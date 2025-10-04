@@ -23,22 +23,39 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
+    return MultiRepositoryProvider(
       providers: [
-        BlocProvider(
-          create: (context) =>
-              AuthBloc(authService: AuthService(), userService: UserService()),
+        RepositoryProvider<AuthService>(
+          create: (context) => AuthService(),
         ),
-        BlocProvider(create: (context) => UserBloc(userService: UserService())),
-        BlocProvider(
-            create: (context) => GroupBloc(groupService: GroupService())),
+        RepositoryProvider<UserService>(
+          create: (context) => UserService(),
+        ),
       ],
-      child: MaterialApp(
-        title: 'ProPlay',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>(
+            create: (context) => AuthBloc(
+              authService: context.read<AuthService>(),
+              userService: context.read<UserService>(),
+            ),
+          ),
+          BlocProvider<UserBloc>(
+            create: (context) => UserBloc(userService: context.read<UserService>()),
+          ),
+          BlocProvider<GroupBloc>(
+            create: (context) => GroupBloc(
+              groupService: GroupService(userService: context.read<UserService>()),
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          title: 'ProPlay',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          ),
+          home: const AuthWrapper(),
         ),
-        home: const AuthWrapper(),
       ),
     );
   }

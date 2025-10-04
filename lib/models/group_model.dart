@@ -7,7 +7,7 @@ class GroupModel {
   final List<String> sports;
   final String createdBy;
   final DateTime createdAt;
-  final List<String> members;
+  final List<String>? members;
 
   GroupModel({
     required this.id,
@@ -16,7 +16,7 @@ class GroupModel {
     required this.sports,
     required this.createdBy,
     required this.createdAt,
-    required this.members,
+    this.members,
   });
 
   // Convert GroupModel to Map for Firestore

@@ -36,6 +36,22 @@ class UserService {
     }
   }
 
+  Future<void> addGroupToUser(String userId, String groupId, String role) async {
+    try {
+      await _firestore
+          .collection(usersCollection)
+          .doc(userId)
+          .collection('groups')
+          .doc(groupId)
+          .set({
+        'role': role,
+        'joinedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      throw Exception('Failed to add group to user: $e');
+    }
+  }
+
   // Update profile image URL
   Future<void> updateProfileImage(String uid, String imageUrl) async {
     try {
