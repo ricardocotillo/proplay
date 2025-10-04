@@ -9,9 +9,7 @@ import 'package:proplay/screens/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -42,14 +40,12 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, state) {
         if (state is AuthInitial || state is AuthLoading) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
         if (state is AuthAuthenticated) {
-          return const MyHomePage(title: 'Flutter Demo Home Page');
+          return const MyHomePage(title: 'ProPlay');
         }
 
         return const LoginScreen();
