@@ -95,7 +95,7 @@ class AppDrawer extends StatelessWidget {
                     style: TextStyle(color: Colors.red),
                   ),
                   onTap: () {
-                    Navigator.pop(context);
+                    final authBloc = context.read<AuthBloc>();
                     // Show confirmation dialog
                     showDialog(
                       context: context,
@@ -112,9 +112,8 @@ class AppDrawer extends StatelessWidget {
                           TextButton(
                             onPressed: () {
                               Navigator.pop(dialogContext);
-                              context.read<AuthBloc>().add(
-                                AuthLogoutRequested(),
-                              );
+                              Navigator.pop(context); // Close the drawer
+                              authBloc.add(AuthLogoutRequested());
                             },
                             child: const Text(
                               'Log Out',
