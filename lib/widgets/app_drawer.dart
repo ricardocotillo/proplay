@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/screens/edit_profile_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -23,9 +24,8 @@ class AppDrawer extends StatelessWidget {
             currentAccountPicture: user?.profileImageUrl != null
                 ? CachedNetworkImage(
                     imageUrl: user!.profileImageUrl!,
-                    imageBuilder: (context, imageProvider) => CircleAvatar(
-                      backgroundImage: imageProvider,
-                    ),
+                    imageBuilder: (context, imageProvider) =>
+                        CircleAvatar(backgroundImage: imageProvider),
                     placeholder: (context, url) => const CircleAvatar(
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
@@ -34,7 +34,7 @@ class AppDrawer extends StatelessWidget {
                       child: Text(
                         user.firstName.isNotEmpty && user.lastName.isNotEmpty
                             ? '${user.firstName[0]}${user.lastName[0]}'
-                                .toUpperCase()
+                                  .toUpperCase()
                             : 'U',
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSecondary,
@@ -51,7 +51,7 @@ class AppDrawer extends StatelessWidget {
                               user.firstName.isNotEmpty &&
                               user.lastName.isNotEmpty
                           ? '${user.firstName[0]}${user.lastName[0]}'
-                              .toUpperCase()
+                                .toUpperCase()
                           : 'U',
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSecondary,
@@ -62,10 +62,7 @@ class AppDrawer extends StatelessWidget {
                   ),
             accountName: Text(
               user != null ? user.fullName : 'User',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             accountEmail: Text(
               user?.email ?? '',
@@ -82,10 +79,10 @@ class AppDrawer extends StatelessWidget {
                   title: const Text('Edit Profile'),
                   onTap: () {
                     Navigator.pop(context);
-                    // TODO: Navigate to edit profile screen
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Edit Profile - Coming soon!'),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EditProfileScreen(),
                       ),
                     );
                   },
@@ -104,8 +101,9 @@ class AppDrawer extends StatelessWidget {
                       context: context,
                       builder: (dialogContext) => AlertDialog(
                         title: const Text('Log Out'),
-                        content:
-                            const Text('Are you sure you want to log out?'),
+                        content: const Text(
+                          'Are you sure you want to log out?',
+                        ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(dialogContext),
@@ -114,9 +112,9 @@ class AppDrawer extends StatelessWidget {
                           TextButton(
                             onPressed: () {
                               Navigator.pop(dialogContext);
-                              context
-                                  .read<AuthBloc>()
-                                  .add(AuthLogoutRequested());
+                              context.read<AuthBloc>().add(
+                                AuthLogoutRequested(),
+                              );
                             },
                             child: const Text(
                               'Log Out',

@@ -6,6 +6,7 @@ import 'package:proplay/services/auth_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_state.dart';
+import 'package:proplay/bloc/user/user_bloc.dart';
 import 'package:proplay/screens/login_screen.dart';
 import 'package:proplay/screens/home_screen.dart';
 
@@ -20,9 +21,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) =>
-          AuthBloc(authService: AuthService(), userService: UserService()),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) =>
+              AuthBloc(authService: AuthService(), userService: UserService()),
+        ),
+        BlocProvider(create: (context) => UserBloc(userService: UserService())),
+      ],
       child: MaterialApp(
         title: 'ProPlay',
         theme: ThemeData(
