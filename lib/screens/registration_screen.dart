@@ -54,7 +54,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               ),
             );
           } else if (state is AuthAuthenticated) {
-            Navigator.pop(context);
+            // Pop back to let AuthWrapper handle navigation to MyHomePage
+            Navigator.of(context).popUntil((route) => route.isFirst);
           }
         },
         builder: (context, state) {
