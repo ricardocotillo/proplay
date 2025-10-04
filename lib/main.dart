@@ -31,6 +31,9 @@ class MyApp extends StatelessWidget {
         RepositoryProvider<UserService>(
           create: (context) => UserService(),
         ),
+        RepositoryProvider<GroupService>(
+          create: (context) => GroupService(userService: context.read<UserService>()),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -38,6 +41,7 @@ class MyApp extends StatelessWidget {
             create: (context) => AuthBloc(
               authService: context.read<AuthService>(),
               userService: context.read<UserService>(),
+              groupService: context.read<GroupService>(),
             ),
           ),
           BlocProvider<UserBloc>(

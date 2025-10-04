@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:proplay/services/auth_service.dart';
+import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
@@ -10,12 +11,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthService _authService;
   final UserService _userService;
+  final GroupService _groupService;
   StreamSubscription<User?>? _authSubscription;
 
-  AuthBloc({required AuthService authService, required UserService userService})
-    : _authService = authService,
-      _userService = userService,
-      super(AuthInitial()) {
+  AuthBloc({
+    required AuthService authService,
+    required UserService userService,
+    required GroupService groupService,
+  })  : _authService = authService,
+        _userService = userService,
+        _groupService = groupService,
+        super(AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
     on<AuthRegisterRequested>(_onAuthRegisterRequested);
@@ -115,6 +121,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
 
       await _userService.createUser(user);
+
+      if (event.groupCode != null && event.groupCode!.isNotEmpty) {
+        try {
+          await _groupService.joinGroup(event.groupCode!, user.uid);
+        } catch (e) {
+          // Group not found, but registration is successful
+          emit(
+            AuthSuccessWithInfo(
+              message: 'Usuário registrado com sucesso, mas o código do grupo não foi encontrado.',
+              firebaseUser: userCredential.user!,
+              userModel: user,
+            ),
+          );
+          return;
+        }
+      }
 
       emit(
         AuthAuthenticated(firebaseUser: userCredential.user!, userModel: user),

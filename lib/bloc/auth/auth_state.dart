@@ -36,3 +36,18 @@ class AuthError extends AuthState {
   @override
   List<Object?> get props => [message];
 }
+
+class AuthSuccessWithInfo extends AuthState {
+  final String message;
+  final User firebaseUser;
+  final UserModel userModel;
+
+  const AuthSuccessWithInfo({
+    required this.message,
+    required this.firebaseUser,
+    required this.userModel,
+  });
+
+  @override
+  List<Object?> get props => [message, firebaseUser, userModel];
+}

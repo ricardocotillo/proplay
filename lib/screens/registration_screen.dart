@@ -18,6 +18,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _groupCodeController = TextEditingController();
 
   @override
   void dispose() {
@@ -26,6 +27,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _groupCodeController.dispose();
     super.dispose();
   }
 
@@ -40,6 +42,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             password: _passwordController.text,
             firstName: _firstNameController.text.trim(),
             lastName: _lastNameController.text.trim(),
+            groupCode: _groupCodeController.text.trim(),
           ),
         );
   }
@@ -61,6 +64,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             );
           } else if (state is AuthAuthenticated) {
             // Pop back to let AuthWrapper handle navigation to MyHomePage
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          } else if (state is AuthSuccessWithInfo) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+              ),
+            );
             Navigator.of(context).popUntil((route) => route.isFirst);
           }
         },
@@ -171,6 +182,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         }
                         return null;
                       },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _groupCodeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Código de Grupo (Opcional)',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.group),
+                      ),
+                      enabled: !isLoading,
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
