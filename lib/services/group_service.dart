@@ -193,4 +193,24 @@ class GroupService {
       throw Exception('Failed to delete group: $e');
     }
   }
+
+  // Get group members
+  Future<List<Map<String, dynamic>>> getGroupMembers(String groupId) async {
+    try {
+      final snapshot = await _firestore
+          .collection(groupsCollection)
+          .doc(groupId)
+          .collection('members')
+          .get();
+
+      return snapshot.docs.map((doc) {
+        return {
+          'userId': doc.id,
+          'role': doc.data()['role'],
+        };
+      }).toList();
+    } catch (e) {
+      throw Exception('Failed to get group members: $e');
+    }
+  }
 }
