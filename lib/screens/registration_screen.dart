@@ -237,8 +237,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      icon: Image.network(
-                        'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                      icon: Image.asset(
+                        'assets/google.png',
                         height: 24,
                         width: 24,
                       ),
