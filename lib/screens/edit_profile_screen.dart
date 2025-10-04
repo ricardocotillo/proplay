@@ -1,11 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:proplay/bloc/user/user_bloc.dart';
 import 'package:proplay/bloc/user/user_event.dart';
 import 'package:proplay/bloc/user/user_state.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/services/storage_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -18,6 +22,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
+  final _imagePicker = ImagePicker();
+  final _storageService = StorageService();
+  File? _selectedImage;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -32,6 +40,76 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImage = File(pickedFile.path);
+        });
+        await _uploadImage();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadImage() async {
+    if (_selectedImage == null) return;
+
+    final user = context.currentUser;
+    if (user == null) return;
+
+    setState(() {
+      _isUploadingImage = true;
+    });
+
+    try {
+      final imageUrl = await _storageService.uploadProfileImage(
+        user.uid,
+        _selectedImage!,
+      );
+
+      if (mounted) {
+        context.read<UserBloc>().add(
+              UserProfileImageUpdateRequested(
+                uid: user.uid,
+                imageUrl: imageUrl,
+              ),
+            );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload image: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingImage = false;
+          _selectedImage = null;
+        });
+      }
+    }
   }
 
   void _saveProfile() {
@@ -71,7 +149,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             );
             // Refresh auth state to get updated user data
             context.read<AuthBloc>().add(AuthCheckRequested());
-            Navigator.pop(context);
+
+            // Only pop if updating profile info, not image
+            if (state.message.contains('Profile updated')) {
+              Navigator.pop(context);
+            }
           } else if (state is UserUpdateFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -91,26 +173,68 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Profile Image Placeholder
+                  // Profile Image
                   Center(
                     child: Stack(
                       children: [
-                        CircleAvatar(
-                          radius: 60,
-                          backgroundColor:
-                              Theme.of(context).colorScheme.primary,
-                          child: Text(
-                            user != null
-                                ? '${user.firstName[0]}${user.lastName[0]}'
-                                    .toUpperCase()
-                                : 'U',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimary,
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
+                        _isUploadingImage
+                            ? const CircleAvatar(
+                                radius: 60,
+                                child: CircularProgressIndicator(),
+                              )
+                            : user?.profileImageUrl != null
+                                ? CachedNetworkImage(
+                                    imageUrl: user!.profileImageUrl!,
+                                    imageBuilder: (context, imageProvider) =>
+                                        CircleAvatar(
+                                      radius: 60,
+                                      backgroundImage: imageProvider,
+                                    ),
+                                    placeholder: (context, url) =>
+                                        const CircleAvatar(
+                                      radius: 60,
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        CircleAvatar(
+                                      radius: 60,
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .primary,
+                                      child: Text(
+                                        user.firstName.isNotEmpty &&
+                                                user.lastName.isNotEmpty
+                                            ? '${user.firstName[0]}${user.lastName[0]}'
+                                                .toUpperCase()
+                                            : 'U',
+                                        style: TextStyle(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
+                                          fontSize: 48,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : CircleAvatar(
+                                    radius: 60,
+                                    backgroundColor:
+                                        Theme.of(context).colorScheme.primary,
+                                    child: Text(
+                                      user != null
+                                          ? '${user.firstName[0]}${user.lastName[0]}'
+                                              .toUpperCase()
+                                          : 'U',
+                                      style: TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onPrimary,
+                                        fontSize: 48,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
                         Positioned(
                           bottom: 0,
                           right: 0,
@@ -125,17 +249,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 color:
                                     Theme.of(context).colorScheme.onSecondary,
                               ),
-                              onPressed: isLoading
+                              onPressed: isLoading || _isUploadingImage
                                   ? null
-                                  : () {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                              'Image upload - Coming soon!'),
-                                        ),
-                                      );
-                                    },
+                                  : _pickImage,
                             ),
                           ),
                         ),

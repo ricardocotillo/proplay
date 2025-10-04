@@ -1,0 +1,49 @@
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
+
+class StorageService {
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+
+  /// Upload profile image to Firebase Storage
+  /// Returns the download URL of the uploaded image
+  Future<String> uploadProfileImage(String uid, File imageFile) async {
+    try {
+      // Create a unique file name with timestamp
+      final fileName = 'profile_$uid.jpg';
+      final ref = _storage.ref().child('profile_images/$fileName');
+
+      // Upload the file
+      final uploadTask = ref.putFile(imageFile);
+
+      // Wait for upload to complete
+      final snapshot = await uploadTask;
+
+      // Get the download URL
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+
+      return downloadUrl;
+    } catch (e) {
+      throw Exception('Failed to upload image: $e');
+    }
+  }
+
+  /// Delete profile image from Firebase Storage
+  Future<void> deleteProfileImage(String imageUrl) async {
+    try {
+      final ref = _storage.refFromURL(imageUrl);
+      await ref.delete();
+    } catch (e) {
+      throw Exception('Failed to delete image: $e');
+    }
+  }
+
+  /// Get download URL for a file path
+  Future<String> getDownloadUrl(String filePath) async {
+    try {
+      final ref = _storage.ref().child(filePath);
+      return await ref.getDownloadURL();
+    } catch (e) {
+      throw Exception('Failed to get download URL: $e');
+    }
+  }
+}
