@@ -48,4 +48,13 @@ class AuthRegisterRequested extends AuthEvent {
   List<Object?> get props => [email, password, firstName, lastName, groupCode];
 }
 
+class AuthGoogleSignInRequested extends AuthEvent {
+  final String? groupCode;
+
+  const AuthGoogleSignInRequested({this.groupCode});
+
+  @override
+  List<Object?> get props => [groupCode];
+}
+
 class AuthLogoutRequested extends AuthEvent {}

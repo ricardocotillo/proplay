@@ -47,6 +47,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         );
   }
 
+  void _signInWithGoogle() {
+    context.read<AuthBloc>().add(
+          AuthGoogleSignInRequested(
+            groupCode: _groupCodeController.text.trim().isEmpty
+                ? null
+                : _groupCodeController.text.trim(),
+          ),
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -206,6 +216,33 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Text('Register'),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'OR',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                        Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: isLoading ? null : _signInWithGoogle,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      icon: Image.network(
+                        'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                        height: 24,
+                        width: 24,
+                      ),
+                      label: const Text('Sign up with Google'),
                     ),
                     const SizedBox(height: 16),
                     TextButton(

@@ -25,6 +25,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
     on<AuthRegisterRequested>(_onAuthRegisterRequested);
+    on<AuthGoogleSignInRequested>(_onAuthGoogleSignInRequested);
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
     on<AuthUserChanged>(_onAuthUserChanged);
 
@@ -140,6 +141,66 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       emit(
         AuthAuthenticated(firebaseUser: userCredential.user!, userModel: user),
+      );
+    } catch (e) {
+      emit(AuthError(e.toString()));
+      emit(AuthUnauthenticated());
+    }
+  }
+
+  Future<void> _onAuthGoogleSignInRequested(
+    AuthGoogleSignInRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      final userCredential = await _authService.signInWithGoogle();
+      final firebaseUser = userCredential.user!;
+
+      // Check if user already exists in Firestore
+      var userModel = await _userService.getUser(firebaseUser.uid);
+
+      // If user doesn't exist, create a new user document
+      if (userModel == null) {
+        // Extract first and last name from Google display name
+        final displayName = firebaseUser.displayName ?? '';
+        final nameParts = displayName.split(' ');
+        final firstName = nameParts.isNotEmpty ? nameParts.first : '';
+        final lastName =
+            nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+
+        userModel = UserModel(
+          uid: firebaseUser.uid,
+          email: firebaseUser.email!,
+          firstName: firstName,
+          lastName: lastName,
+          profileImageUrl: firebaseUser.photoURL,
+          createdAt: DateTime.now(),
+        );
+
+        await _userService.createUser(userModel);
+
+        // Join group if group code is provided
+        if (event.groupCode != null && event.groupCode!.isNotEmpty) {
+          try {
+            await _groupService.joinGroup(event.groupCode!, userModel.uid);
+          } catch (e) {
+            // Group not found, but registration is successful
+            emit(
+              AuthSuccessWithInfo(
+                message:
+                    'Usuário registrado com sucesso, mas o código do grupo não foi encontrado.',
+                firebaseUser: firebaseUser,
+                userModel: userModel,
+              ),
+            );
+            return;
+          }
+        }
+      }
+
+      emit(
+        AuthAuthenticated(firebaseUser: firebaseUser, userModel: userModel),
       );
     } catch (e) {
       emit(AuthError(e.toString()));
