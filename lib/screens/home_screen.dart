@@ -166,14 +166,27 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Text(
                     'crea',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      decoration: TextDecoration.underline,
-                      fontWeight: FontWeight.bold,
-                    ),
+                          color: Theme.of(context).colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ),
               ),
-              const TextSpan(text: ' o unete a uno'),
+              const TextSpan(text: ' o '),
+              WidgetSpan(
+                child: GestureDetector(
+                  onTap: () => _showJoinGroupDialog(),
+                  child: Text(
+                    'unete a uno',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
