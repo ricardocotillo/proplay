@@ -37,32 +37,30 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
 
     context.read<AuthBloc>().add(
-          AuthRegisterRequested(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-            firstName: _firstNameController.text.trim(),
-            lastName: _lastNameController.text.trim(),
-            groupCode: _groupCodeController.text.trim(),
-          ),
-        );
+      AuthRegisterRequested(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        groupCode: _groupCodeController.text.trim(),
+      ),
+    );
   }
 
   void _signInWithGoogle() {
     context.read<AuthBloc>().add(
-          AuthGoogleSignInRequested(
-            groupCode: _groupCodeController.text.trim().isEmpty
-                ? null
-                : _groupCodeController.text.trim(),
-          ),
-        );
+      AuthGoogleSignInRequested(
+        groupCode: _groupCodeController.text.trim().isEmpty
+            ? null
+            : _groupCodeController.text.trim(),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-      ),
+      appBar: AppBar(title: const Text('Register')),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
@@ -97,10 +95,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(
-                      Icons.person_add_outlined,
-                      size: 80,
-                    ),
+                    const Icon(Icons.person_add_outlined, size: 80),
                     const SizedBox(height: 32),
                     TextFormField(
                       controller: _firstNameController,
@@ -242,7 +237,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         height: 24,
                         width: 24,
                       ),
-                      label: const Text('Sign up with Google'),
+                      label: const Text('Registrate con Google'),
                     ),
                     const SizedBox(height: 16),
                     TextButton(
@@ -251,7 +246,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           : () {
                               Navigator.pop(context);
                             },
-                      child: const Text('Already have an account? Login'),
+                      child: const Text('¿Ya tienes una cuenta? Inicia sesión'),
                     ),
                   ],
                 ),
