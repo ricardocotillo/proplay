@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/app_drawer.dart';
+import 'package:proplay/screens/create_group_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -75,10 +76,38 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       endDrawer: const AppDrawer(),
       body: Center(
-        child: Text(
-          'No tienes un grupo aun? crea o unete a uno',
-          style: Theme.of(context).textTheme.titleLarge,
-          textAlign: TextAlign.center,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: RichText(
+            textAlign: TextAlign.center,
+            text: TextSpan(
+              style: Theme.of(context).textTheme.titleLarge,
+              children: [
+                const TextSpan(text: 'No tienes un grupo aun? '),
+                WidgetSpan(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateGroupScreen(),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'crea',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            decoration: TextDecoration.underline,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ),
+                ),
+                const TextSpan(text: ' o unete a uno'),
+              ],
+            ),
+          ),
         ),
       ),
     );

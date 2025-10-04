@@ -4,9 +4,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'firebase_options.dart';
 import 'package:proplay/services/auth_service.dart';
 import 'package:proplay/services/user_service.dart';
+import 'package:proplay/services/group_service.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_state.dart';
 import 'package:proplay/bloc/user/user_bloc.dart';
+import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/screens/login_screen.dart';
 import 'package:proplay/screens/home_screen.dart';
 
@@ -28,6 +30,8 @@ class MyApp extends StatelessWidget {
               AuthBloc(authService: AuthService(), userService: UserService()),
         ),
         BlocProvider(create: (context) => UserBloc(userService: UserService())),
+        BlocProvider(
+            create: (context) => GroupBloc(groupService: GroupService())),
       ],
       child: MaterialApp(
         title: 'ProPlay',
