@@ -1,9 +1,9 @@
-
 import 'package:flutter/material.dart';
 import 'package:proplay/models/group_model.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
+import 'package:proplay/screens/group_edit_screen.dart';
 
 class GroupDetailScreen extends StatefulWidget {
   final GroupModel group;
@@ -33,10 +33,7 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
       for (var memberData in membersData) {
         UserModel? user = await _userService.getUser(memberData['userId']);
         if (user != null) {
-          members.add({
-            'user': user,
-            'role': memberData['role'],
-          });
+          members.add({'user': user, 'role': memberData['role']});
         }
       }
       setState(() {
@@ -56,6 +53,19 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.group.name),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => GroupEditScreen(group: widget.group),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
