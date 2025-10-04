@@ -1,0 +1,1 @@
+ /Users/ricardo/dev/sld/proplay/.dart_tool/flutter_build/37fa378b12cb6382a8fb00d744c5a0a4/native_assets.json: 
