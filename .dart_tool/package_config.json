@@ -38,6 +38,24 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "cloud_firestore",
+      "rootUri": "file:///Users/ricardo/.pub-cache/hosted/pub.dev/cloud_firestore-6.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "cloud_firestore_platform_interface",
+      "rootUri": "file:///Users/ricardo/.pub-cache/hosted/pub.dev/cloud_firestore_platform_interface-7.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "cloud_firestore_web",
+      "rootUri": "file:///Users/ricardo/.pub-cache/hosted/pub.dev/cloud_firestore_web-5.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
       "name": "collection",
       "rootUri": "file:///Users/ricardo/.pub-cache/hosted/pub.dev/collection-1.19.1",
       "packageUri": "lib/",
