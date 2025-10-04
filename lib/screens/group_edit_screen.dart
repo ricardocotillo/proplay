@@ -1,4 +1,7 @@
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:proplay/bloc/group_edit/group_edit_bloc.dart';
 import 'package:proplay/models/group_model.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
@@ -15,50 +18,50 @@ class GroupEditScreen extends StatefulWidget {
 class _GroupEditScreenState extends State<GroupEditScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late TextEditingController _sportsController;
-  final GroupService _groupService = GroupService(userService: UserService());
+
+  // Available sports
+  final List<String> _availableSports = [
+    'Fútbol',
+    'Baloncesto',
+    'Tenis',
+    'Voleibol',
+    'Béisbol',
+    'Rugby',
+    'Natación',
+    'Ciclismo',
+    'Atletismo',
+    'Gimnasia',
+  ];
+
+  final List<String> _selectedSports = [];
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.group.name);
-    _sportsController = TextEditingController(text: widget.group.sports.join(', '));
+    _selectedSports.addAll(widget.group.sports);
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _sportsController.dispose();
     super.dispose();
   }
 
-  void _saveGroup() async {
+  void _saveGroup(BuildContext context) {
     if (_formKey.currentState!.validate()) {
       final newName = _nameController.text;
-      final newSports = _sportsController.text.split(',').map((s) => s.trim()).toList();
-
-      try {
-        await _groupService.updateGroup(widget.group.id, {
-          'name': newName,
-          'sports': newSports,
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Group updated successfully')),
+      context.read<GroupEditBloc>().add(
+            GroupEditSubmitted(
+              groupId: widget.group.id,
+              name: newName,
+              sports: _selectedSports,
+            ),
           );
-          Navigator.pop(context);
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to update group: $e')),
-          );
-        }
-      }
     }
   }
 
-  void _deleteGroup() async {
+  void _deleteGroup(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -78,71 +81,112 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
     );
 
     if (confirmed == true) {
-      try {
-        await _groupService.deleteGroup(widget.group.id);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Group deleted successfully')),
-          );
-          // Pop until we are back at the home screen
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to delete group: $e')),
-          );
-        }
-      }
+      // ignore: use_build_context_synchronously
+      context.read<GroupEditBloc>().add(GroupDeleted(widget.group.id));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Group'),
+    return BlocProvider(
+      create: (context) => GroupEditBloc(
+        groupService: GroupService(userService: UserService()),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Group Name'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
-                  }
-                  return null;
-                },
+      child: BlocListener<GroupEditBloc, GroupEditState>(
+        listener: (context, state) {
+          if (state is GroupEditSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+            if (state.message.contains('deleted')) {
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            } else {
+              Navigator.pop(context);
+            }
+          } else if (state is GroupEditFailure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.error)),
+            );
+          }
+        },
+        child: BlocBuilder<GroupEditBloc, GroupEditState>(
+          builder: (context, state) {
+            final isLoading = state is GroupEditInProgress;
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('Edit Group'),
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _sportsController,
-                decoration: const InputDecoration(labelText: 'Sports (comma separated)'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter at least one sport';
-                  }
-                  return null;
-                },
+              body: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(labelText: 'Group Name'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a name';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Sports Selection
+                      Text(
+                        'Selecciona Deportes',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _availableSports.map((sport) {
+                          final isSelected = _selectedSports.contains(sport);
+                          return FilterChip(
+                            label: Text(sport),
+                            selected: isSelected,
+                            onSelected: isLoading
+                                ? null
+                                : (selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _selectedSports.add(sport);
+                                      } else {
+                                        _selectedSports.remove(sport);
+                                      }
+                                    });
+                                  },
+                            selectedColor: Theme.of(
+                              context,
+                            ).colorScheme.primaryContainer,
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 32),
+                      if (isLoading)
+                        const Center(child: CircularProgressIndicator())
+                      else ...[
+                        ElevatedButton(
+                          onPressed: () => _saveGroup(context),
+                          child: const Text('Save Changes'),
+                        ),
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: () => _deleteGroup(context),
+                          style: TextButton.styleFrom(foregroundColor: Colors.red),
+                          child: const Text('Eliminar Grupo'),
+                        ),
+                      ]
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: _saveGroup,
-                child: const Text('Save Changes'),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: _deleteGroup,
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('Eliminar Grupo'),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
