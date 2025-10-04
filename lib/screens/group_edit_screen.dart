@@ -50,6 +50,15 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
 
   void _saveGroup(BuildContext context) {
     if (_formKey.currentState!.validate()) {
+      if (_selectedSports.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select at least one sport'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
       final newName = _nameController.text;
       context.read<GroupEditBloc>().add(
             GroupEditSubmitted(
@@ -166,12 +175,22 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                           );
                         }).toList(),
                       ),
+                      if (_selectedSports.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            'Por favor selecciona al menos un deporte',
+                            style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          ),
+                        ),
                       const SizedBox(height: 32),
                       if (isLoading)
                         const Center(child: CircularProgressIndicator())
                       else ...[
                         ElevatedButton(
-                          onPressed: () => _saveGroup(context),
+                          onPressed: isLoading || _selectedSports.isEmpty
+                              ? null
+                              : () => _saveGroup(context),
                           child: const Text('Save Changes'),
                         ),
                         const SizedBox(height: 16),

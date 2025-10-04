@@ -43,26 +43,16 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       return;
     }
 
-    if (_selectedSports.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor selecciona al menos un deporte'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
     final user = context.currentUser;
     if (user == null) return;
 
     context.read<GroupBloc>().add(
-      GroupCreateRequested(
-        name: _groupNameController.text.trim(),
-        sports: _selectedSports,
-        createdBy: user.uid,
-      ),
-    );
+          GroupCreateRequested(
+            name: _groupNameController.text.trim(),
+            sports: _selectedSports,
+            createdBy: user.uid,
+          ),
+        );
   }
 
   @override
@@ -150,6 +140,14 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                       );
                     }).toList(),
                   ),
+                  if (_selectedSports.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        'Por favor selecciona al menos un deporte',
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ),
                   const SizedBox(height: 32),
 
                   // Info Text
@@ -191,7 +189,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
 
                   // Create Button
                   ElevatedButton(
-                    onPressed: isLoading ? null : _createGroup,
+                    onPressed: isLoading || _selectedSports.isEmpty ? null : _createGroup,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
