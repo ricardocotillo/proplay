@@ -92,7 +92,18 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       endDrawer: const AppDrawer(),
-      body: BlocBuilder<GroupBloc, GroupState>(
+      body: BlocConsumer<GroupBloc, GroupState>(
+        listener: (context, state) {
+          if (state is GroupJoinSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.message),
+                backgroundColor: Colors.green,
+              ),
+            );
+            _loadGroups();
+          }
+        },
         builder: (context, state) {
           if (state is GroupLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -171,57 +182,143 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildGroupsList(List groups) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: groups.length,
-      itemBuilder: (context, index) {
-        final group = groups[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              child: Text(
-                group.name.isNotEmpty ? group.name[0].toUpperCase() : 'G',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  fontWeight: FontWeight.bold,
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateGroupScreen(),
+                      ),
+                    );
+                    if (result != null) {
+                      _loadGroups();
+                    }
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Crear Grupo'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
                 ),
               ),
-            ),
-            title: Text(
-              group.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(
-              group.sports.join(', '),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                group.code,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'monospace',
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _showJoinGroupDialog(),
+                  icon: const Icon(Icons.group_add),
+                  label: const Text('Unirse a Grupo'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
                 ),
               ),
-            ),
-            onTap: () {
-              // TODO: Navigate to group details
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Grupo: ${group.name}')),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: groups.length,
+            itemBuilder: (context, index) {
+              final group = groups[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    child: Text(
+                      group.name.isNotEmpty ? group.name[0].toUpperCase() : 'G',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    group.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    group.sports.join(', '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      group.code,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
+                  onTap: () {
+                    // TODO: Navigate to group details
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Grupo: ${group.name}')),
+                    );
+                  },
+                ),
               );
             },
           ),
-        );
-      },
+        ),
+      ],
+    );
+  }
+
+  void _showJoinGroupDialog() {
+    final codeController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Unirse a Grupo'),
+        content: TextField(
+          controller: codeController,
+          decoration: const InputDecoration(
+            labelText: 'Código del Grupo',
+            border: OutlineInputBorder(),
+            hintText: 'Ingresa el código de 6 caracteres',
+          ),
+          textCapitalization: TextCapitalization.characters,
+          maxLength: 6,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final code = codeController.text.trim().toUpperCase();
+              if (code.length == 6) {
+                final user = this.context.currentUser;
+                if (user != null) {
+                  this.context.read<GroupBloc>().add(
+                        GroupJoinRequested(code: code, userId: user.uid),
+                      );
+                  Navigator.pop(context);
+                }
+              }
+            },
+            child: const Text('Unirse'),
+          ),
+        ],
+      ),
     );
   }
 }
