@@ -57,12 +57,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     if (user == null) return;
 
     context.read<GroupBloc>().add(
-          GroupCreateRequested(
-            name: _groupNameController.text.trim(),
-            sports: _selectedSports,
-            createdBy: user.uid,
-          ),
-        );
+      GroupCreateRequested(
+        name: _groupNameController.text.trim(),
+        sports: _selectedSports,
+        createdBy: user.uid,
+      ),
+    );
   }
 
   @override
@@ -144,8 +144,9 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                                   }
                                 });
                               },
-                        selectedColor:
-                            Theme.of(context).colorScheme.primaryContainer,
+                        selectedColor: Theme.of(
+                          context,
+                        ).colorScheme.primaryContainer,
                       );
                     }).toList(),
                   ),
@@ -155,7 +156,9 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(

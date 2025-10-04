@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Text(
                         user != null
                             ? '${user.firstName[0]}${user.lastName[0]}'
-                                .toUpperCase()
+                                  .toUpperCase()
                             : 'U',
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onPrimary,
@@ -166,10 +166,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Text(
                     'crea',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          decoration: TextDecoration.underline,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      color: Theme.of(context).colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -251,7 +251,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.primaryContainer,
                       borderRadius: BorderRadius.circular(12),
@@ -266,7 +269,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   onTap: () {
-                    // TODO: Navigate to group details
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Grupo: ${group.name}')),
                     );
@@ -309,8 +311,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 final user = this.context.currentUser;
                 if (user != null) {
                   this.context.read<GroupBloc>().add(
-                        GroupJoinRequested(code: code, userId: user.uid),
-                      );
+                    GroupJoinRequested(code: code, userId: user.uid),
+                  );
                   Navigator.pop(context);
                 }
               }
