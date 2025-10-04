@@ -12,33 +12,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final UserService _userService;
   StreamSubscription<User?>? _authSubscription;
 
-  AuthBloc({
-    required AuthService authService,
-    required UserService userService,
-  })  : _authService = authService,
-        _userService = userService,
-        super(AuthInitial()) {
+  AuthBloc({required AuthService authService, required UserService userService})
+    : _authService = authService,
+      _userService = userService,
+      super(AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
     on<AuthRegisterRequested>(_onAuthRegisterRequested);
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
+    on<AuthUserChanged>(_onAuthUserChanged);
 
     // Start listening to auth state changes
-    _authSubscription = _authService.authStateChanges.listen((user) async {
-      if (user != null) {
-        final userModel = await _userService.getUser(user.uid);
-        if (userModel != null) {
-          emit(AuthAuthenticated(
-            firebaseUser: user,
-            userModel: userModel,
-          ));
-        } else {
-          emit(AuthUnauthenticated());
-        }
-      } else {
-        emit(AuthUnauthenticated());
-      }
-    });
+    _authSubscription = _authService.authStateChanges.listen(
+      (user) => add(AuthUserChanged(user)),
+    );
   }
 
   Future<void> _onAuthCheckRequested(
@@ -49,10 +36,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     if (user != null) {
       final userModel = await _userService.getUser(user.uid);
       if (userModel != null) {
-        emit(AuthAuthenticated(
-          firebaseUser: user,
-          userModel: userModel,
-        ));
+        emit(AuthAuthenticated(firebaseUser: user, userModel: userModel));
+      } else {
+        emit(AuthUnauthenticated());
+      }
+    } else {
+      emit(AuthUnauthenticated());
+    }
+  }
+
+  Future<void> _onAuthUserChanged(
+    AuthUserChanged event,
+    Emitter<AuthState> emit,
+  ) async {
+    if (event.user != null) {
+      final userModel = await _userService.getUser(event.user!.uid);
+      if (userModel != null) {
+        emit(
+          AuthAuthenticated(firebaseUser: event.user!, userModel: userModel),
+        );
       } else {
         emit(AuthUnauthenticated());
       }
@@ -75,10 +77,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       // Get user model from Firestore
       final userModel = await _userService.getUser(userCredential.user!.uid);
       if (userModel != null) {
-        emit(AuthAuthenticated(
-          firebaseUser: userCredential.user!,
-          userModel: userModel,
-        ));
+        emit(
+          AuthAuthenticated(
+            firebaseUser: userCredential.user!,
+            userModel: userModel,
+          ),
+        );
       } else {
         emit(AuthError('User data not found'));
         emit(AuthUnauthenticated());
@@ -112,10 +116,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       await _userService.createUser(user);
 
-      emit(AuthAuthenticated(
-        firebaseUser: userCredential.user!,
-        userModel: user,
-      ));
+      emit(
+        AuthAuthenticated(firebaseUser: userCredential.user!, userModel: user),
+      );
     } catch (e) {
       emit(AuthError(e.toString()));
       emit(AuthUnauthenticated());
