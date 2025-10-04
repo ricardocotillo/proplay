@@ -1,20 +1,24 @@
-
-import 'package:bloc/bloc.dart';
+import 'package:bloc/bloc.dart' as bloc;
 import 'package:equatable/equatable.dart';
 import 'package:proplay/services/group_service.dart';
 
 part 'group_edit_event.dart';
 part 'group_edit_state.dart';
 
-class GroupEditBloc extends Bloc<GroupEditEvent, GroupEditState> {
+class GroupEditBloc extends bloc.Bloc<GroupEditEvent, GroupEditState> {
   final GroupService _groupService;
 
-  GroupEditBloc({required GroupService groupService}) : _groupService = groupService, super(GroupEditInitial()) {
+  GroupEditBloc({required GroupService groupService})
+    : _groupService = groupService,
+      super(GroupEditInitial()) {
     on<GroupEditSubmitted>(_onGroupEditSubmitted);
     on<GroupDeleted>(_onGroupDeleted);
   }
 
-  void _onGroupEditSubmitted(GroupEditSubmitted event, Emitter<GroupEditState> emit) async {
+  void _onGroupEditSubmitted(
+    GroupEditSubmitted event,
+    bloc.Emitter<GroupEditState> emit,
+  ) async {
     emit(GroupEditInProgress());
     try {
       await _groupService.updateGroup(event.groupId, {
@@ -27,7 +31,10 @@ class GroupEditBloc extends Bloc<GroupEditEvent, GroupEditState> {
     }
   }
 
-  void _onGroupDeleted(GroupDeleted event, Emitter<GroupEditState> emit) async {
+  void _onGroupDeleted(
+    GroupDeleted event,
+    bloc.Emitter<GroupEditState> emit,
+  ) async {
     emit(GroupEditInProgress());
     try {
       await _groupService.deleteGroup(event.groupId);

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -27,12 +28,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider<AuthService>(
-          create: (context) => AuthService(),
-        ),
-        RepositoryProvider<UserService>(
-          create: (context) => UserService(),
-        ),
+        RepositoryProvider<AuthService>(create: (context) => AuthService()),
+        RepositoryProvider<UserService>(create: (context) => UserService()),
         RepositoryProvider<GroupService>(
           create: (context) =>
               GroupService(userService: context.read<UserService>()),
@@ -53,64 +50,70 @@ class MyApp extends StatelessWidget {
           ),
           BlocProvider<GroupBloc>(
             create: (context) => GroupBloc(
-              groupService: GroupService(userService: context.read<UserService>()),
+              groupService: GroupService(
+                userService: context.read<UserService>(),
+              ),
             ),
           ),
         ],
-        child: Builder(builder: (context) {
-          final authState = context.watch<AuthBloc>().state;
+        child: Builder(
+          builder: (context) {
+            final authState = context.watch<AuthBloc>().state;
 
-          final router = GoRouter(
-            routes: [
-              GoRoute(
-                path: '/',
-                builder: (context, state) => const HomeScreen(),
-              ),
-              GoRoute(
-                path: '/login',
-                builder: (context, state) => const LoginScreen(),
-              ),
-              GoRoute(
-                path: '/group/:id',
-                builder: (context, state) {
-                  final id = state.pathParameters['id']!;
-                  return GroupDetailScreenLoader(groupId: id);
-                },
-              ),
-            ],
-            redirect: (context, state) {
-              final loggedIn = authState is AuthAuthenticated;
-              final loggingIn = state.matchedLocation == '/login';
+            final router = GoRouter(
+              routes: [
+                GoRoute(
+                  path: '/',
+                  builder: (context, state) => const HomeScreen(),
+                ),
+                GoRoute(
+                  path: '/login',
+                  builder: (context, state) => const LoginScreen(),
+                ),
+                GoRoute(
+                  path: '/group/:id',
+                  builder: (context, state) {
+                    final id = state.pathParameters['id']!;
+                    return GroupDetailScreenLoader(groupId: id);
+                  },
+                ),
+              ],
+              redirect: (context, state) {
+                final loggedIn = authState is AuthAuthenticated;
+                final loggingIn = state.matchedLocation == '/login';
 
-              if (!loggedIn) {
-                return '/login';
-              }
+                if (!loggedIn) {
+                  return '/login';
+                }
 
-              if (loggingIn) {
-                return '/';
-              }
+                if (loggingIn) {
+                  return '/';
+                }
 
-              return null;
-            },
-            refreshListenable: GoRouterRefreshStream(context.read<AuthBloc>().stream),
-          );
-
-          if (authState is AuthInitial || authState is AuthLoading) {
-            return const MaterialApp(
-              home: Scaffold(
-                body: Center(child: CircularProgressIndicator()),
+                return null;
+              },
+              refreshListenable: GoRouterRefreshStream(
+                context.read<AuthBloc>().stream,
               ),
             );
-          }
 
-          return MaterialApp.router(
-            routerConfig: router,
-            title: 'ProPlay',
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-            ),
-          );
-        }),
+            if (authState is AuthInitial || authState is AuthLoading) {
+              return const MaterialApp(
+                home: Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            }
+
+            return MaterialApp.router(
+              routerConfig: router,
+              title: 'ProPlay',
+              theme: ThemeData(
+                colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -122,7 +125,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
     _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
   }
 
-  late final _subscription;
+  late final StreamSubscription<dynamic> _subscription;
 
   @override
   void dispose() {
