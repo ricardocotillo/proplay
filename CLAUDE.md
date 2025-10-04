@@ -117,6 +117,8 @@ class UserModel {
 - `LoginScreen` - Email/password login with navigation to registration
 - `RegistrationScreen` - User registration with first name, last name, email, password
 - `HomeScreen` - Main app screen with profile image in AppBar
+- `CreateGroupScreen` - Create a new group with name and sports
+- `EditProfileScreen` - Edit user profile with first name, last name, email, password
 
 ### Widgets
 - `AppDrawer` - Side drawer with user profile and menu options
@@ -210,6 +212,7 @@ flutter_bloc: ^9.1.1            # BLoC state management
 equatable: ^2.0.7               # Value equality
 provider: ^6.1.5+1              # Dependency injection
 cached_network_image: ^3.4.1    # Image caching
+image_picker: ^1.2.0            # Image picker
 ```
 
 ## Key Files to Never Modify Manually
