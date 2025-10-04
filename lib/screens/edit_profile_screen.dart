@@ -80,6 +80,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
 
     try {
+      // Delete old profile image if it exists
+      if (user.profileImageUrl != null && user.profileImageUrl!.isNotEmpty) {
+        try {
+          await _storageService.deleteProfileImage(user.profileImageUrl!);
+        } catch (e) {
+          // Log but don't fail - old image might already be deleted or not exist
+          debugPrint('Failed to delete old image: $e');
+        }
+      }
+
+      // Upload new image
       final imageUrl = await _storageService.uploadProfileImage(
         user.uid,
         _selectedImage!,
