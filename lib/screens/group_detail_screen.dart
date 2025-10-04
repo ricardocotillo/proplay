@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:proplay/models/group_model.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
-import 'package:proplay/screens/group_edit_screen.dart';
 
 class GroupDetailScreen extends StatefulWidget {
   final GroupModel group;
@@ -52,18 +52,21 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          },
+        ),
         title: Text(widget.group.name),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => GroupEditScreen(group: widget.group),
-                ),
-              );
-            },
+            onPressed: () => context.push('/group/${widget.group.id}/edit'),
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/bloc/auth/auth_state.dart';
@@ -243,9 +244,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     TextButton(
                       onPressed: isLoading
                           ? null
-                          : () {
-                              Navigator.pop(context);
-                            },
+                          : () => context.pop(),
                       child: const Text('¿Ya tienes una cuenta? Inicia sesión'),
                     ),
                   ],

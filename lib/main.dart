@@ -13,7 +13,11 @@ import 'package:proplay/bloc/user/user_bloc.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/screens/login_screen.dart';
 import 'package:proplay/screens/home_screen.dart';
+import 'package:proplay/screens/registration_screen.dart';
+import 'package:proplay/screens/create_group_screen.dart';
+import 'package:proplay/screens/edit_profile_screen.dart';
 import 'package:proplay/screens/group_detail_screen_loader.dart';
+import 'package:proplay/screens/group_edit_screen_loader.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -71,10 +75,29 @@ class MyApp extends StatelessWidget {
                   builder: (context, state) => const LoginScreen(),
                 ),
                 GoRoute(
+                  path: '/registration',
+                  builder: (context, state) => const RegistrationScreen(),
+                ),
+                GoRoute(
+                  path: '/create-group',
+                  builder: (context, state) => const CreateGroupScreen(),
+                ),
+                GoRoute(
+                  path: '/edit-profile',
+                  builder: (context, state) => const EditProfileScreen(),
+                ),
+                GoRoute(
                   path: '/group/:id',
                   builder: (context, state) {
                     final id = state.pathParameters['id']!;
                     return GroupDetailScreenLoader(groupId: id);
+                  },
+                ),
+                GoRoute(
+                  path: '/group/:id/edit',
+                  builder: (context, state) {
+                    final id = state.pathParameters['id']!;
+                    return GroupEditScreenLoader(groupId: id);
                   },
                 ),
               ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/group/group_event.dart';
 import 'package:proplay/bloc/group/group_state.dart';
@@ -71,7 +72,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                 backgroundColor: Colors.green,
               ),
             );
-            Navigator.pop(context, state.group);
+            context.pop(state.group);
           } else if (state is GroupError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

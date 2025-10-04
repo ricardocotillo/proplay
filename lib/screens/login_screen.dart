@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/bloc/auth/auth_state.dart';
-import 'package:proplay/screens/registration_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -128,15 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextButton(
                       onPressed: isLoading
                           ? null
-                          : () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const RegistrationScreen(),
-                                ),
-                              );
-                            },
+                          : () => context.push('/registration'),
                       child: const Text("Don't have an account? Register"),
                     ),
                   ],

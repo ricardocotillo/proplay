@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/app_drawer.dart';
-import 'package:proplay/screens/create_group_screen.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/group/group_event.dart';
 import 'package:proplay/bloc/group/group_state.dart';
-import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -153,16 +152,12 @@ class _HomeScreenState extends State<HomeScreen> {
               const TextSpan(text: 'No tienes un grupo aun? '),
               WidgetSpan(
                 child: GestureDetector(
-                  onTap: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CreateGroupScreen(),
-                      ),
-                    );
-                    if (result != null) {
-                      _loadGroups();
-                    }
+                  onTap: () {
+                    context.push('/create-group').then((result) {
+                      if (result != null) {
+                        _loadGroups();
+                      }
+                    });
                   },
                   child: Text(
                     'crea',
@@ -204,16 +199,12 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CreateGroupScreen(),
-                      ),
-                    );
-                    if (result != null) {
-                      _loadGroups();
-                    }
+                  onPressed: () {
+                    context.push('/create-group').then((result) {
+                      if (result != null) {
+                        _loadGroups();
+                      }
+                    });
                   },
                   icon: const Icon(Icons.add),
                   label: const Text('Crear Grupo'),

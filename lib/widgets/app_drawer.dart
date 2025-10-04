@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/utils/auth_helper.dart';
-import 'package:proplay/screens/edit_profile_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -78,13 +78,8 @@ class AppDrawer extends StatelessWidget {
                   leading: const Icon(Icons.edit),
                   title: const Text('Edit Profile'),
                   onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const EditProfileScreen(),
-                      ),
-                    );
+                    context.pop(); // Close drawer
+                    context.push('/edit-profile');
                   },
                 ),
                 const Divider(),
@@ -111,8 +106,8 @@ class AppDrawer extends StatelessWidget {
                           ),
                           TextButton(
                             onPressed: () {
-                              Navigator.pop(dialogContext);
-                              Navigator.pop(context); // Close the drawer
+                              Navigator.pop(dialogContext); // Close dialog
+                              context.pop(); // Close the drawer
                               authBloc.add(AuthLogoutRequested());
                             },
                             child: const Text(

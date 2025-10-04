@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/group_edit/group_edit_bloc.dart';
 import 'package:proplay/models/group_model.dart';
 import 'package:proplay/services/group_service.dart';
@@ -108,9 +109,9 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
               SnackBar(content: Text(state.message)),
             );
             if (state.message.contains('deleted')) {
-              Navigator.of(context).popUntil((route) => route.isFirst);
+              context.go('/');
             } else {
-              Navigator.pop(context);
+              context.pop();
             }
           } else if (state is GroupEditFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -123,6 +124,16 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
             final isLoading = state is GroupEditInProgress;
             return Scaffold(
               appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/');
+                    }
+                  },
+                ),
                 title: const Text('Edit Group'),
               ),
               body: Padding(
