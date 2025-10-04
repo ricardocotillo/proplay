@@ -11,7 +11,7 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.currentUser;
+    final user = context.watchUser;
 
     return Drawer(
       child: Column(

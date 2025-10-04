@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.currentUser;
+    final user = context.watchUser;
 
     return Scaffold(
       key: _scaffoldKey,

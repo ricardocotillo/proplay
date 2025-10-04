@@ -131,7 +131,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.currentUser;
+    final user = context.watchUser;
 
     return Scaffold(
       appBar: AppBar(
