@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "979151294493",
+    "project_id": "proplay-eac23",
+    "storage_bucket": "proplay-eac23.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:979151294493:android:77cd123ece3d7e3d20f6f4",
+        "android_client_info": {
+          "package_name": "com.example.proplay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZY0zvn5s0I2Eh5aEGy06QelTsC2SeUYg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
