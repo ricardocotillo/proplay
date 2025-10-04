@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'firebase_options.dart';
 import 'package:proplay/services/auth_service.dart';
 import 'package:proplay/services/user_service.dart';
@@ -11,6 +12,7 @@ import 'package:proplay/bloc/user/user_bloc.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/screens/login_screen.dart';
 import 'package:proplay/screens/home_screen.dart';
+import 'package:proplay/screens/group_detail_screen_loader.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,7 +34,8 @@ class MyApp extends StatelessWidget {
           create: (context) => UserService(),
         ),
         RepositoryProvider<GroupService>(
-          create: (context) => GroupService(userService: context.read<UserService>()),
+          create: (context) =>
+              GroupService(userService: context.read<UserService>()),
         ),
       ],
       child: MultiBlocProvider(
@@ -45,7 +48,8 @@ class MyApp extends StatelessWidget {
             ),
           ),
           BlocProvider<UserBloc>(
-            create: (context) => UserBloc(userService: context.read<UserService>()),
+            create: (context) =>
+                UserBloc(userService: context.read<UserService>()),
           ),
           BlocProvider<GroupBloc>(
             create: (context) => GroupBloc(
@@ -53,37 +57,76 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ],
-        child: MaterialApp(
-          title: 'ProPlay',
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          ),
-          home: const AuthWrapper(),
-        ),
+        child: Builder(builder: (context) {
+          final authState = context.watch<AuthBloc>().state;
+
+          final router = GoRouter(
+            routes: [
+              GoRoute(
+                path: '/',
+                builder: (context, state) => const HomeScreen(),
+              ),
+              GoRoute(
+                path: '/login',
+                builder: (context, state) => const LoginScreen(),
+              ),
+              GoRoute(
+                path: '/group/:id',
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return GroupDetailScreenLoader(groupId: id);
+                },
+              ),
+            ],
+            redirect: (context, state) {
+              final loggedIn = authState is AuthAuthenticated;
+              final loggingIn = state.matchedLocation == '/login';
+
+              if (!loggedIn) {
+                return '/login';
+              }
+
+              if (loggingIn) {
+                return '/';
+              }
+
+              return null;
+            },
+            refreshListenable: GoRouterRefreshStream(context.read<AuthBloc>().stream),
+          );
+
+          if (authState is AuthInitial || authState is AuthLoading) {
+            return const MaterialApp(
+              home: Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              ),
+            );
+          }
+
+          return MaterialApp.router(
+            routerConfig: router,
+            title: 'ProPlay',
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+            ),
+          );
+        }),
       ),
     );
   }
 }
 
-class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
+  }
+
+  late final _subscription;
 
   @override
-  Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, state) {
-        if (state is AuthInitial || state is AuthLoading) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (state is AuthAuthenticated) {
-          return const HomeScreen();
-        }
-
-        return const LoginScreen();
-      },
-    );
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
   }
 }

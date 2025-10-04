@@ -282,14 +282,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
+                  import 'package:go_router/go_router.dart';
+
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => GroupDetailScreen(group: group),
-                      ),
-                    );
-                  },
+                    context.go('/group/${group.id}');
                 ),
               );
             },
