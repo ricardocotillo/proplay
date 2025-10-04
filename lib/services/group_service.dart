@@ -58,12 +58,12 @@ class GroupService {
 
       // Add creator to members subcollection
       await docRef.collection('members').doc(createdBy).set({
-        'role': 'admin',
+        'role': 'owner',
         'joinedAt': FieldValue.serverTimestamp(),
       });
 
       // Add group to user's groups subcollection
-      await _userService.addGroupToUser(createdBy, docRef.id, 'admin');
+      await _userService.addGroupToUser(createdBy, docRef.id, 'owner');
 
       return group;
     } catch (e) {
