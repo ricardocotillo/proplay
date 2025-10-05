@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:proplay/models/group_model.dart';
-import 'package:proplay/models/user_model.dart';
+import 'package:proplay/models/group_member_model.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
 
@@ -17,7 +17,7 @@ class GroupDetailScreen extends StatefulWidget {
 class _GroupDetailScreenState extends State<GroupDetailScreen> {
   final GroupService _groupService = GroupService(userService: UserService());
   final UserService _userService = UserService();
-  List<Map<String, dynamic>> _members = [];
+  List<GroupMemberModel> _members = [];
   bool _isLoading = true;
 
   @override
@@ -29,11 +29,11 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
   Future<void> _fetchMembers() async {
     try {
       final membersData = await _groupService.getGroupMembers(widget.group.id);
-      List<Map<String, dynamic>> members = [];
+      List<GroupMemberModel> members = [];
       for (var memberData in membersData) {
-        UserModel? user = await _userService.getUser(memberData['userId']);
+        final user = await _userService.getUser(memberData['userId']);
         if (user != null) {
-          members.add({'user': user, 'role': memberData['role']});
+          members.add(GroupMemberModel.fromMap(memberData, user));
         }
       }
       setState(() {
@@ -76,20 +76,18 @@ class _GroupDetailScreenState extends State<GroupDetailScreen> {
               itemCount: _members.length,
               itemBuilder: (context, index) {
                 final member = _members[index];
-                final UserModel user = member['user'];
-                final String role = member['role'];
 
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundImage: user.profileImageUrl != null
-                        ? NetworkImage(user.profileImageUrl!)
+                    backgroundImage: member.user.profileImageUrl != null
+                        ? NetworkImage(member.user.profileImageUrl!)
                         : null,
-                    child: user.profileImageUrl == null
+                    child: member.user.profileImageUrl == null
                         ? const Icon(Icons.person)
                         : null,
                   ),
-                  title: Text(user.fullName),
-                  subtitle: Text(role),
+                  title: Text(member.user.fullName),
+                  subtitle: Text(member.roleLabel),
                 );
               },
             ),
