@@ -34,17 +34,15 @@ class GroupDetailError extends GroupDetailState {
   List<Object?> get props => [message];
 }
 
-class GroupDetailUpdatingRole extends GroupDetailState {
+class GroupDetailRoleUpdated extends GroupDetailState {
   final List<GroupMemberModel> members;
   final String? currentUserRole;
-  final String updatingUserId;
 
-  const GroupDetailUpdatingRole({
+  const GroupDetailRoleUpdated({
     required this.members,
     required this.currentUserRole,
-    required this.updatingUserId,
   });
 
   @override
-  List<Object?> get props => [members, currentUserRole, updatingUserId];
+  List<Object?> get props => [members, currentUserRole];
 }

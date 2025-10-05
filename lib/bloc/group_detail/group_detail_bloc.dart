@@ -52,13 +52,14 @@ class GroupDetailBloc extends Bloc<GroupDetailEvent, GroupDetailState> {
     Emitter<GroupDetailState> emit,
   ) async {
     final currentState = state;
-    if (currentState is! GroupDetailLoaded) return;
+    if (currentState is! GroupDetailLoaded && currentState is! GroupDetailRoleUpdated) return;
 
-    emit(GroupDetailUpdatingRole(
-      members: currentState.members,
-      currentUserRole: currentState.currentUserRole,
-      updatingUserId: event.userId,
-    ));
+    final currentMembers = currentState is GroupDetailLoaded
+        ? currentState.members
+        : (currentState as GroupDetailRoleUpdated).members;
+    final currentUserRole = currentState is GroupDetailLoaded
+        ? currentState.currentUserRole
+        : (currentState as GroupDetailRoleUpdated).currentUserRole;
 
     try {
       // Toggle between 'admin' and 'member'
@@ -70,10 +71,29 @@ class GroupDetailBloc extends Bloc<GroupDetailEvent, GroupDetailState> {
         newRole,
       );
 
-      // Reload members to get updated data
-      add(GroupDetailLoadMembers(event.groupId));
+      // Update the specific member in the list
+      final updatedMembers = currentMembers.map((member) {
+        if (member.userId == event.userId) {
+          return GroupMemberModel(
+            userId: member.userId,
+            user: member.user,
+            role: newRole,
+          );
+        }
+        return member;
+      }).toList();
+
+      emit(GroupDetailRoleUpdated(
+        members: updatedMembers,
+        currentUserRole: currentUserRole,
+      ));
     } catch (e) {
       emit(GroupDetailError(e.toString()));
+      // Re-emit previous state after error
+      emit(GroupDetailLoaded(
+        members: currentMembers,
+        currentUserRole: currentUserRole,
+      ));
     }
   }
 }

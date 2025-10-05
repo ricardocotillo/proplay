@@ -96,14 +96,13 @@ class GroupDetailScreen extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (state is GroupDetailLoaded ||
-                state is GroupDetailUpdatingRole) {
+            if (state is GroupDetailLoaded || state is GroupDetailRoleUpdated) {
               final members = state is GroupDetailLoaded
                   ? state.members
-                  : (state as GroupDetailUpdatingRole).members;
+                  : (state as GroupDetailRoleUpdated).members;
               final currentUserRole = state is GroupDetailLoaded
                   ? state.currentUserRole
-                  : (state as GroupDetailUpdatingRole).currentUserRole;
+                  : (state as GroupDetailRoleUpdated).currentUserRole;
               final isOwner = currentUserRole == 'owner';
 
               return ListView.builder(
