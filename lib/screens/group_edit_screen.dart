@@ -1,6 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:proplay/bloc/group_edit/group_edit_bloc.dart';
 import 'package:proplay/models/group_model.dart';
 import 'package:proplay/services/group_service.dart';
@@ -18,6 +22,8 @@ class GroupEditScreen extends StatefulWidget {
 class _GroupEditScreenState extends State<GroupEditScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
+  final ImagePicker _imagePicker = ImagePicker();
+  File? _selectedImage;
 
   // Available sports
   final List<String> _availableSports = [
@@ -48,6 +54,21 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final XFile? pickedFile = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+  }
+
   void _saveGroup(BuildContext context) {
     if (_formKey.currentState!.validate()) {
       if (_selectedSports.isEmpty) {
@@ -65,6 +86,7 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
           groupId: widget.group.id,
           name: newName,
           sports: _selectedSports,
+          profileImage: _selectedImage,
         ),
       );
     }
@@ -141,6 +163,51 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // Profile Image Section
+                      Center(
+                        child: GestureDetector(
+                          onTap: isLoading ? null : _pickImage,
+                          child: Stack(
+                            children: [
+                              CircleAvatar(
+                                radius: 60,
+                                backgroundImage: _selectedImage != null
+                                    ? FileImage(_selectedImage!)
+                                    : (widget.group.profileImageUrl != null
+                                        ? CachedNetworkImageProvider(
+                                            widget.group.profileImageUrl!,
+                                          )
+                                        : null) as ImageProvider?,
+                                child: (_selectedImage == null &&
+                                        widget.group.profileImageUrl == null)
+                                    ? Text(
+                                        widget.group.name.isNotEmpty
+                                            ? widget.group.name[0].toUpperCase()
+                                            : 'G',
+                                        style: const TextStyle(fontSize: 40),
+                                      )
+                                    : null,
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: CircleAvatar(
+                                  radius: 18,
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.primary,
+                                  child: Icon(
+                                    Icons.camera_alt,
+                                    size: 18,
+                                    color:
+                                        Theme.of(context).colorScheme.onPrimary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
                       TextFormField(
                         controller: _nameController,
                         decoration: const InputDecoration(

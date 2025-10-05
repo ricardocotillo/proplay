@@ -8,6 +8,7 @@ class GroupModel {
   final String createdBy;
   final DateTime createdAt;
   final List<String>? members;
+  final String? profileImageUrl;
 
   GroupModel({
     required this.id,
@@ -17,6 +18,7 @@ class GroupModel {
     required this.createdBy,
     required this.createdAt,
     this.members,
+    this.profileImageUrl,
   });
 
   // Convert GroupModel to Map for Firestore
@@ -29,6 +31,7 @@ class GroupModel {
       'createdBy': createdBy,
       'createdAt': Timestamp.fromDate(createdAt),
       'members': members,
+      'profileImageUrl': profileImageUrl,
     };
   }
 
@@ -42,6 +45,7 @@ class GroupModel {
       createdBy: map['createdBy'] ?? '',
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       members: List<String>.from(map['members'] ?? []),
+      profileImageUrl: map['profileImageUrl'],
     );
   }
 

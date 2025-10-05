@@ -27,6 +27,29 @@ class StorageService {
     }
   }
 
+  /// Upload group profile image to Firebase Storage
+  /// Returns the download URL of the uploaded image
+  Future<String> uploadGroupImage(String groupId, File imageFile) async {
+    try {
+      // Create a unique file name with timestamp
+      final fileName = 'group_$groupId.jpg';
+      final ref = _storage.ref().child('group_images/$fileName');
+
+      // Upload the file
+      final uploadTask = ref.putFile(imageFile);
+
+      // Wait for upload to complete
+      final snapshot = await uploadTask;
+
+      // Get the download URL
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+
+      return downloadUrl;
+    } catch (e) {
+      throw Exception('Failed to upload group image: $e');
+    }
+  }
+
   /// Delete profile image from Firebase Storage
   Future<void> deleteProfileImage(String imageUrl) async {
     try {

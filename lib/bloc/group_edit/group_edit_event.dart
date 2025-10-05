@@ -12,11 +12,13 @@ class GroupEditSubmitted extends GroupEditEvent {
   final String groupId;
   final String name;
   final List<String> sports;
+  final dynamic profileImage;
 
   const GroupEditSubmitted({
     required this.groupId,
     required this.name,
     required this.sports,
+    this.profileImage,
   });
 
   @override
