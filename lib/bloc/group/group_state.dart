@@ -47,3 +47,12 @@ class GroupError extends GroupState {
   @override
   List<Object?> get props => [message];
 }
+
+class GroupDeleteSuccess extends GroupState {
+  final String message;
+
+  const GroupDeleteSuccess(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}

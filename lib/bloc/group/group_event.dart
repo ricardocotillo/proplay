@@ -43,3 +43,12 @@ class GroupLoadUserGroups extends GroupEvent {
   @override
   List<Object?> get props => [userId];
 }
+
+class GroupDeleteRequested extends GroupEvent {
+  final String groupId;
+
+  const GroupDeleteRequested(this.groupId);
+
+  @override
+  List<Object?> get props => [groupId];
+}

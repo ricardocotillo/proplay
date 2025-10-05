@@ -12,6 +12,7 @@ class GroupBloc extends Bloc<GroupEvent, GroupState> {
     on<GroupCreateRequested>(_onGroupCreateRequested);
     on<GroupJoinRequested>(_onGroupJoinRequested);
     on<GroupLoadUserGroups>(_onGroupLoadUserGroups);
+    on<GroupDeleteRequested>(_onGroupDeleteRequested);
   }
 
   Future<void> _onGroupCreateRequested(
@@ -52,6 +53,19 @@ class GroupBloc extends Bloc<GroupEvent, GroupState> {
     try {
       final groups = await _groupService.getUserGroups(event.userId);
       emit(GroupLoaded(groups));
+    } catch (e) {
+      emit(GroupError(e.toString()));
+    }
+  }
+
+  Future<void> _onGroupDeleteRequested(
+    GroupDeleteRequested event,
+    Emitter<GroupState> emit,
+  ) async {
+    emit(GroupLoading());
+    try {
+      await _groupService.deleteGroup(event.groupId);
+      emit(const GroupDeleteSuccess('Grupo eliminado exitosamente'));
     } catch (e) {
       emit(GroupError(e.toString()));
     }
