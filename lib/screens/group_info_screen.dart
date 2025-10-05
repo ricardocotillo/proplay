@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:proplay/models/group_model.dart';
 
 class GroupInfoScreen extends StatelessWidget {
@@ -30,19 +31,24 @@ class GroupInfoScreen extends StatelessWidget {
           Center(
             child: CircleAvatar(
               radius: 60,
-              child: Text(
-                group.name.isNotEmpty ? group.name[0].toUpperCase() : '',
-                style: const TextStyle(fontSize: 48),
-              ),
+              backgroundImage: group.profileImageUrl != null
+                  ? CachedNetworkImageProvider(group.profileImageUrl!)
+                  : null,
+              child: group.profileImageUrl == null
+                  ? Text(
+                      group.name.isNotEmpty ? group.name[0].toUpperCase() : '',
+                      style: const TextStyle(fontSize: 48),
+                    )
+                  : null,
             ),
           ),
           const SizedBox(height: 16),
           // Group Name
           Text(
             group.name,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 32),
           // Options
@@ -60,7 +66,10 @@ class GroupInfoScreen extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.delete, color: Colors.red),
-            title: const Text('Eliminar grupo', style: TextStyle(color: Colors.red)),
+            title: const Text(
+              'Eliminar grupo',
+              style: TextStyle(color: Colors.red),
+            ),
             onTap: () {
               // TODO: Implement delete group functionality
               showDialog(
@@ -80,9 +89,7 @@ class GroupInfoScreen extends StatelessWidget {
                         // TODO: Implement delete logic
                         Navigator.pop(dialogContext);
                       },
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
-                      ),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
                       child: const Text('Eliminar'),
                     ),
                   ],

@@ -87,6 +87,20 @@ class GroupService {
     }
   }
 
+  // Stream group by ID for real-time updates
+  Stream<GroupModel?> streamGroup(String groupId) {
+    return _firestore
+        .collection(groupsCollection)
+        .doc(groupId)
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.exists) {
+        return GroupModel.fromDocument(snapshot);
+      }
+      return null;
+    });
+  }
+
   // Get group by code
   Future<GroupModel?> getGroupByCode(String code) async {
     try {

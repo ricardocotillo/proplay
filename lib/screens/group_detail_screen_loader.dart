@@ -4,31 +4,17 @@ import 'package:proplay/models/group_model.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/screens/group_detail_screen.dart';
 
-class GroupDetailScreenLoader extends StatefulWidget {
+class GroupDetailScreenLoader extends StatelessWidget {
   final String groupId;
 
   const GroupDetailScreenLoader({super.key, required this.groupId});
 
   @override
-  State<GroupDetailScreenLoader> createState() =>
-      _GroupDetailScreenLoaderState();
-}
-
-class _GroupDetailScreenLoaderState extends State<GroupDetailScreenLoader> {
-  late final GroupService _groupService;
-  Future<GroupModel?>? _groupFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _groupService = context.read<GroupService>();
-    _groupFuture = _groupService.getGroup(widget.groupId);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return FutureBuilder<GroupModel?>(
-      future: _groupFuture,
+    final groupService = context.read<GroupService>();
+
+    return StreamBuilder<GroupModel?>(
+      stream: groupService.streamGroup(groupId),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
