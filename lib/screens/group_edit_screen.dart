@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -62,12 +61,12 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
       }
       final newName = _nameController.text;
       context.read<GroupEditBloc>().add(
-            GroupEditSubmitted(
-              groupId: widget.group.id,
-              name: newName,
-              sports: _selectedSports,
-            ),
-          );
+        GroupEditSubmitted(
+          groupId: widget.group.id,
+          name: newName,
+          sports: _selectedSports,
+        ),
+      );
     }
   }
 
@@ -99,24 +98,23 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => GroupEditBloc(
-        groupService: GroupService(userService: UserService()),
-      ),
+      create: (context) =>
+          GroupEditBloc(groupService: GroupService(userService: UserService())),
       child: BlocListener<GroupEditBloc, GroupEditState>(
         listener: (context, state) {
           if (state is GroupEditSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
             if (state.message.contains('deleted')) {
               context.go('/');
             } else {
               context.pop();
             }
           } else if (state is GroupEditFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.error)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.error)));
           }
         },
         child: BlocBuilder<GroupEditBloc, GroupEditState>(
@@ -145,7 +143,9 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                     children: [
                       TextFormField(
                         controller: _nameController,
-                        decoration: const InputDecoration(labelText: 'Group Name'),
+                        decoration: const InputDecoration(
+                          labelText: 'Group Name',
+                        ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter a name';
@@ -191,7 +191,9 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Text(
                             'Por favor selecciona al menos un deporte',
-                            style: TextStyle(color: Theme.of(context).colorScheme.error),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
                           ),
                         ),
                       const SizedBox(height: 32),
@@ -204,13 +206,7 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                               : () => _saveGroup(context),
                           child: const Text('Save Changes'),
                         ),
-                        const SizedBox(height: 16),
-                        TextButton(
-                          onPressed: () => _deleteGroup(context),
-                          style: TextButton.styleFrom(foregroundColor: Colors.red),
-                          child: const Text('Eliminar Grupo'),
-                        ),
-                      ]
+                      ],
                     ],
                   ),
                 ),

@@ -75,13 +75,10 @@ class GroupDetailScreen extends StatelessWidget {
               }
             },
           ),
-          title: Text(group.name),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () => context.push('/group/${group.id}/edit'),
-            ),
-          ],
+          title: InkWell(
+            onTap: () => context.push('/group/${group.id}/info'),
+            child: Text(group.name),
+          ),
         ),
         body: BlocConsumer<GroupDetailBloc, GroupDetailState>(
           listener: (context, state) {

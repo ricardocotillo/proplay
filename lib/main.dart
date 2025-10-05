@@ -18,6 +18,7 @@ import 'package:proplay/screens/create_group_screen.dart';
 import 'package:proplay/screens/edit_profile_screen.dart';
 import 'package:proplay/screens/group_detail_screen_loader.dart';
 import 'package:proplay/screens/group_edit_screen_loader.dart';
+import 'package:proplay/screens/group_info_screen_loader.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -98,6 +99,13 @@ class MyApp extends StatelessWidget {
                   builder: (context, state) {
                     final id = state.pathParameters['id']!;
                     return GroupEditScreenLoader(groupId: id);
+                  },
+                ),
+                GoRoute(
+                  path: '/group/:id/info',
+                  builder: (context, state) {
+                    final id = state.pathParameters['id']!;
+                    return GroupInfoScreenLoader(groupId: id);
                   },
                 ),
               ],
