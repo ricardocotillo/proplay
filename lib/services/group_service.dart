@@ -213,4 +213,43 @@ class GroupService {
       throw Exception('Failed to get group members: $e');
     }
   }
+
+  // Update member role
+  Future<void> updateMemberRole(
+    String groupId,
+    String userId,
+    String newRole,
+  ) async {
+    try {
+      await _firestore
+          .collection(groupsCollection)
+          .doc(groupId)
+          .collection('members')
+          .doc(userId)
+          .update({'role': newRole});
+
+      await _userService.updateUserGroupRole(userId, groupId, newRole);
+    } catch (e) {
+      throw Exception('Failed to update member role: $e');
+    }
+  }
+
+  // Get member role
+  Future<String?> getMemberRole(String groupId, String userId) async {
+    try {
+      final doc = await _firestore
+          .collection(groupsCollection)
+          .doc(groupId)
+          .collection('members')
+          .doc(userId)
+          .get();
+
+      if (doc.exists) {
+        return doc.data()?['role'] as String?;
+      }
+      return null;
+    } catch (e) {
+      throw Exception('Failed to get member role: $e');
+    }
+  }
 }

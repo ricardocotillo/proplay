@@ -52,6 +52,24 @@ class UserService {
     }
   }
 
+  // Update user's role in a group
+  Future<void> updateUserGroupRole(
+    String userId,
+    String groupId,
+    String newRole,
+  ) async {
+    try {
+      await _firestore
+          .collection(usersCollection)
+          .doc(userId)
+          .collection('groups')
+          .doc(groupId)
+          .update({'role': newRole});
+    } catch (e) {
+      throw Exception('Failed to update user group role: $e');
+    }
+  }
+
   // Update profile image URL
   Future<void> updateProfileImage(String uid, String imageUrl) async {
     try {
