@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/group_detail/group_detail_bloc.dart';
@@ -79,6 +80,21 @@ class GroupDetailScreen extends StatelessWidget {
             onTap: () => context.push('/group/${group.id}/info'),
             child: Text(group.name),
           ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: group.code));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Código copiado al portapapeles'),
+                    ),
+                  );
+                }
+              },
+              child: Text(group.code),
+            ),
+          ],
         ),
         body: BlocConsumer<GroupDetailBloc, GroupDetailState>(
           listener: (context, state) {
