@@ -102,6 +102,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             );
             _loadGroups();
+          } else if (state is GroupDeleteSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+            _loadGroups();
           }
         },
         builder: (context, state) {
@@ -274,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   onTap: () {
-                    context.go('/group/${group.id}');
+                    context.push('/group/${group.id}');
                   },
                 ),
               );

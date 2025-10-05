@@ -18,11 +18,6 @@ class GroupInfoScreen extends StatelessWidget {
       listener: (context, state) {
         if (state is GroupDeleteSuccess) {
           context.go('/');
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.message)));
-          });
         } else if (state is GroupError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
