@@ -281,6 +281,8 @@ class _HomeScreenState extends State<HomeScreen> {
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
+                  visualDensity: VisualDensity.compact,
+                  dense: true,
                   leading: CircleAvatar(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     child: Text(

@@ -129,8 +129,9 @@ class GroupDetailScreen extends StatelessWidget {
                   : (state as GroupDetailRoleUpdated).currentUserRole;
               final isOwner = currentUserRole == 'owner';
 
-              return ListView.builder(
+              return ListView.separated(
                 itemCount: members.length,
+                separatorBuilder: (context, index) => const Divider(),
                 itemBuilder: (context, index) {
                   final member = members[index];
                   final isCurrentUser = member.userId == currentUser?.uid;
