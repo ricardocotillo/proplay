@@ -42,7 +42,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: const Text('ProPlay'),
         automaticallyImplyLeading: false,
         actions: [
@@ -103,9 +105,9 @@ class _HomeScreenState extends State<HomeScreen> {
             );
             _loadGroups();
           } else if (state is GroupDeleteSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
             _loadGroups();
           }
         },
