@@ -45,16 +45,15 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        title: const Text('ProPlay'),
         automaticallyImplyLeading: false,
+        leading: IconButton(
+          style: IconButton.styleFrom(backgroundColor: Colors.white),
+          onPressed: () {
+            // TODO: Handle notification tap
+          },
+          icon: const Icon(Icons.notifications_none),
+        ),
         actions: [
-          IconButton(
-            style: IconButton.styleFrom(backgroundColor: Colors.white),
-            onPressed: () {
-              // TODO: Handle notification tap
-            },
-            icon: const Icon(Icons.notifications_none),
-          ),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(
