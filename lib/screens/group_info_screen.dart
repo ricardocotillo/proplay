@@ -60,9 +60,7 @@ class GroupInfoScreen extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.bar_chart),
             title: const Text('Media'),
-            onTap: () {
-              // TODO: Implement media screen
-            },
+            onTap: () {},
           ),
           ListTile(
             leading: const Icon(Icons.delete, color: Colors.red),
@@ -71,7 +69,6 @@ class GroupInfoScreen extends StatelessWidget {
               style: TextStyle(color: Colors.red),
             ),
             onTap: () {
-              // TODO: Implement delete group functionality
               showDialog(
                 context: context,
                 builder: (dialogContext) => AlertDialog(
@@ -86,7 +83,6 @@ class GroupInfoScreen extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        // TODO: Implement delete logic
                         Navigator.pop(dialogContext);
                       },
                       style: TextButton.styleFrom(foregroundColor: Colors.red),
