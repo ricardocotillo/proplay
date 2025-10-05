@@ -100,55 +100,87 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       endDrawer: const AppDrawer(),
-      body: BlocConsumer<GroupBloc, GroupState>(
-        listener: (context, state) {
-          if (state is GroupJoinSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Colors.green,
-              ),
-            );
-            _loadGroups();
-          } else if (state is GroupDeleteSuccess) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.message)));
-            _loadGroups();
-          }
-        },
-        builder: (context, state) {
-          if (state is GroupLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (state is GroupLoaded) {
-            if (state.groups.isEmpty) {
-              return _buildEmptyState(context);
-            }
-            return _buildGroupsList(state.groups);
-          }
-
-          if (state is GroupError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 16),
-                  Text(state.message),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loadGroups,
-                    child: const Text('Reintentar'),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bienvenido, ${user?.firstName ?? ''}',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.secondary,
                   ),
-                ],
-              ),
-            );
-          }
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Juega como un pro',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: BlocConsumer<GroupBloc, GroupState>(
+              listener: (context, state) {
+                if (state is GroupJoinSuccess) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  _loadGroups();
+                } else if (state is GroupDeleteSuccess) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(state.message)));
+                  _loadGroups();
+                }
+              },
+              builder: (context, state) {
+                if (state is GroupLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          return _buildEmptyState(context);
-        },
+                if (state is GroupLoaded) {
+                  if (state.groups.isEmpty) {
+                    return _buildEmptyState(context);
+                  }
+                  return _buildGroupsList(state.groups);
+                }
+
+                if (state is GroupError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 48,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(state.message),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadGroups,
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return _buildEmptyState(context);
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
