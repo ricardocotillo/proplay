@@ -48,6 +48,13 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('ProPlay'),
         automaticallyImplyLeading: false,
         actions: [
+          IconButton(
+            style: IconButton.styleFrom(backgroundColor: Colors.white),
+            onPressed: () {
+              // TODO: Handle notification tap
+            },
+            icon: const Icon(Icons.notifications_none),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(
