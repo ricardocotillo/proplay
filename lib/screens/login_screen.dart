@@ -37,6 +37,12 @@ class _LoginScreenState extends State<LoginScreen> {
         );
   }
 
+  void _signInWithGoogle() {
+    context.read<AuthBloc>().add(
+      const AuthGoogleSignInRequested(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,6 +129,33 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Text('Login'),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'OR',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                        Expanded(child: Divider()),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: isLoading ? null : _signInWithGoogle,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      icon: Image.asset(
+                        'assets/google.png',
+                        height: 24,
+                        width: 24,
+                      ),
+                      label: const Text('Inicia sesión con Google'),
                     ),
                     const SizedBox(height: 16),
                     TextButton(
