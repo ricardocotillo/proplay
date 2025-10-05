@@ -69,44 +69,56 @@ class MyApp extends StatelessWidget {
               routes: [
                 GoRoute(
                   path: '/',
+                  name: 'home',
                   builder: (context, state) => const HomeScreen(),
+                  routes: [
+                    GoRoute(
+                      path: 'create-group',
+                      name: 'create-group',
+                      builder: (context, state) => const CreateGroupScreen(),
+                    ),
+                    GoRoute(
+                      path: 'edit-profile',
+                      name: 'edit-profile',
+                      builder: (context, state) => const EditProfileScreen(),
+                    ),
+                    GoRoute(
+                      path: 'group/:id',
+                      name: 'group-detail',
+                      builder: (context, state) {
+                        final id = state.pathParameters['id']!;
+                        return GroupDetailScreenLoader(groupId: id);
+                      },
+                      routes: [
+                        GoRoute(
+                          path: 'edit',
+                          name: 'group-edit',
+                          builder: (context, state) {
+                            final id = state.pathParameters['id']!;
+                            return GroupEditScreenLoader(groupId: id);
+                          },
+                        ),
+                        GoRoute(
+                          path: 'info',
+                          name: 'group-info',
+                          builder: (context, state) {
+                            final id = state.pathParameters['id']!;
+                            return GroupInfoScreenLoader(groupId: id);
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
                 GoRoute(
                   path: '/login',
+                  name: 'login',
                   builder: (context, state) => const LoginScreen(),
                 ),
                 GoRoute(
                   path: '/registration',
+                  name: 'registration',
                   builder: (context, state) => const RegistrationScreen(),
-                ),
-                GoRoute(
-                  path: '/create-group',
-                  builder: (context, state) => const CreateGroupScreen(),
-                ),
-                GoRoute(
-                  path: '/edit-profile',
-                  builder: (context, state) => const EditProfileScreen(),
-                ),
-                GoRoute(
-                  path: '/group/:id',
-                  builder: (context, state) {
-                    final id = state.pathParameters['id']!;
-                    return GroupDetailScreenLoader(groupId: id);
-                  },
-                ),
-                GoRoute(
-                  path: '/group/:id/edit',
-                  builder: (context, state) {
-                    final id = state.pathParameters['id']!;
-                    return GroupEditScreenLoader(groupId: id);
-                  },
-                ),
-                GoRoute(
-                  path: '/group/:id/info',
-                  builder: (context, state) {
-                    final id = state.pathParameters['id']!;
-                    return GroupInfoScreenLoader(groupId: id);
-                  },
                 ),
               ],
               redirect: (context, state) {
