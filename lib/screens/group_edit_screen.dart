@@ -92,31 +92,6 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
     }
   }
 
-  void _deleteGroup(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar Grupo'),
-        content: const Text('Are you sure you want to delete this group?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      // ignore: use_build_context_synchronously
-      context.read<GroupEditBloc>().add(GroupDeleted(widget.group.id));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -174,11 +149,13 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                                 backgroundImage: _selectedImage != null
                                     ? FileImage(_selectedImage!)
                                     : (widget.group.profileImageUrl != null
-                                        ? CachedNetworkImageProvider(
-                                            widget.group.profileImageUrl!,
-                                          )
-                                        : null) as ImageProvider?,
-                                child: (_selectedImage == null &&
+                                              ? CachedNetworkImageProvider(
+                                                  widget.group.profileImageUrl!,
+                                                )
+                                              : null)
+                                          as ImageProvider?,
+                                child:
+                                    (_selectedImage == null &&
                                         widget.group.profileImageUrl == null)
                                     ? Text(
                                         widget.group.name.isNotEmpty
@@ -193,13 +170,15 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                                 right: 0,
                                 child: CircleAvatar(
                                   radius: 18,
-                                  backgroundColor:
-                                      Theme.of(context).colorScheme.primary,
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.primary,
                                   child: Icon(
                                     Icons.camera_alt,
                                     size: 18,
-                                    color:
-                                        Theme.of(context).colorScheme.onPrimary,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimary,
                                   ),
                                 ),
                               ),
