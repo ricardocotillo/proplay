@@ -16,40 +16,51 @@ class GroupDetailScreen extends StatelessWidget {
 
   const GroupDetailScreen({super.key, required this.group});
 
-  void _showRoleChangeDialog(
+  void _showMemberOptions(
     BuildContext context,
     GroupMemberModel member,
     String groupId,
   ) {
-    final newRole = member.role == 'admin' ? 'member' : 'admin';
-    final newRoleLabel = newRole == 'admin' ? 'administrador' : 'miembro';
+    final isAdmin = member.role == 'admin';
+    final roleActionLabel = isAdmin
+        ? 'Remover como administrador'
+        : 'Designar como administrador';
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Cambiar rol'),
-        content: Text(
-          '¿Cambiar el rol de ${member.user.fullName} a $newRoleLabel?',
+      builder: (bottomSheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Icon(
+                isAdmin ? Icons.person : Icons.admin_panel_settings,
+              ),
+              title: Text(roleActionLabel),
+              onTap: () {
+                context.read<GroupDetailBloc>().add(
+                  GroupDetailToggleMemberRole(
+                    groupId: groupId,
+                    userId: member.userId,
+                    currentRole: member.role,
+                  ),
+                );
+                Navigator.pop(bottomSheetContext);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person_remove, color: Colors.red),
+              title: const Text(
+                'Remover usuario',
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () {
+                Navigator.pop(bottomSheetContext);
+                // TODO: Implement remove user functionality
+              },
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              context.read<GroupDetailBloc>().add(
-                GroupDetailToggleMemberRole(
-                  groupId: groupId,
-                  userId: member.userId,
-                  currentRole: member.role,
-                ),
-              );
-              Navigator.pop(dialogContext);
-            },
-            child: const Text('Cambiar'),
-          ),
-        ],
       ),
     );
   }
@@ -138,7 +149,7 @@ class GroupDetailScreen extends StatelessWidget {
                     title: Text(member.user.fullName),
                     subtitle: Text(member.roleLabel),
                     onLongPress: canChangeRole
-                        ? () => _showRoleChangeDialog(context, member, group.id)
+                        ? () => _showMemberOptions(context, member, group.id)
                         : null,
                   );
                 },
