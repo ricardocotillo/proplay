@@ -58,6 +58,11 @@ class GroupInfoScreen extends StatelessWidget {
             onTap: () => context.push('/group/${group.id}/edit'),
           ),
           ListTile(
+            leading: const Icon(Icons.calendar_today),
+            title: const Text('Sesiones'),
+            onTap: () {},
+          ),
+          ListTile(
             leading: const Icon(Icons.bar_chart),
             title: const Text('Media'),
             onTap: () {},
