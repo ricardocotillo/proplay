@@ -108,12 +108,12 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
     return BlocProvider(
       create: (context) => SessionBloc(sessionService: SessionService()),
       child: Scaffold(
-        appBar: AppBar(title: const Text('Create Session')),
+        appBar: AppBar(title: const Text('Crear sesión')),
         body: BlocListener<SessionBloc, SessionState>(
           listener: (context, state) {
             if (state is SessionCreationSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Session created successfully!')),
+                const SnackBar(content: Text('Sesión creada exitosamente!')),
               );
               Navigator.of(context).pop();
             }
@@ -132,28 +132,28 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
                 children: [
                   TextFormField(
                     controller: _titleController,
-                    decoration: const InputDecoration(labelText: 'Title'),
+                    decoration: const InputDecoration(labelText: 'Título'),
                     validator: (value) =>
-                        value!.isEmpty ? 'Please enter a title' : null,
+                        value!.isEmpty ? 'Por favor, ingresa un título' : null,
                   ),
                   const SizedBox(height: 16),
                   _buildDateTimePicker(
                     context: context,
-                    label: 'Join Date',
+                    label: 'Fecha de inscripción',
                     date: _joinDate,
                     onDatePicked: (date) => setState(() => _joinDate = date),
                   ),
                   const SizedBox(height: 16),
                   _buildDateTimePicker(
                     context: context,
-                    label: 'Cut-Off Date',
+                    label: 'Fecha de cierre',
                     date: _cutOffDate,
                     onDatePicked: (date) => setState(() => _cutOffDate = date),
                   ),
                   const SizedBox(height: 16),
                   _buildDateTimePicker(
                     context: context,
-                    label: 'Event Start',
+                    label: 'Fecha de inicio',
                     date: _eventDate,
                     time: _eventTime,
                     onDatePicked: (date) => setState(() => _eventDate = date),
@@ -162,7 +162,7 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
                   const SizedBox(height: 16),
                   _buildDateTimePicker(
                     context: context,
-                    label: 'Event End',
+                    label: 'Fecha de finalización',
                     date: _eventEndDate,
                     time: _eventEndTime,
                     onDatePicked: (date) =>
@@ -173,33 +173,38 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _maxPlayersController,
-                    decoration: const InputDecoration(labelText: 'Max Players'),
+                    decoration: const InputDecoration(
+                      labelText: 'Máximo de jugadores',
+                    ),
                     keyboardType: TextInputType.number,
-                    validator: (value) =>
-                        value!.isEmpty ? 'Please enter max players' : null,
+                    validator: (value) => value!.isEmpty
+                        ? 'Por favor, ingresa el número de jugadores'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _maxWaitingListController,
                     decoration: const InputDecoration(
-                      labelText: 'Max Waiting List',
+                      labelText: 'Máximo en lista de espera',
                     ),
                     keyboardType: TextInputType.number,
-                    validator: (value) =>
-                        value!.isEmpty ? 'Please enter max waiting list' : null,
+                    validator: (value) => value!.isEmpty
+                        ? 'Por favor, ingresa el número máximo en lista de espera'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _totalCostController,
-                    decoration: const InputDecoration(labelText: 'Total Cost'),
+                    decoration: const InputDecoration(labelText: 'Costo total'),
                     keyboardType: TextInputType.number,
-                    validator: (value) =>
-                        value!.isEmpty ? 'Please enter total cost' : null,
+                    validator: (value) => value!.isEmpty
+                        ? 'Por favor, ingresa el costo total'
+                        : null,
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Text('Is Recurring?'),
+                      const Text('¿Es recurrente?'),
                       Switch(
                         value: _isRecurring,
                         onChanged: (value) =>
@@ -211,10 +216,10 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
                     TextFormField(
                       controller: _rruleController,
                       decoration: const InputDecoration(
-                        labelText: 'Recurrence Rule (rrule)',
+                        labelText: 'Regla de repetición (rrule)',
                       ),
                       validator: (value) => _isRecurring && value!.isEmpty
-                          ? 'Please enter a recurrence rule'
+                          ? 'Por favor, ingresa la regla de repetición'
                           : null,
                     ),
                   const SizedBox(height: 32),
@@ -226,7 +231,7 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
                         }
                         return ElevatedButton(
                           onPressed: _submitForm,
-                          child: const Text('Create Session'),
+                          child: const Text('Crear Sesión'),
                         );
                       },
                     ),
@@ -278,7 +283,9 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
                     ),
                   ),
                   child: Text(
-                    date != null ? dateFormat.format(date) : 'Select Date',
+                    date != null
+                        ? dateFormat.format(date)
+                        : 'Seleccionar fecha',
                   ),
                 ),
               ),
@@ -305,7 +312,7 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
                       ),
                     ),
                     child: Text(
-                      time != null ? time.format(context) : 'Select Time',
+                      time != null ? time.format(context) : 'Seleccionar hora',
                     ),
                   ),
                 ),
