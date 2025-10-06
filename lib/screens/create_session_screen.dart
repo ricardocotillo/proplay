@@ -9,15 +9,28 @@ import 'package:proplay/models/session_template_model.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/utils/auth_helper.dart';
 
-class CreateSessionScreen extends StatefulWidget {
+class CreateSessionScreen extends StatelessWidget {
   final String groupId;
   const CreateSessionScreen({super.key, required this.groupId});
 
   @override
-  State<CreateSessionScreen> createState() => _CreateSessionScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => SessionBloc(sessionService: SessionService()),
+      child: _CreateSessionContent(groupId: groupId),
+    );
+  }
 }
 
-class _CreateSessionScreenState extends State<CreateSessionScreen> {
+class _CreateSessionContent extends StatefulWidget {
+  final String groupId;
+  const _CreateSessionContent({required this.groupId});
+
+  @override
+  State<_CreateSessionContent> createState() => _CreateSessionContentState();
+}
+
+class _CreateSessionContentState extends State<_CreateSessionContent> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _maxPlayersController = TextEditingController();
@@ -105,139 +118,134 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => SessionBloc(sessionService: SessionService()),
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Crear sesión')),
-        body: BlocListener<SessionBloc, SessionState>(
-          listener: (context, state) {
-            if (state is SessionCreationSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Sesión creada exitosamente!')),
-              );
-              Navigator.of(context).pop();
-            }
-            if (state is SessionCreationFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error: ${state.message}')),
-              );
-            }
-          },
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+    return Scaffold(
+      appBar: AppBar(title: const Text('Crear sesión')),
+      body: BlocListener<SessionBloc, SessionState>(
+        listener: (context, state) {
+          if (state is SessionCreationSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Sesión creada exitosamente!')),
+            );
+            Navigator.of(context).pop();
+          }
+          if (state is SessionCreationFailure) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Error: ${state.message}')));
+          }
+        },
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(labelText: 'Título'),
+                  validator: (value) =>
+                      value!.isEmpty ? 'Por favor, ingresa un título' : null,
+                ),
+                const SizedBox(height: 16),
+                _buildDateTimePicker(
+                  context: context,
+                  label: 'Fecha de inscripción',
+                  date: _joinDate,
+                  onDatePicked: (date) => setState(() => _joinDate = date),
+                ),
+                const SizedBox(height: 16),
+                _buildDateTimePicker(
+                  context: context,
+                  label: 'Fecha de cierre',
+                  date: _cutOffDate,
+                  onDatePicked: (date) => setState(() => _cutOffDate = date),
+                ),
+                const SizedBox(height: 16),
+                _buildDateTimePicker(
+                  context: context,
+                  label: 'Fecha de inicio',
+                  date: _eventDate,
+                  time: _eventTime,
+                  onDatePicked: (date) => setState(() => _eventDate = date),
+                  onTimePicked: (time) => setState(() => _eventTime = time),
+                ),
+                const SizedBox(height: 16),
+                _buildDateTimePicker(
+                  context: context,
+                  label: 'Fecha de finalización',
+                  date: _eventEndDate,
+                  time: _eventEndTime,
+                  onDatePicked: (date) => setState(() => _eventEndDate = date),
+                  onTimePicked: (time) => setState(() => _eventEndTime = time),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _maxPlayersController,
+                  decoration: const InputDecoration(
+                    labelText: 'Máximo de jugadores',
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) => value!.isEmpty
+                      ? 'Por favor, ingresa el número de jugadores'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _maxWaitingListController,
+                  decoration: const InputDecoration(
+                    labelText: 'Máximo en lista de espera',
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) => value!.isEmpty
+                      ? 'Por favor, ingresa el número máximo en lista de espera'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _totalCostController,
+                  decoration: const InputDecoration(labelText: 'Costo total'),
+                  keyboardType: TextInputType.number,
+                  validator: (value) => value!.isEmpty
+                      ? 'Por favor, ingresa el costo total'
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Text('¿Es recurrente?'),
+                    Switch(
+                      value: _isRecurring,
+                      onChanged: (value) =>
+                          setState(() => _isRecurring = value),
+                    ),
+                  ],
+                ),
+                if (_isRecurring)
                   TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(labelText: 'Título'),
-                    validator: (value) =>
-                        value!.isEmpty ? 'Por favor, ingresa un título' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDateTimePicker(
-                    context: context,
-                    label: 'Fecha de inscripción',
-                    date: _joinDate,
-                    onDatePicked: (date) => setState(() => _joinDate = date),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDateTimePicker(
-                    context: context,
-                    label: 'Fecha de cierre',
-                    date: _cutOffDate,
-                    onDatePicked: (date) => setState(() => _cutOffDate = date),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDateTimePicker(
-                    context: context,
-                    label: 'Fecha de inicio',
-                    date: _eventDate,
-                    time: _eventTime,
-                    onDatePicked: (date) => setState(() => _eventDate = date),
-                    onTimePicked: (time) => setState(() => _eventTime = time),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDateTimePicker(
-                    context: context,
-                    label: 'Fecha de finalización',
-                    date: _eventEndDate,
-                    time: _eventEndTime,
-                    onDatePicked: (date) =>
-                        setState(() => _eventEndDate = date),
-                    onTimePicked: (time) =>
-                        setState(() => _eventEndTime = time),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _maxPlayersController,
+                    controller: _rruleController,
                     decoration: const InputDecoration(
-                      labelText: 'Máximo de jugadores',
+                      labelText: 'Regla de repetición (rrule)',
                     ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) => value!.isEmpty
-                        ? 'Por favor, ingresa el número de jugadores'
+                    validator: (value) => _isRecurring && value!.isEmpty
+                        ? 'Por favor, ingresa la regla de repetición'
                         : null,
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _maxWaitingListController,
-                    decoration: const InputDecoration(
-                      labelText: 'Máximo en lista de espera',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) => value!.isEmpty
-                        ? 'Por favor, ingresa el número máximo en lista de espera'
-                        : null,
+                const SizedBox(height: 32),
+                Center(
+                  child: BlocBuilder<SessionBloc, SessionState>(
+                    builder: (context, state) {
+                      if (state is SessionCreationLoading) {
+                        return const CircularProgressIndicator();
+                      }
+                      return ElevatedButton(
+                        onPressed: _submitForm,
+                        child: const Text('Crear Sesión'),
+                      );
+                    },
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _totalCostController,
-                    decoration: const InputDecoration(labelText: 'Costo total'),
-                    keyboardType: TextInputType.number,
-                    validator: (value) => value!.isEmpty
-                        ? 'Por favor, ingresa el costo total'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Text('¿Es recurrente?'),
-                      Switch(
-                        value: _isRecurring,
-                        onChanged: (value) =>
-                            setState(() => _isRecurring = value),
-                      ),
-                    ],
-                  ),
-                  if (_isRecurring)
-                    TextFormField(
-                      controller: _rruleController,
-                      decoration: const InputDecoration(
-                        labelText: 'Regla de repetición (rrule)',
-                      ),
-                      validator: (value) => _isRecurring && value!.isEmpty
-                          ? 'Por favor, ingresa la regla de repetición'
-                          : null,
-                    ),
-                  const SizedBox(height: 32),
-                  Center(
-                    child: BlocBuilder<SessionBloc, SessionState>(
-                      builder: (context, state) {
-                        if (state is SessionCreationLoading) {
-                          return const CircularProgressIndicator();
-                        }
-                        return ElevatedButton(
-                          onPressed: _submitForm,
-                          child: const Text('Crear Sesión'),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
