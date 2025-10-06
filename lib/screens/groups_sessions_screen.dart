@@ -9,6 +9,12 @@ class GroupsSessionsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sessions'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () {},
+          ),
+        ],
       ),
       body: const Center(
         child: Text('Upcoming sessions will be displayed here.'),
