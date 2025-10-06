@@ -22,13 +22,17 @@ class GroupsSessionsScreen extends StatelessWidget {
           actions: [
             IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => CreateSessionScreen(groupId: groupId),
                   ),
                 );
+                // Reload sessions if a new session was created
+                if (result == true && context.mounted) {
+                  context.read<SessionBloc>().add(LoadSessions(groupId));
+                }
               },
             ),
           ],

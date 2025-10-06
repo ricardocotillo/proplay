@@ -124,7 +124,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Sesión creada exitosamente!')),
             );
-            Navigator.of(context).pop();
+            Navigator.of(context).pop(true);
           }
           if (state is SessionCreationFailure) {
             ScaffoldMessenger.of(
