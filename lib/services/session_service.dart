@@ -32,7 +32,7 @@ class SessionService {
         template: templateWithCalculations,
       );
     } catch (e) {
-      print(e);
+      // TODO: Handle errors appropriately
       rethrow;
     }
   }
@@ -73,8 +73,7 @@ class SessionService {
           .map((doc) => SessionModel.fromMap(doc.id, doc.data()))
           .toList();
     } catch (e) {
-      // Handle errors appropriately
-      print(e);
+      // TODO: Handle errors appropriately
       rethrow;
     }
   }
