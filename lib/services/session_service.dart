@@ -15,20 +15,49 @@ class SessionService {
           ? template.totalCost / template.maxPlayers
           : 0;
 
-      await _firestore
+      // Create the template with calculated fields
+      final templateWithCalculations = template.copyWith(
+        durationInMinutes: durationInMinutes,
+        costPerPlayer: costPerPlayer.toDouble(),
+      );
+
+      // Add template to Firestore
+      final templateDoc = await _firestore
           .collection('sessionTemplates')
-          .add(
-            template
-                .copyWith(
-                  durationInMinutes: durationInMinutes,
-                  costPerPlayer: costPerPlayer.toDouble(),
-                )
-                .toMap(),
-          );
+          .add(templateWithCalculations.toMap());
+
+      // Create the first live session from the template
+      await _createFirstLiveSession(
+        templateId: templateDoc.id,
+        template: templateWithCalculations,
+      );
     } catch (e) {
       print(e);
       rethrow;
     }
+  }
+
+  Future<void> _createFirstLiveSession({
+    required String templateId,
+    required SessionTemplateModel template,
+  }) async {
+    // Create the first live session with the template's event date
+    final liveSession = SessionModel(
+      id: '', // Will be set by Firestore
+      templateId: templateId,
+      groupId: template.groupId,
+      title: template.title,
+      eventDate: template.eventDate.toDate(),
+      eventEndDate: template.eventEndDate.toDate(),
+      cutOffDate: template.cutOffDate.toDate(),
+      status: 'OPEN',
+      playerCount: 0,
+      waitingListCount: 0,
+      maxPlayers: template.maxPlayers,
+      costPerPlayer: template.costPerPlayer ?? 0,
+    );
+
+    await _firestore.collection('liveSessions').add(liveSession.toMap());
   }
 
   Future<List<SessionModel>> getUpcomingSessions(String groupId) async {
