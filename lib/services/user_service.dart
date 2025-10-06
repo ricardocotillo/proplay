@@ -98,4 +98,17 @@ class UserService {
       throw Exception('Failed to delete user: $e');
     }
   }
+
+  Future<void> removeGroupFromUser(String userId, String groupId) async {
+    try {
+      await _firestore
+          .collection(usersCollection)
+          .doc(userId)
+          .collection('groups')
+          .doc(groupId)
+          .delete();
+    } catch (e) {
+      throw Exception('Failed to remove group from user: $e');
+    }
+  }
 }

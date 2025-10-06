@@ -46,3 +46,16 @@ class GroupDetailRoleUpdated extends GroupDetailState {
   @override
   List<Object?> get props => [members, currentUserRole];
 }
+
+class GroupDetailMemberRemoved extends GroupDetailState {
+  final List<GroupMemberModel> members;
+  final String? currentUserRole;
+
+  const GroupDetailMemberRemoved({
+    required this.members,
+    required this.currentUserRole,
+  });
+
+  @override
+  List<Object?> get props => [members, currentUserRole];
+}

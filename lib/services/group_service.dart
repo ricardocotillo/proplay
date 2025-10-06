@@ -266,4 +266,19 @@ class GroupService {
       throw Exception('Failed to get member role: $e');
     }
   }
+
+  Future<void> removeMember(String groupId, String userId) async {
+    try {
+      await _firestore
+          .collection(groupsCollection)
+          .doc(groupId)
+          .collection('members')
+          .doc(userId)
+          .delete();
+
+      await _userService.removeGroupFromUser(userId, groupId);
+    } catch (e) {
+      throw Exception('Failed to remove member: $e');
+    }
+  }
 }

@@ -55,8 +55,13 @@ class GroupDetailScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.red),
               ),
               onTap: () {
+                context.read<GroupDetailBloc>().add(
+                  GroupDetailRemoveMember(
+                    groupId: groupId,
+                    userId: member.userId,
+                  ),
+                );
                 Navigator.pop(bottomSheetContext);
-                // TODO: Implement remove user functionality
               },
             ),
           ],
@@ -120,13 +125,19 @@ class GroupDetailScreen extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (state is GroupDetailLoaded || state is GroupDetailRoleUpdated) {
+            if (state is GroupDetailLoaded ||
+                state is GroupDetailRoleUpdated ||
+                state is GroupDetailMemberRemoved) {
               final members = state is GroupDetailLoaded
                   ? state.members
-                  : (state as GroupDetailRoleUpdated).members;
+                  : state is GroupDetailRoleUpdated
+                  ? (state as GroupDetailRoleUpdated).members
+                  : (state as GroupDetailMemberRemoved).members;
               final currentUserRole = state is GroupDetailLoaded
                   ? state.currentUserRole
-                  : (state as GroupDetailRoleUpdated).currentUserRole;
+                  : state is GroupDetailRoleUpdated
+                  ? (state as GroupDetailRoleUpdated).currentUserRole
+                  : (state as GroupDetailMemberRemoved).currentUserRole;
               final isOwner = currentUserRole == 'owner';
 
               return ListView.separated(

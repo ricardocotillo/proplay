@@ -17,6 +17,42 @@ class GroupDetailBloc extends Bloc<GroupDetailEvent, GroupDetailState> {
   }) : super(GroupDetailInitial()) {
     on<GroupDetailLoadMembers>(_onLoadMembers);
     on<GroupDetailToggleMemberRole>(_onToggleMemberRole);
+    on<GroupDetailRemoveMember>(_onRemoveMember);
+  }
+
+  Future<void> _onRemoveMember(
+    GroupDetailRemoveMember event,
+    Emitter<GroupDetailState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! GroupDetailLoaded &&
+        currentState is! GroupDetailRoleUpdated) return;
+
+    final currentMembers = currentState is GroupDetailLoaded
+        ? currentState.members
+        : (currentState as GroupDetailRoleUpdated).members;
+    final currentUserRole = currentState is GroupDetailLoaded
+        ? currentState.currentUserRole
+        : (currentState as GroupDetailRoleUpdated).currentUserRole;
+
+    try {
+      await groupService.removeMember(event.groupId, event.userId);
+
+      final updatedMembers =
+          currentMembers.where((member) => member.userId != event.userId).toList();
+
+      emit(GroupDetailMemberRemoved(
+        members: updatedMembers,
+        currentUserRole: currentUserRole,
+      ));
+    } catch (e) {
+      emit(GroupDetailError(e.toString()));
+      // Re-emit previous state after error
+      emit(GroupDetailLoaded(
+        members: currentMembers,
+        currentUserRole: currentUserRole,
+      ));
+    }
   }
 
   Future<void> _onLoadMembers(
