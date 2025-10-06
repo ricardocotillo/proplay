@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:proplay/models/group_model.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/group/group_event.dart';
+import 'package:proplay/screens/groups_sessions_screen.dart';
 
 class GroupInfoScreen extends StatelessWidget {
   final GroupModel group;
@@ -63,7 +64,14 @@ class GroupInfoScreen extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.calendar_today),
             title: const Text('Sesiones'),
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const GroupsSessionsScreen(),
+                ),
+              );
+            },
           ),
           ListTile(
             leading: const Icon(Icons.bar_chart),

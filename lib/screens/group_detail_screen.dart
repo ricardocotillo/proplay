@@ -10,6 +10,7 @@ import 'package:proplay/models/group_member_model.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/screens/groups_sessions_screen.dart';
 
 class GroupDetailScreen extends StatelessWidget {
   final GroupModel group;
@@ -97,6 +98,17 @@ class GroupDetailScreen extends StatelessWidget {
             child: Text(group.name),
           ),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.calendar_today),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const GroupsSessionsScreen(),
+                  ),
+                );
+              },
+            ),
             TextButton(
               onPressed: () async {
                 await Clipboard.setData(ClipboardData(text: group.code));
