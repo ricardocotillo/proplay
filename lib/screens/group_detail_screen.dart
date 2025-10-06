@@ -131,12 +131,12 @@ class GroupDetailScreen extends StatelessWidget {
               final members = state is GroupDetailLoaded
                   ? state.members
                   : state is GroupDetailRoleUpdated
-                  ? (state as GroupDetailRoleUpdated).members
+                  ? state.members
                   : (state as GroupDetailMemberRemoved).members;
               final currentUserRole = state is GroupDetailLoaded
                   ? state.currentUserRole
                   : state is GroupDetailRoleUpdated
-                  ? (state as GroupDetailRoleUpdated).currentUserRole
+                  ? state.currentUserRole
                   : (state as GroupDetailMemberRemoved).currentUserRole;
               final isOwner = currentUserRole == 'owner';
 
