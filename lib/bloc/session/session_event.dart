@@ -1,5 +1,4 @@
-import 'package:equatable/equatable.dart';
-import 'package:proplay/models/session_template_model.dart';
+part of 'session_bloc.dart';
 
 abstract class SessionEvent extends Equatable {
   const SessionEvent();
@@ -8,11 +7,11 @@ abstract class SessionEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class SessionTemplateCreateRequested extends SessionEvent {
-  final SessionTemplateModel template;
+class LoadSessions extends SessionEvent {
+  final String groupId;
 
-  const SessionTemplateCreateRequested(this.template);
+  const LoadSessions(this.groupId);
 
   @override
-  List<Object> get props => [template];
+  List<Object> get props => [groupId];
 }

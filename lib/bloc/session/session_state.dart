@@ -1,5 +1,4 @@
-
-import 'package:equatable/equatable.dart';
+part of 'session_bloc.dart';
 
 abstract class SessionState extends Equatable {
   const SessionState();
@@ -10,14 +9,21 @@ abstract class SessionState extends Equatable {
 
 class SessionInitial extends SessionState {}
 
-class SessionCreationLoading extends SessionState {}
+class SessionLoading extends SessionState {}
 
-class SessionCreationSuccess extends SessionState {}
+class SessionLoaded extends SessionState {
+  final List<SessionModel> sessions;
 
-class SessionCreationFailure extends SessionState {
+  const SessionLoaded(this.sessions);
+
+  @override
+  List<Object> get props => [sessions];
+}
+
+class SessionError extends SessionState {
   final String message;
 
-  const SessionCreationFailure(this.message);
+  const SessionError(this.message);
 
   @override
   List<Object> get props => [message];

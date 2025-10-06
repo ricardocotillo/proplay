@@ -1,10 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:proplay/bloc/create_session/create_session_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:proplay/bloc/session/session_bloc.dart';
-import 'package:proplay/bloc/session/session_event.dart';
-import 'package:proplay/bloc/session/session_state.dart';
 import 'package:proplay/models/session_template_model.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/utils/auth_helper.dart';
@@ -16,7 +14,7 @@ class CreateSessionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => SessionBloc(sessionService: SessionService()),
+      create: (context) => CreateSessionBloc(sessionService: SessionService()),
       child: _CreateSessionContent(groupId: groupId),
     );
   }
@@ -112,7 +110,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         rrule: _isRecurring ? _rruleController.text : null,
       );
 
-      context.read<SessionBloc>().add(SessionTemplateCreateRequested(template));
+      context.read<CreateSessionBloc>().add(CreateSessionTemplate(template));
     }
   }
 
@@ -120,7 +118,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Crear sesión')),
-      body: BlocListener<SessionBloc, SessionState>(
+      body: BlocListener<CreateSessionBloc, CreateSessionState>(
         listener: (context, state) {
           if (state is SessionCreationSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -233,9 +231,9 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                   ),
                 const SizedBox(height: 32),
                 Center(
-                  child: BlocBuilder<SessionBloc, SessionState>(
+                  child: BlocBuilder<CreateSessionBloc, CreateSessionState>(
                     builder: (context, state) {
-                      if (state is SessionCreationLoading) {
+                      if (state is CreateSessionLoading) {
                         return const CircularProgressIndicator();
                       }
                       return ElevatedButton(

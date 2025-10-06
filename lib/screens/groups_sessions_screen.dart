@@ -1,31 +1,76 @@
 import 'package:flutter/material.dart';
 import 'package:proplay/screens/create_session_screen.dart';
 
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:proplay/bloc/session/session_bloc.dart';
+import 'package:proplay/services/session_service.dart';
+import 'package:intl/intl.dart';
+
 class GroupsSessionsScreen extends StatelessWidget {
   final String groupId;
   const GroupsSessionsScreen({super.key, required this.groupId});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sessions'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CreateSessionScreen(groupId: groupId),
-                ),
+    return BlocProvider(
+      create: (context) => SessionBloc(
+        sessionService: SessionService(),
+      )..add(LoadSessions(groupId)),
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Sessions'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreateSessionScreen(groupId: groupId),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        body: BlocBuilder<SessionBloc, SessionState>(
+          builder: (context, state) {
+            if (state is SessionLoading) {
+              return const Center(
+                child: CircularProgressIndicator(),
               );
-            },
-          ),
-        ],
-      ),
-      body: const Center(
-        child: Text('Upcoming sessions will be displayed here.'),
+            }
+            if (state is SessionLoaded) {
+              if (state.sessions.isEmpty) {
+                return const Center(
+                  child: Text('No upcoming sessions.'),
+                );
+              }
+              return ListView.builder(
+                itemCount: state.sessions.length,
+                itemBuilder: (context, index) {
+                  final session = state.sessions[index];
+                  return ListTile(
+                    title: Text(session.title),
+                    subtitle: Text(
+                      DateFormat.yMMMd().add_jm().format(session.eventDate),
+                    ),
+                    trailing: Text(
+                        '${session.playerCount}/${session.maxPlayers} players'),
+                  );
+                },
+              );
+            }
+            if (state is SessionError) {
+              return Center(
+                child: Text('Error: ${state.message}'),
+              );
+            }
+            return const Center(
+              child: Text('Upcoming sessions will be displayed here.'),
+            );
+          },
+        ),
       ),
     );
   }

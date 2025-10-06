@@ -1,8 +1,10 @@
-
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:proplay/bloc/session/session_event.dart';
-import 'package:proplay/bloc/session/session_state.dart';
+import 'package:bloc/bloc.dart';
+import 'package:equatable/equatable.dart';
+import 'package:proplay/models/session_model.dart';
 import 'package:proplay/services/session_service.dart';
+
+part 'session_event.dart';
+part 'session_state.dart';
 
 class SessionBloc extends Bloc<SessionEvent, SessionState> {
   final SessionService _sessionService;
@@ -10,19 +12,16 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
   SessionBloc({required SessionService sessionService})
       : _sessionService = sessionService,
         super(SessionInitial()) {
-    on<SessionTemplateCreateRequested>(_onCreateSessionTemplateRequested);
+    on<LoadSessions>(_onLoadSessions);
   }
 
-  Future<void> _onCreateSessionTemplateRequested(
-    SessionTemplateCreateRequested event,
-    Emitter<SessionState> emit,
-  ) async {
-    emit(SessionCreationLoading());
+  void _onLoadSessions(LoadSessions event, Emitter<SessionState> emit) async {
+    emit(SessionLoading());
     try {
-      await _sessionService.createSessionTemplate(event.template);
-      emit(SessionCreationSuccess());
+      final sessions = await _sessionService.getUpcomingSessions(event.groupId);
+      emit(SessionLoaded(sessions));
     } catch (e) {
-      emit(SessionCreationFailure(e.toString()));
+      emit(SessionError(e.toString()));
     }
   }
 }
