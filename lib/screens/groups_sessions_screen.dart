@@ -1,8 +1,9 @@
-
 import 'package:flutter/material.dart';
+import 'package:proplay/screens/create_session_screen.dart';
 
 class GroupsSessionsScreen extends StatelessWidget {
-  const GroupsSessionsScreen({super.key});
+  final String groupId;
+  const GroupsSessionsScreen({super.key, required this.groupId});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +13,14 @@ class GroupsSessionsScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CreateSessionScreen(groupId: groupId),
+                ),
+              );
+            },
           ),
         ],
       ),
