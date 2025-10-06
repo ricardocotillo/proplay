@@ -10,7 +10,7 @@ class SessionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sessions'),
+        title: const Text('Pichangas'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -22,9 +22,7 @@ class SessionsScreen extends StatelessWidget {
           },
         ),
       ),
-      body: const Center(
-        child: Text('Sessions will be listed here.'),
-      ),
+      body: const Center(child: Text('Las pichangas se mostrarán aquí.')),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           context.push('/group/${group.id}/sessions/create');

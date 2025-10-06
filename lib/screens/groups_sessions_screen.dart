@@ -13,12 +13,12 @@ class GroupsSessionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => SessionBloc(
-        sessionService: SessionService(),
-      )..add(LoadSessions(groupId)),
+      create: (context) =>
+          SessionBloc(sessionService: SessionService())
+            ..add(LoadSessions(groupId)),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Sessions'),
+          title: const Text('Pichangas'),
           actions: [
             IconButton(
               icon: const Icon(Icons.add),
@@ -40,15 +40,11 @@ class GroupsSessionsScreen extends StatelessWidget {
         body: BlocBuilder<SessionBloc, SessionState>(
           builder: (context, state) {
             if (state is SessionLoading) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
             if (state is SessionLoaded) {
               if (state.sessions.isEmpty) {
-                return const Center(
-                  child: Text('No upcoming sessions.'),
-                );
+                return const Center(child: Text('No hay próximas pichangas.'));
               }
               return ListView.builder(
                 itemCount: state.sessions.length,
@@ -60,18 +56,17 @@ class GroupsSessionsScreen extends StatelessWidget {
                       DateFormat.yMMMd().add_jm().format(session.eventDate),
                     ),
                     trailing: Text(
-                        '${session.playerCount}/${session.maxPlayers} players'),
+                      '${session.playerCount}/${session.maxPlayers} jugadores',
+                    ),
                   );
                 },
               );
             }
             if (state is SessionError) {
-              return Center(
-                child: Text('Error: ${state.message}'),
-              );
+              return Center(child: Text('Error: ${state.message}'));
             }
             return const Center(
-              child: Text('Upcoming sessions will be displayed here.'),
+              child: Text('Las próximas pichangas se mostrarán aquí.'),
             );
           },
         ),
