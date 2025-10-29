@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/session_template_model.dart';
+import 'package:proplay/models/user_model.dart';
 
 class SessionService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -52,7 +53,7 @@ class SessionService {
       cutOffDate: template.cutOffDate.toDate(),
       status: 'OPEN',
       playerCount: 0,
-      waitingListCount: 0,
+      waitingListCount: template.maxWaitingList, // This is max capacity, not current count
       maxPlayers: template.maxPlayers,
       costPerPlayer: template.costPerPlayer ?? 0,
     );
@@ -83,6 +84,126 @@ class SessionService {
       await _firestore.collection('liveSessions').doc(sessionId).delete();
     } catch (e) {
       // TODO: Handle errors appropriately
+      rethrow;
+    }
+  }
+
+  /// Stream a session for real-time updates
+  Stream<SessionModel> streamSession(String sessionId) {
+    return _firestore
+        .collection('liveSessions')
+        .doc(sessionId)
+        .snapshots()
+        .map((doc) {
+      if (!doc.exists) {
+        throw Exception('Session not found');
+      }
+      return SessionModel.fromMap(doc.id, doc.data()!);
+    });
+  }
+
+  /// Join a session with race condition protection using Firestore transaction
+  Future<void> joinSession(String sessionId, UserModel user) async {
+    final simpleUser = SimpleUserModel(
+      uid: user.uid,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      profileImageUrl: user.profileImageUrl,
+    );
+
+    try {
+      await _firestore.runTransaction((transaction) async {
+        final sessionRef =
+            _firestore.collection('liveSessions').doc(sessionId);
+        final sessionDoc = await transaction.get(sessionRef);
+
+        if (!sessionDoc.exists) {
+          throw Exception('Session not found');
+        }
+
+        final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
+
+        // Check if user is already in the session or waiting list
+        final players = session.players ?? [];
+        final waitingList = session.waitingList ?? [];
+
+        if (players.any((p) => p.uid == user.uid) ||
+            waitingList.any((p) => p.uid == user.uid)) {
+          throw Exception('You have already joined this session');
+        }
+
+        // Check if there's space in the main player list
+        if (players.length < session.maxPlayers) {
+          // Add to main player list
+          final updatedPlayers = [...players, simpleUser];
+          transaction.update(sessionRef, {
+            'players': updatedPlayers.map((p) => p.toMap()).toList(),
+            'playerCount': updatedPlayers.length,
+          });
+        } else if (waitingList.length < session.waitingListCount) {
+          // Add to waiting list (waitingListCount is the max capacity)
+          final updatedWaitingList = [...waitingList, simpleUser];
+          transaction.update(sessionRef, {
+            'waitingList':
+                updatedWaitingList.map((p) => p.toMap()).toList(),
+          });
+        } else {
+          throw Exception('Session is full, including waiting list');
+        }
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Leave a session - removes user from either players or waiting list
+  Future<void> leaveSession(String sessionId, String userId) async {
+    try {
+      await _firestore.runTransaction((transaction) async {
+        final sessionRef =
+            _firestore.collection('liveSessions').doc(sessionId);
+        final sessionDoc = await transaction.get(sessionRef);
+
+        if (!sessionDoc.exists) {
+          throw Exception('Session not found');
+        }
+
+        final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
+
+        final players = session.players ?? [];
+        final waitingList = session.waitingList ?? [];
+
+        // Check if user is in the main player list
+        if (players.any((p) => p.uid == userId)) {
+          var updatedPlayers = players.where((p) => p.uid != userId).toList();
+          var updatedWaitingList = List<SimpleUserModel>.from(waitingList);
+
+          // If there's someone on the waiting list, promote them
+          if (updatedWaitingList.isNotEmpty) {
+            final promotedPlayer = updatedWaitingList.removeAt(0);
+            updatedPlayers.add(promotedPlayer);
+          }
+
+          transaction.update(sessionRef, {
+            'players': updatedPlayers.map((p) => p.toMap()).toList(),
+            'playerCount': updatedPlayers.length,
+            'waitingList':
+                updatedWaitingList.map((p) => p.toMap()).toList(),
+          });
+        }
+        // Check if user is in the waiting list
+        else if (waitingList.any((p) => p.uid == userId)) {
+          final updatedWaitingList =
+              waitingList.where((p) => p.uid != userId).toList();
+          transaction.update(sessionRef, {
+            'waitingList':
+                updatedWaitingList.map((p) => p.toMap()).toList(),
+          });
+        } else {
+          throw Exception('You are not part of this session');
+        }
+      });
+    } catch (e) {
       rethrow;
     }
   }

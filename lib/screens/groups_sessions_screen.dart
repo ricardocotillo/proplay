@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:proplay/screens/create_session_screen.dart';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:proplay/bloc/session/session_bloc.dart';
-import 'package:proplay/services/session_service.dart';
 import 'package:intl/intl.dart';
+import 'package:proplay/bloc/session/session_bloc.dart';
+import 'package:proplay/screens/create_session_screen.dart';
+import 'package:proplay/screens/session_detail_screen.dart';
+import 'package:proplay/services/session_service.dart';
 
 class GroupsSessionsScreen extends StatelessWidget {
   final String groupId;
@@ -123,6 +123,15 @@ class GroupsSessionsScreen extends StatelessWidget {
                       trailing: Text(
                         '${session.playerCount}/${session.maxPlayers} jugadores',
                       ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                SessionDetailScreen(sessionId: session.id),
+                          ),
+                        );
+                      },
                     ),
                   );
                 },

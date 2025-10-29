@@ -49,6 +49,8 @@ class SessionModel extends Equatable {
     waitingListCount,
     maxPlayers,
     costPerPlayer,
+    players,
+    waitingList,
   ];
 
   SessionModel copyWith({
@@ -64,6 +66,8 @@ class SessionModel extends Equatable {
     int? waitingListCount,
     int? maxPlayers,
     double? costPerPlayer,
+    List<SimpleUserModel>? players,
+    List<SimpleUserModel>? waitingList,
   }) {
     return SessionModel(
       id: id ?? this.id,
@@ -78,6 +82,8 @@ class SessionModel extends Equatable {
       waitingListCount: waitingListCount ?? this.waitingListCount,
       maxPlayers: maxPlayers ?? this.maxPlayers,
       costPerPlayer: costPerPlayer ?? this.costPerPlayer,
+      players: players ?? this.players,
+      waitingList: waitingList ?? this.waitingList,
     );
   }
 
@@ -94,6 +100,10 @@ class SessionModel extends Equatable {
       'waitingListCount': waitingListCount,
       'maxPlayers': maxPlayers,
       'costPerPlayer': costPerPlayer,
+      if (players != null)
+        'players': players!.map((p) => p.toMap()).toList(),
+      if (waitingList != null)
+        'waitingList': waitingList!.map((p) => p.toMap()).toList(),
     };
   }
 
@@ -111,6 +121,16 @@ class SessionModel extends Equatable {
       waitingListCount: map['waitingListCount'] as int,
       maxPlayers: map['maxPlayers'] as int,
       costPerPlayer: (map['costPerPlayer'] as num).toDouble(),
+      players: map['players'] != null
+          ? (map['players'] as List)
+              .map((p) => SimpleUserModel.fromMap(p as Map<String, dynamic>))
+              .toList()
+          : null,
+      waitingList: map['waitingList'] != null
+          ? (map['waitingList'] as List)
+              .map((p) => SimpleUserModel.fromMap(p as Map<String, dynamic>))
+              .toList()
+          : null,
     );
   }
 }
