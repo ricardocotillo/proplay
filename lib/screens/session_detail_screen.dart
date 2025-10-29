@@ -342,7 +342,7 @@ class SessionDetailScreen extends StatelessWidget {
 
   Widget _buildPlayerTile(
     BuildContext context,
-    SimpleUserModel player,
+    SessionUserModel player,
     int position,
     bool isWaitingList,
   ) {
@@ -390,6 +390,13 @@ class SessionDetailScreen extends StatelessWidget {
         '${player.firstName} ${player.lastName}',
         style: const TextStyle(fontWeight: FontWeight.w500),
       ),
+      subtitle: Text(
+        _formatJoinTime(player.joinedAt),
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.grey[600],
+        ),
+      ),
       trailing: isWaitingList
           ? Icon(Icons.hourglass_empty, color: Colors.orange[700], size: 20)
           : Icon(Icons.check_circle, color: Colors.green[700], size: 20),
@@ -401,6 +408,25 @@ class SessionDetailScreen extends StatelessWidget {
       return 'Unirse a la Pichanga';
     } else {
       return 'Unirse a Lista de Espera';
+    }
+  }
+
+  String _formatJoinTime(DateTime joinedAt) {
+    final now = DateTime.now();
+    final difference = now.difference(joinedAt);
+
+    if (difference.inMinutes < 1) {
+      return 'Justo ahora';
+    } else if (difference.inMinutes < 60) {
+      return 'Hace ${difference.inMinutes} min';
+    } else if (difference.inHours < 24) {
+      final hours = difference.inHours;
+      return 'Hace $hours hora${hours > 1 ? 's' : ''}';
+    } else if (difference.inDays < 7) {
+      final days = difference.inDays;
+      return 'Hace $days día${days > 1 ? 's' : ''}';
+    } else {
+      return DateFormat.MMMd().format(joinedAt);
     }
   }
 

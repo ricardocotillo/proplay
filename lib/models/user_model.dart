@@ -1,16 +1,20 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class SimpleUserModel {
+class SessionUserModel {
   final String uid;
   final String firstName;
   final String lastName;
   final String? profileImageUrl;
+  final DateTime joinedAt;
+  final String? receiptUrl;
 
-  SimpleUserModel({
+  SessionUserModel({
     required this.uid,
     required this.firstName,
     required this.lastName,
     this.profileImageUrl,
+    required this.joinedAt,
+    this.receiptUrl,
   });
 
   Map<String, dynamic> toMap() {
@@ -19,15 +23,19 @@ class SimpleUserModel {
       'firstName': firstName,
       'lastName': lastName,
       'profileImageUrl': profileImageUrl,
+      'joinedAt': Timestamp.fromDate(joinedAt),
+      'receiptUrl': receiptUrl,
     };
   }
 
-  factory SimpleUserModel.fromMap(Map<String, dynamic> map) {
-    return SimpleUserModel(
+  factory SessionUserModel.fromMap(Map<String, dynamic> map) {
+    return SessionUserModel(
       uid: map['uid'] ?? '',
       firstName: map['firstName'] ?? '',
       lastName: map['lastName'] ?? '',
       profileImageUrl: map['profileImageUrl'],
+      joinedAt: (map['joinedAt'] as Timestamp).toDate(),
+      receiptUrl: map['receiptUrl'],
     );
   }
 }
