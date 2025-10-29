@@ -20,22 +20,25 @@ class GroupsSessionsScreen extends StatelessWidget {
         appBar: AppBar(
           title: const Text('Pichangas'),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () async {
-                // Capture the bloc before the async navigation
-                final sessionBloc = context.read<SessionBloc>();
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CreateSessionScreen(groupId: groupId),
-                  ),
-                );
-                // Reload sessions if a new session was created
-                if (result == true) {
-                  sessionBloc.add(LoadSessions(groupId));
-                }
-              },
+            Builder(
+              builder: (builderContext) => IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: () async {
+                  // Capture the bloc before the async navigation
+                  final sessionBloc = builderContext.read<SessionBloc>();
+                  final result = await Navigator.push(
+                    builderContext,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          CreateSessionScreen(groupId: groupId),
+                    ),
+                  );
+                  // Reload sessions if a new session was created
+                  if (result == true) {
+                    sessionBloc.add(LoadSessions(groupId));
+                  }
+                },
+              ),
             ),
           ],
         ),
@@ -57,37 +60,40 @@ class GroupsSessionsScreen extends StatelessWidget {
                     direction: DismissDirection.endToStart,
                     confirmDismiss: (direction) async {
                       return await showDialog<bool>(
-                        context: context,
-                        builder: (BuildContext dialogContext) {
-                          return AlertDialog(
-                            title: const Text('Eliminar sesión'),
-                            content: const Text(
-                              '¿Estás seguro de que quieres eliminar esta sesión? '
-                              'Esta acción no se puede deshacer.',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.of(dialogContext).pop(false),
-                                child: const Text('Cancelar'),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.of(dialogContext).pop(true),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Colors.red,
+                            context: context,
+                            builder: (BuildContext dialogContext) {
+                              return AlertDialog(
+                                title: const Text('Eliminar sesión'),
+                                content: const Text(
+                                  '¿Estás seguro de que quieres eliminar esta sesión? '
+                                  'Esta acción no se puede deshacer.',
                                 ),
-                                child: const Text('Eliminar'),
-                              ),
-                            ],
-                          );
-                        },
-                      ) ?? false;
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(dialogContext).pop(false),
+                                    child: const Text('Cancelar'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(dialogContext).pop(true),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.red,
+                                    ),
+                                    child: const Text('Eliminar'),
+                                  ),
+                                ],
+                              );
+                            },
+                          ) ??
+                          false;
                     },
                     onDismissed: (direction) {
-                      context.read<SessionBloc>().add(DeleteSession(session.id));
+                      context.read<SessionBloc>().add(
+                        DeleteSession(session.id),
+                      );
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('${session.title} eliminada'),
-                        ),
+                        SnackBar(content: Text('${session.title} eliminada')),
                       );
                     },
                     background: Container(
