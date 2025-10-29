@@ -1,5 +1,37 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+class SimpleUserModel {
+  final String uid;
+  final String firstName;
+  final String lastName;
+  final String? profileImageUrl;
+
+  SimpleUserModel({
+    required this.uid,
+    required this.firstName,
+    required this.lastName,
+    this.profileImageUrl,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'uid': uid,
+      'firstName': firstName,
+      'lastName': lastName,
+      'profileImageUrl': profileImageUrl,
+    };
+  }
+
+  factory SimpleUserModel.fromMap(Map<String, dynamic> map) {
+    return SimpleUserModel(
+      uid: map['uid'] ?? '',
+      firstName: map['firstName'] ?? '',
+      lastName: map['lastName'] ?? '',
+      profileImageUrl: map['profileImageUrl'],
+    );
+  }
+}
+
 class UserModel {
   final String uid;
   final String email;

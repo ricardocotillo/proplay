@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
+import 'package:proplay/models/user_model.dart';
 
 class SessionModel extends Equatable {
   final String id;
@@ -14,6 +15,8 @@ class SessionModel extends Equatable {
   final int waitingListCount;
   final int maxPlayers;
   final double costPerPlayer;
+  final List<SimpleUserModel>? players;
+  final List<SimpleUserModel>? waitingList;
 
   const SessionModel({
     required this.id,
@@ -28,23 +31,25 @@ class SessionModel extends Equatable {
     required this.waitingListCount,
     required this.maxPlayers,
     required this.costPerPlayer,
+    this.players,
+    this.waitingList,
   });
 
   @override
   List<Object?> get props => [
-        id,
-        templateId,
-        groupId,
-        title,
-        eventDate,
-        eventEndDate,
-        cutOffDate,
-        status,
-        playerCount,
-        waitingListCount,
-        maxPlayers,
-        costPerPlayer,
-      ];
+    id,
+    templateId,
+    groupId,
+    title,
+    eventDate,
+    eventEndDate,
+    cutOffDate,
+    status,
+    playerCount,
+    waitingListCount,
+    maxPlayers,
+    costPerPlayer,
+  ];
 
   SessionModel copyWith({
     String? id,
