@@ -23,6 +23,8 @@ class GroupsSessionsScreen extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.add),
               onPressed: () async {
+                // Capture the bloc before the async navigation
+                final sessionBloc = context.read<SessionBloc>();
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -30,8 +32,8 @@ class GroupsSessionsScreen extends StatelessWidget {
                   ),
                 );
                 // Reload sessions if a new session was created
-                if (result == true && context.mounted) {
-                  context.read<SessionBloc>().add(LoadSessions(groupId));
+                if (result == true) {
+                  sessionBloc.add(LoadSessions(groupId));
                 }
               },
             ),
