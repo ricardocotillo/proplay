@@ -34,7 +34,6 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   final _maxPlayersController = TextEditingController();
   final _maxWaitingListController = TextEditingController();
   final _totalCostController = TextEditingController();
-  final _rruleController = TextEditingController();
 
   DateTime? _joinDate;
   DateTime? _cutOffDate;
@@ -50,7 +49,6 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
     _maxPlayersController.dispose();
     _maxWaitingListController.dispose();
     _totalCostController.dispose();
-    _rruleController.dispose();
     super.dispose();
   }
 
@@ -107,7 +105,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         maxWaitingList: int.parse(_maxWaitingListController.text),
         totalCost: double.parse(_totalCostController.text),
         isRecurring: _isRecurring,
-        rrule: _isRecurring ? _rruleController.text : null,
+        rrule: _isRecurring ? 'FREQ=WEEKLY' : null,
       );
 
       context.read<CreateSessionBloc>().add(CreateSessionTemplate(template));
@@ -220,14 +218,15 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                   ],
                 ),
                 if (_isRecurring)
-                  TextFormField(
-                    controller: _rruleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Regla de repetición (rrule)',
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      'La sesión se repetirá semanalmente en el mismo día y hora',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
-                    validator: (value) => _isRecurring && value!.isEmpty
-                        ? 'Por favor, ingresa la regla de repetición'
-                        : null,
                   ),
                 const SizedBox(height: 32),
                 Center(
