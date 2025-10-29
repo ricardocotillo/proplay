@@ -220,4 +220,66 @@ class SessionService {
       rethrow;
     }
   }
+
+  /// Upload receipt and update user's confirmation status
+  Future<void> uploadReceipt({
+    required String sessionId,
+    required String userId,
+    required String receiptUrl,
+  }) async {
+    try {
+      await _firestore.runTransaction((transaction) async {
+        final sessionRef = _firestore.collection('liveSessions').doc(sessionId);
+        final sessionDoc = await transaction.get(sessionRef);
+
+        if (!sessionDoc.exists) {
+          throw Exception('Session not found');
+        }
+
+        final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
+
+        final players = session.players ?? [];
+        final waitingList = session.waitingList ?? [];
+
+        // Find the user in either players or waiting list and update
+        bool found = false;
+
+        // Check players list
+        final updatedPlayers = players.map((player) {
+          if (player.uid == userId) {
+            found = true;
+            return player.copyWith(
+              receiptUrl: receiptUrl,
+              isConfirmed: true,
+            );
+          }
+          return player;
+        }).toList();
+
+        // Check waiting list if not found in players
+        final updatedWaitingList = waitingList.map((player) {
+          if (player.uid == userId) {
+            found = true;
+            return player.copyWith(
+              receiptUrl: receiptUrl,
+              isConfirmed: true,
+            );
+          }
+          return player;
+        }).toList();
+
+        if (!found) {
+          throw Exception('User not found in session');
+        }
+
+        // Update Firestore
+        transaction.update(sessionRef, {
+          'players': updatedPlayers.map((p) => p.toMap()).toList(),
+          'waitingList': updatedWaitingList.map((p) => p.toMap()).toList(),
+        });
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

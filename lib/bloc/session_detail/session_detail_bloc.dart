@@ -1,23 +1,28 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:proplay/bloc/session_detail/session_detail_event.dart';
 import 'package:proplay/bloc/session_detail/session_detail_state.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/session_service.dart';
+import 'package:proplay/services/receipt_upload_service.dart';
 
 class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
   final SessionService sessionService;
+  final ReceiptUploadService receiptUploadService;
   final UserModel currentUser;
   StreamSubscription<SessionModel>? _sessionSubscription;
 
   SessionDetailBloc({
     required this.sessionService,
+    required this.receiptUploadService,
     required this.currentUser,
   }) : super(const SessionDetailInitial()) {
     on<LoadSessionDetail>(_onLoadSessionDetail);
     on<JoinSession>(_onJoinSession);
     on<LeaveSession>(_onLeaveSession);
+    on<UploadReceipt>(_onUploadReceipt);
     on<_UpdateSessionState>(_onUpdateSessionState);
     on<_SessionError>(_onSessionError);
   }
@@ -100,6 +105,55 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
         currentState.session.id,
         currentUser.uid,
       );
+      // The stream will automatically update the state with the new session data
+    } catch (e) {
+      emit(SessionDetailError(
+        e.toString(),
+        session: currentState.session,
+      ));
+    }
+  }
+
+  Future<void> _onUploadReceipt(
+    UploadReceipt event,
+    Emitter<SessionDetailState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! SessionDetailLoaded) return;
+
+    emit(SessionDetailProcessing(
+      session: currentState.session,
+      action: 'uploading_receipt',
+    ));
+
+    try {
+      // Pick image from gallery or camera
+      final XFile? image = await receiptUploadService.pickImage(ImageSource.gallery);
+
+      if (image == null) {
+        // User cancelled the picker
+        emit(SessionDetailLoaded(
+          session: currentState.session,
+          isCurrentUserJoined: currentState.isCurrentUserJoined,
+          isCurrentUserInWaitingList: currentState.isCurrentUserInWaitingList,
+        ));
+        return;
+      }
+
+      // Upload to Firebase Storage
+      final String receiptUrl = await receiptUploadService.uploadReceipt(
+        sessionId: currentState.session.id,
+        userId: currentUser.uid,
+        imagePath: image.path,
+      );
+
+      // Update Firestore with receipt URL and confirmation
+      await sessionService.uploadReceipt(
+        sessionId: currentState.session.id,
+        userId: currentUser.uid,
+        receiptUrl: receiptUrl,
+      );
+
       // The stream will automatically update the state with the new session data
     } catch (e) {
       emit(SessionDetailError(

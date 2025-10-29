@@ -26,3 +26,8 @@ class JoinSession extends SessionDetailEvent {
 class LeaveSession extends SessionDetailEvent {
   const LeaveSession();
 }
+
+/// Upload receipt for confirmation
+class UploadReceipt extends SessionDetailEvent {
+  const UploadReceipt();
+}

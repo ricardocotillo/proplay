@@ -7,6 +7,7 @@ class SessionUserModel {
   final String? profileImageUrl;
   final DateTime joinedAt;
   final String? receiptUrl;
+  final bool isConfirmed;
 
   SessionUserModel({
     required this.uid,
@@ -15,6 +16,7 @@ class SessionUserModel {
     this.profileImageUrl,
     required this.joinedAt,
     this.receiptUrl,
+    this.isConfirmed = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -25,6 +27,7 @@ class SessionUserModel {
       'profileImageUrl': profileImageUrl,
       'joinedAt': Timestamp.fromDate(joinedAt),
       'receiptUrl': receiptUrl,
+      'isConfirmed': isConfirmed,
     };
   }
 
@@ -36,6 +39,27 @@ class SessionUserModel {
       profileImageUrl: map['profileImageUrl'],
       joinedAt: (map['joinedAt'] as Timestamp).toDate(),
       receiptUrl: map['receiptUrl'],
+      isConfirmed: map['isConfirmed'] ?? false,
+    );
+  }
+
+  SessionUserModel copyWith({
+    String? uid,
+    String? firstName,
+    String? lastName,
+    String? profileImageUrl,
+    DateTime? joinedAt,
+    String? receiptUrl,
+    bool? isConfirmed,
+  }) {
+    return SessionUserModel(
+      uid: uid ?? this.uid,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      joinedAt: joinedAt ?? this.joinedAt,
+      receiptUrl: receiptUrl ?? this.receiptUrl,
+      isConfirmed: isConfirmed ?? this.isConfirmed,
     );
   }
 }
