@@ -71,9 +71,26 @@ class SessionService {
           .orderBy('eventDate')
           .get();
 
-      return snapshot.docs
-          .map((doc) => SessionModel.fromMap(doc.id, doc.data()))
-          .toList();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        // Only include fields needed for list view, exclude players and waitingList
+        final filteredData = {
+          'id': doc.id,
+          'templateId': data['templateId'] ?? '',
+          'groupId': data['groupId'],
+          'title': data['title'],
+          'eventDate': data['eventDate'],
+          'eventEndDate': data['eventEndDate'] ?? data['eventDate'], // Fallback to eventDate
+          'cutOffDate': data['cutOffDate'] ?? data['eventDate'], // Fallback to eventDate
+          'status': data['status'],
+          'playerCount': data['playerCount'] ?? 0,
+          'waitingListCount': data['waitingListCount'] ?? 0,
+          'maxPlayers': data['maxPlayers'],
+          'costPerPlayer': data['costPerPlayer'] ?? 0,
+          // Explicitly exclude players and waitingList
+        };
+        return SessionModel.fromMap(doc.id, filteredData);
+      }).toList();
     } catch (e) {
       // TODO: Handle errors appropriately
       rethrow;
