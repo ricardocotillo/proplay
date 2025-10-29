@@ -52,13 +52,71 @@ class GroupsSessionsScreen extends StatelessWidget {
                 itemCount: state.sessions.length,
                 itemBuilder: (context, index) {
                   final session = state.sessions[index];
-                  return ListTile(
-                    title: Text(session.title),
-                    subtitle: Text(
-                      DateFormat.yMMMd().add_jm().format(session.eventDate),
+                  return Dismissible(
+                    key: Key(session.id),
+                    direction: DismissDirection.endToStart,
+                    confirmDismiss: (direction) async {
+                      return await showDialog<bool>(
+                        context: context,
+                        builder: (BuildContext dialogContext) {
+                          return AlertDialog(
+                            title: const Text('Eliminar sesión'),
+                            content: const Text(
+                              '¿Estás seguro de que quieres eliminar esta sesión? '
+                              'Esta acción no se puede deshacer.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(dialogContext).pop(false),
+                                child: const Text('Cancelar'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.of(dialogContext).pop(true),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Colors.red,
+                                ),
+                                child: const Text('Eliminar'),
+                              ),
+                            ],
+                          );
+                        },
+                      ) ?? false;
+                    },
+                    onDismissed: (direction) {
+                      context.read<SessionBloc>().add(DeleteSession(session.id));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${session.title} eliminada'),
+                        ),
+                      );
+                    },
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20.0),
+                      color: Colors.red,
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Icon(Icons.delete, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            'Eliminar',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    trailing: Text(
-                      '${session.playerCount}/${session.maxPlayers} jugadores',
+                    child: ListTile(
+                      title: Text(session.title),
+                      subtitle: Text(
+                        DateFormat.yMMMd().add_jm().format(session.eventDate),
+                      ),
+                      trailing: Text(
+                        '${session.playerCount}/${session.maxPlayers} jugadores',
+                      ),
                     ),
                   );
                 },

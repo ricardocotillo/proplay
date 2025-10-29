@@ -77,4 +77,13 @@ class SessionService {
       rethrow;
     }
   }
+
+  Future<void> deleteSession(String sessionId) async {
+    try {
+      await _firestore.collection('liveSessions').doc(sessionId).delete();
+    } catch (e) {
+      // TODO: Handle errors appropriately
+      rethrow;
+    }
+  }
 }

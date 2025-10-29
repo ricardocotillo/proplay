@@ -15,3 +15,12 @@ class LoadSessions extends SessionEvent {
   @override
   List<Object> get props => [groupId];
 }
+
+class DeleteSession extends SessionEvent {
+  final String sessionId;
+
+  const DeleteSession(this.sessionId);
+
+  @override
+  List<Object> get props => [sessionId];
+}
