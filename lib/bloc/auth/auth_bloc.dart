@@ -18,10 +18,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required AuthService authService,
     required UserService userService,
     required GroupService groupService,
-  })  : _authService = authService,
-        _userService = userService,
-        _groupService = groupService,
-        super(AuthInitial()) {
+  }) : _authService = authService,
+       _userService = userService,
+       _groupService = groupService,
+       super(AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
     on<AuthRegisterRequested>(_onAuthRegisterRequested);
@@ -130,7 +130,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           // Group not found, but registration is successful
           emit(
             AuthSuccessWithInfo(
-              message: 'Usuário registrado com sucesso, mas o código do grupo não foi encontrado.',
+              message:
+                  'Usuário registrado com sucesso, mas o código do grupo não foi encontrado.',
               firebaseUser: userCredential.user!,
               userModel: user,
             ),
@@ -166,8 +167,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         final displayName = firebaseUser.displayName ?? '';
         final nameParts = displayName.split(' ');
         final firstName = nameParts.isNotEmpty ? nameParts.first : '';
-        final lastName =
-            nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+        final lastName = nameParts.length > 1
+            ? nameParts.sublist(1).join(' ')
+            : '';
 
         userModel = UserModel(
           uid: firebaseUser.uid,
@@ -199,10 +201,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         }
       }
 
-      emit(
-        AuthAuthenticated(firebaseUser: firebaseUser, userModel: userModel),
-      );
+      emit(AuthAuthenticated(firebaseUser: firebaseUser, userModel: userModel));
     } catch (e) {
+      print(e);
       emit(AuthError(e.toString()));
       emit(AuthUnauthenticated());
     }

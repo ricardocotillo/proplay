@@ -124,12 +124,15 @@ class MyApp extends StatelessWidget {
               redirect: (context, state) {
                 final loggedIn = authState is AuthAuthenticated;
                 final loggingIn = state.matchedLocation == '/login';
+                final registering = state.matchedLocation == '/registration';
 
-                if (!loggedIn) {
+                // Allow access to login and registration when not logged in
+                if (!loggedIn && !loggingIn && !registering) {
                   return '/login';
                 }
 
-                if (loggingIn) {
+                // Redirect to home if already logged in and trying to access auth screens
+                if (loggedIn && (loggingIn || registering)) {
                   return '/';
                 }
 

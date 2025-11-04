@@ -5,6 +5,13 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
+  AuthService() {
+    _googleSignIn.initialize(
+      clientId:
+          '979151294493-f8e9dc74bna070m7q5n5inst6iigt5nl.apps.googleusercontent.com',
+    );
+  }
+
   // Get current user
   User? get currentUser => _auth.currentUser;
 
