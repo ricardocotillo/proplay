@@ -78,6 +78,7 @@ class SessionDetailScreen extends StatelessWidget {
             final isInWaitingList = isLoaded
                 ? state.isCurrentUserInWaitingList
                 : false;
+            final isOwnerOrAdmin = isLoaded ? state.isOwnerOrAdmin : false;
 
             final players = session.players ?? [];
             final waitingList = session.waitingList ?? [];
@@ -213,6 +214,7 @@ class SessionDetailScreen extends StatelessWidget {
                                   player,
                                   index + 1,
                                   false,
+                                  isOwnerOrAdmin,
                                 );
                               }),
                             ],
@@ -241,6 +243,7 @@ class SessionDetailScreen extends StatelessWidget {
                                   player,
                                   index + 1,
                                   true,
+                                  isOwnerOrAdmin,
                                 );
                               }),
                             ],
@@ -417,6 +420,7 @@ class SessionDetailScreen extends StatelessWidget {
     SessionUserModel player,
     int position,
     bool isWaitingList,
+    bool isOwnerOrAdmin,
   ) {
     final initials = '${player.firstName[0]}${player.lastName[0]}'
         .toUpperCase();
@@ -492,11 +496,94 @@ class SessionDetailScreen extends StatelessWidget {
           ],
         ],
       ),
-      trailing: isWaitingList
-          ? Icon(Icons.hourglass_empty, color: Colors.orange[700], size: 20)
-          : player.isConfirmed
-          ? Icon(Icons.check_circle, color: Colors.green[700], size: 20)
-          : Icon(Icons.pending, color: Colors.orange[700], size: 20),
+      trailing: isOwnerOrAdmin
+          ? PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert, size: 20),
+              onSelected: (value) {
+                if (value == 'view_receipt') {
+                  if (player.receiptUrl != null && player.receiptUrl!.isNotEmpty) {
+                    context.read<SessionDetailBloc>().add(
+                      ViewReceipt(player.receiptUrl!),
+                    );
+                  }
+                } else if (value == 'remove') {
+                  _showRemoveUserDialog(context, player);
+                } else if (value == 'move_to_waiting') {
+                  _showMoveUserDialog(context, player, toWaitingList: true);
+                } else if (value == 'move_to_players') {
+                  _showMoveUserDialog(context, player, toWaitingList: false);
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                final items = <PopupMenuEntry<String>>[];
+
+                // View receipt option (only if receipt exists)
+                if (player.receiptUrl != null && player.receiptUrl!.isNotEmpty) {
+                  items.add(
+                    const PopupMenuItem<String>(
+                      value: 'view_receipt',
+                      child: Row(
+                        children: [
+                          Icon(Icons.receipt, size: 18),
+                          SizedBox(width: 8),
+                          Text('Ver comprobante'),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                // Move between lists options
+                if (isWaitingList) {
+                  items.add(
+                    const PopupMenuItem<String>(
+                      value: 'move_to_players',
+                      child: Row(
+                        children: [
+                          Icon(Icons.arrow_upward, size: 18, color: Colors.green),
+                          SizedBox(width: 8),
+                          Text('Mover a Jugadores'),
+                        ],
+                      ),
+                    ),
+                  );
+                } else {
+                  items.add(
+                    const PopupMenuItem<String>(
+                      value: 'move_to_waiting',
+                      child: Row(
+                        children: [
+                          Icon(Icons.arrow_downward, size: 18, color: Colors.orange),
+                          SizedBox(width: 8),
+                          Text('Mover a Lista de Espera'),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                // Remove option
+                items.add(
+                  const PopupMenuItem<String>(
+                    value: 'remove',
+                    child: Row(
+                      children: [
+                        Icon(Icons.remove_circle, size: 18, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Eliminar', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                );
+
+                return items;
+              },
+            )
+          : isWaitingList
+              ? Icon(Icons.hourglass_empty, color: Colors.orange[700], size: 20)
+              : player.isConfirmed
+                  ? Icon(Icons.check_circle, color: Colors.green[700], size: 20)
+                  : Icon(Icons.pending, color: Colors.orange[700], size: 20),
     );
   }
 
@@ -547,6 +634,78 @@ class SessionDetailScreen extends StatelessWidget {
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Salir'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRemoveUserDialog(BuildContext context, SessionUserModel player) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Eliminar Jugador'),
+        content: Text(
+          '¿Estás seguro de que quieres eliminar a ${player.firstName} ${player.lastName} de esta pichanga?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.read<SessionDetailBloc>().add(
+                RemoveUserFromSession(player.uid),
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMoveUserDialog(
+    BuildContext context,
+    SessionUserModel player, {
+    required bool toWaitingList,
+  }) {
+    final String action = toWaitingList
+        ? 'mover a la lista de espera'
+        : 'mover a la lista de jugadores';
+    final String title = toWaitingList
+        ? 'Mover a Lista de Espera'
+        : 'Mover a Jugadores';
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(title),
+        content: Text(
+          '¿Estás seguro de que quieres $action a ${player.firstName} ${player.lastName}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              if (toWaitingList) {
+                context.read<SessionDetailBloc>().add(
+                  MoveUserToWaitingList(player.uid),
+                );
+              } else {
+                context.read<SessionDetailBloc>().add(
+                  MoveUserToPlayers(player.uid),
+                );
+              }
+            },
+            child: const Text('Confirmar'),
           ),
         ],
       ),

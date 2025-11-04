@@ -282,4 +282,135 @@ class SessionService {
       rethrow;
     }
   }
+
+  /// Admin: Remove a user from the session
+  Future<void> removeUserFromSession({
+    required String sessionId,
+    required String userId,
+  }) async {
+    try {
+      await _firestore.runTransaction((transaction) async {
+        final sessionRef = _firestore.collection('liveSessions').doc(sessionId);
+        final sessionDoc = await transaction.get(sessionRef);
+
+        if (!sessionDoc.exists) {
+          throw Exception('Session not found');
+        }
+
+        final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
+
+        final players = session.players ?? [];
+        final waitingList = session.waitingList ?? [];
+
+        // Remove from players list
+        final updatedPlayers = players.where((p) => p.uid != userId).toList();
+
+        // Remove from waiting list
+        final updatedWaitingList = waitingList.where((p) => p.uid != userId).toList();
+
+        transaction.update(sessionRef, {
+          'players': updatedPlayers.map((p) => p.toMap()).toList(),
+          'playerCount': updatedPlayers.length,
+          'waitingList': updatedWaitingList.map((p) => p.toMap()).toList(),
+        });
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Admin: Move user from players to waiting list
+  Future<void> moveUserToWaitingList({
+    required String sessionId,
+    required String userId,
+  }) async {
+    try {
+      await _firestore.runTransaction((transaction) async {
+        final sessionRef = _firestore.collection('liveSessions').doc(sessionId);
+        final sessionDoc = await transaction.get(sessionRef);
+
+        if (!sessionDoc.exists) {
+          throw Exception('Session not found');
+        }
+
+        final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
+
+        final players = session.players ?? [];
+        final waitingList = session.waitingList ?? [];
+
+        // Find user in players list
+        final userToMove = players.firstWhere(
+          (p) => p.uid == userId,
+          orElse: () => throw Exception('User not found in players list'),
+        );
+
+        // Check if waiting list is full
+        if (waitingList.length >= session.waitingListCount) {
+          throw Exception('Waiting list is full');
+        }
+
+        // Remove from players and add to waiting list
+        final updatedPlayers = players.where((p) => p.uid != userId).toList();
+        final updatedWaitingList = [...waitingList, userToMove];
+
+        transaction.update(sessionRef, {
+          'players': updatedPlayers.map((p) => p.toMap()).toList(),
+          'playerCount': updatedPlayers.length,
+          'waitingList': updatedWaitingList.map((p) => p.toMap()).toList(),
+        });
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Admin: Move user from waiting list to players
+  Future<void> moveUserToPlayers({
+    required String sessionId,
+    required String userId,
+  }) async {
+    try {
+      await _firestore.runTransaction((transaction) async {
+        final sessionRef = _firestore.collection('liveSessions').doc(sessionId);
+        final sessionDoc = await transaction.get(sessionRef);
+
+        if (!sessionDoc.exists) {
+          throw Exception('Session not found');
+        }
+
+        final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
+
+        final players = session.players ?? [];
+        final waitingList = session.waitingList ?? [];
+
+        // Find user in waiting list
+        final userToMove = waitingList.firstWhere(
+          (p) => p.uid == userId,
+          orElse: () => throw Exception('User not found in waiting list'),
+        );
+
+        // Check if players list is full
+        if (players.length >= session.maxPlayers) {
+          throw Exception('Players list is full');
+        }
+
+        // Remove from waiting list and add to players
+        final updatedWaitingList = waitingList.where((p) => p.uid != userId).toList();
+        final updatedPlayers = [...players, userToMove];
+
+        transaction.update(sessionRef, {
+          'players': updatedPlayers.map((p) => p.toMap()).toList(),
+          'playerCount': updatedPlayers.length,
+          'waitingList': updatedWaitingList.map((p) => p.toMap()).toList(),
+        });
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Get group by ID to check admin status
+  Future<DocumentSnapshot> getGroup(String groupId) async {
+    return await _firestore.collection('groups').doc(groupId).get();
+  }
 }

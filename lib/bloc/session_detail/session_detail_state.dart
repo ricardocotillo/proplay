@@ -23,11 +23,13 @@ class SessionDetailLoaded extends SessionDetailState {
   final SessionModel session;
   final bool isCurrentUserJoined;
   final bool isCurrentUserInWaitingList;
+  final bool isOwnerOrAdmin;
 
   const SessionDetailLoaded({
     required this.session,
     required this.isCurrentUserJoined,
     required this.isCurrentUserInWaitingList,
+    this.isOwnerOrAdmin = false,
   });
 
   @override
@@ -35,6 +37,7 @@ class SessionDetailLoaded extends SessionDetailState {
         session,
         isCurrentUserJoined,
         isCurrentUserInWaitingList,
+        isOwnerOrAdmin,
       ];
 }
 

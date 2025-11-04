@@ -31,3 +31,43 @@ class LeaveSession extends SessionDetailEvent {
 class UploadReceipt extends SessionDetailEvent {
   const UploadReceipt();
 }
+
+/// View a player's receipt (admin only)
+class ViewReceipt extends SessionDetailEvent {
+  final String receiptUrl;
+
+  const ViewReceipt(this.receiptUrl);
+
+  @override
+  List<Object?> get props => [receiptUrl];
+}
+
+/// Remove a user from the session (admin only)
+class RemoveUserFromSession extends SessionDetailEvent {
+  final String userId;
+
+  const RemoveUserFromSession(this.userId);
+
+  @override
+  List<Object?> get props => [userId];
+}
+
+/// Move user from players to waiting list (admin only)
+class MoveUserToWaitingList extends SessionDetailEvent {
+  final String userId;
+
+  const MoveUserToWaitingList(this.userId);
+
+  @override
+  List<Object?> get props => [userId];
+}
+
+/// Move user from waiting list to players (admin only)
+class MoveUserToPlayers extends SessionDetailEvent {
+  final String userId;
+
+  const MoveUserToPlayers(this.userId);
+
+  @override
+  List<Object?> get props => [userId];
+}
