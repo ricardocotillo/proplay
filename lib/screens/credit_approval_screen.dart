@@ -269,7 +269,7 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
         final userRef = FirebaseFirestore.instance
             .collection('users')
             .doc(targetUserId);
-        transaction.update(userRef, {'credit': newCreditAmount});
+        transaction.update(userRef, {'credits': newCreditAmount});
       });
 
       // Remove from local list
