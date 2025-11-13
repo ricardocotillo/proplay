@@ -6,6 +6,7 @@ import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/screens/credit_history_screen.dart';
+import 'package:proplay/screens/credit_approval_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -96,6 +97,32 @@ class AppDrawer extends StatelessWidget {
                     );
                   },
                 ),
+                // Superuser only: Approve credits
+                if (user?.superUser == true) ...[
+                  const Divider(),
+                  ListTile(
+                    leading: Icon(
+                      Icons.admin_panel_settings,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    title: Text(
+                      'Aprobar Créditos',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    onTap: () {
+                      context.pop(); // Close drawer
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreditApprovalScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.logout, color: Colors.red),
