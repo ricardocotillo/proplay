@@ -134,10 +134,9 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
 
         if (userDoc.exists) {
           final user = UserModel.fromDocument(userDoc);
-          _approvalItems.add(_CreditApprovalItem(
-            creditHistory: creditHistory,
-            user: user,
-          ));
+          _approvalItems.add(
+            _CreditApprovalItem(creditHistory: creditHistory, user: user),
+          );
         }
       } catch (e) {
         debugPrint('Error loading user data: $e');
@@ -180,6 +179,131 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
     }
   }
 
+  Future<void> _showApprovalDialog(_CreditApprovalItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Aprobar Créditos'),
+        content: Text(
+          '¿Confirmas que quieres aprobar ${item.creditHistory.creditAmount} créditos para ${item.user.fullName}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Aprobar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await _approveCredit(item);
+    }
+  }
+
+  Future<void> _approveCredit(_CreditApprovalItem item) async {
+    try {
+      // Show loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 16),
+                Text('Aprobando créditos...'),
+              ],
+            ),
+            duration: Duration(seconds: 10),
+          ),
+        );
+      }
+
+      // IMPORTANT: Get userId from creditHistory entry to ensure correct user is updated
+      final targetUserId = item.creditHistory.userId;
+      final creditsToAdd = item.creditHistory.creditAmount;
+
+      // Verify user exists before making any changes
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(targetUserId)
+          .get();
+
+      if (!userDoc.exists) {
+        throw Exception('Usuario no encontrado con ID: $targetUserId');
+      }
+
+      // Verify the userId matches what we expect
+      if (targetUserId != item.user.uid) {
+        throw Exception('Error de verificación: ID de usuario no coincide');
+      }
+
+      final currentUser = UserModel.fromDocument(userDoc);
+      final currentCredits = currentUser.credits;
+      final newCreditAmount = currentCredits + creditsToAdd;
+
+      debugPrint('Approving credits:');
+      debugPrint('  User ID: $targetUserId');
+      debugPrint('  User Name: ${currentUser.fullName}');
+      debugPrint('  Current Credits: $currentCredits');
+      debugPrint('  Adding Credits: $creditsToAdd');
+      debugPrint('  New Total: $newCreditAmount');
+
+      // Use Firestore transaction to ensure atomic operation
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // Update credit history status to 'approved'
+        final creditHistoryRef = FirebaseFirestore.instance
+            .collection('creditHistory')
+            .doc(item.creditHistory.id);
+        transaction.update(creditHistoryRef, {'status': 'approved'});
+
+        // Update user's credit amount using the userId from creditHistory
+        final userRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(targetUserId);
+        transaction.update(userRef, {'credit': newCreditAmount});
+      });
+
+      // Remove from local list
+      if (mounted) {
+        setState(() {
+          _approvalItems.remove(item);
+        });
+
+        // Hide loading and show success
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Créditos aprobados exitosamente para ${currentUser.fullName} (${currentCredits} → ${newCreditAmount})',
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al aprobar créditos: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
@@ -209,9 +333,7 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Aprobar Créditos'),
-      ),
+      appBar: AppBar(title: const Text('Aprobar Créditos')),
       body: _approvalItems.isEmpty && !_isLoading
           ? Center(
               child: Column(
@@ -225,10 +347,7 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
                   const SizedBox(height: 16),
                   Text(
                     'No hay solicitudes pendientes',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                   ),
                 ],
               ),
@@ -265,16 +384,16 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
                           Row(
                             children: [
                               CircleAvatar(
-                                backgroundColor: Theme.of(context)
-                                    .colorScheme
-                                    .primary
-                                    .withOpacity(0.2),
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary.withOpacity(0.2),
                                 child: Text(
                                   '${user.firstName[0]}${user.lastName[0]}'
                                       .toUpperCase(),
                                   style: TextStyle(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -316,7 +435,8 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
                           _DetailRow(
                             icon: Icons.payments,
                             label: 'Monto Pagado',
-                            value: 'S/ ${creditHistory.amountPaid.toStringAsFixed(2)}',
+                            value:
+                                'S/ ${creditHistory.amountPaid.toStringAsFixed(2)}',
                           ),
                           const SizedBox(height: 8),
                           _DetailRow(
@@ -353,18 +473,23 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: _getStatusColor(creditHistory.status)
-                                      .withOpacity(0.2),
+                                  color: _getStatusColor(
+                                    creditHistory.status,
+                                  ).withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: _getStatusColor(creditHistory.status),
+                                    color: _getStatusColor(
+                                      creditHistory.status,
+                                    ),
                                     width: 1,
                                   ),
                                 ),
                                 child: Text(
                                   _getStatusText(creditHistory.status),
                                   style: TextStyle(
-                                    color: _getStatusColor(creditHistory.status),
+                                    color: _getStatusColor(
+                                      creditHistory.status,
+                                    ),
                                     fontWeight: FontWeight.w600,
                                     fontSize: 12,
                                   ),
@@ -377,11 +502,31 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton.icon(
-                              onPressed: () => _openReceipt(creditHistory.receiptUrl),
+                              onPressed: () =>
+                                  _openReceipt(creditHistory.receiptUrl),
                               icon: const Icon(Icons.receipt_long),
                               label: const Text('Ver Recibo'),
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Approve button
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _showApprovalDialog(item),
+                              icon: const Icon(Icons.check_circle),
+                              label: const Text('Aprobar'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                               ),
                             ),
                           ),
@@ -400,10 +545,7 @@ class _CreditApprovalItem {
   final CreditHistoryModel creditHistory;
   final UserModel user;
 
-  _CreditApprovalItem({
-    required this.creditHistory,
-    required this.user,
-  });
+  _CreditApprovalItem({required this.creditHistory, required this.user});
 }
 
 class _DetailRow extends StatelessWidget {
@@ -421,27 +563,17 @@ class _DetailRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 20,
-          color: Colors.grey[600],
-        ),
+        Icon(icon, size: 20, color: Colors.grey[600]),
         const SizedBox(width: 12),
         Text(
           '$label:',
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Colors.grey[600], fontSize: 14),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
         ),
       ],

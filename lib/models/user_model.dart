@@ -71,7 +71,7 @@ class UserModel {
   final String lastName;
   final String? profileImageUrl;
   final DateTime createdAt;
-  final int credit;
+  final int credits;
   final bool superUser;
 
   UserModel({
@@ -81,7 +81,7 @@ class UserModel {
     required this.lastName,
     this.profileImageUrl,
     required this.createdAt,
-    this.credit = 0,
+    this.credits = 0,
     this.superUser = false,
   });
 
@@ -94,7 +94,7 @@ class UserModel {
       'lastName': lastName,
       'profileImageUrl': profileImageUrl,
       'createdAt': Timestamp.fromDate(createdAt),
-      'credit': credit,
+      'credits': credits,
       'superUser': superUser,
     };
   }
@@ -108,7 +108,7 @@ class UserModel {
       lastName: map['lastName'] ?? '',
       profileImageUrl: map['profileImageUrl'],
       createdAt: (map['createdAt'] as Timestamp).toDate(),
-      credit: map['credit'] ?? 0,
+      credits: map['credits'] ?? 0,
       superUser: map['superUser'] ?? false,
     );
   }
