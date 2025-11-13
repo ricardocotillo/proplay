@@ -62,9 +62,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         return;
       }
 
-      if (_joinDate == null ||
-          _cutOffDate == null ||
-          _eventDate == null ||
+      if (_eventDate == null ||
           _eventTime == null ||
           _eventEndDate == null ||
           _eventEndTime == null) {
