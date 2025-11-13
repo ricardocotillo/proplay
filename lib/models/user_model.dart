@@ -71,6 +71,7 @@ class UserModel {
   final String lastName;
   final String? profileImageUrl;
   final DateTime createdAt;
+  final int credit;
 
   UserModel({
     required this.uid,
@@ -79,6 +80,7 @@ class UserModel {
     required this.lastName,
     this.profileImageUrl,
     required this.createdAt,
+    this.credit = 0,
   });
 
   // Convert UserModel to Map for Firestore
@@ -90,6 +92,7 @@ class UserModel {
       'lastName': lastName,
       'profileImageUrl': profileImageUrl,
       'createdAt': Timestamp.fromDate(createdAt),
+      'credit': credit,
     };
   }
 
@@ -102,6 +105,7 @@ class UserModel {
       lastName: map['lastName'] ?? '',
       profileImageUrl: map['profileImageUrl'],
       createdAt: (map['createdAt'] as Timestamp).toDate(),
+      credit: map['credit'] ?? 0,
     );
   }
 

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -6,10 +8,13 @@ class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   AuthService() {
-    _googleSignIn.initialize(
-      clientId:
-          '979151294493-f8e9dc74bna070m7q5n5inst6iigt5nl.apps.googleusercontent.com',
-    );
+    // check if we are in android device
+    if (Platform.isAndroid) {
+      _googleSignIn.initialize(
+        clientId:
+            '979151294493-f8e9dc74bna070m7q5n5inst6iigt5nl.apps.googleusercontent.com',
+      );
+    }
   }
 
   // Get current user

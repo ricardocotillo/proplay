@@ -54,6 +54,40 @@ class _HomeScreenState extends State<HomeScreen> {
           icon: const Icon(Icons.notifications_none),
         ),
         actions: [
+          GestureDetector(
+            onTap: _showAddCreditsDialog,
+            child: Container(
+              margin: const EdgeInsets.only(right: 12.0),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.account_balance_wallet,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${user?.credit ?? 0}',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(
@@ -368,6 +402,31 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             },
             child: const Text('Unirse'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddCreditsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Agregar Créditos'),
+        content: const Text(
+          '¿Deseas agregar más créditos a tu cuenta?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Navigate to add credits screen
+            },
+            child: const Text('Agregar'),
           ),
         ],
       ),
