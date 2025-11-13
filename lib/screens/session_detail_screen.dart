@@ -7,6 +7,7 @@ import 'package:proplay/bloc/session_detail/session_detail_event.dart';
 import 'package:proplay/bloc/session_detail/session_detail_state.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
+import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/group_service.dart';
@@ -281,9 +282,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                         )
                       : ElevatedButton.icon(
                           onPressed: () {
-                            context.read<SessionDetailBloc>().add(
-                              const JoinSession(),
-                            );
+                            _showJoinConfirmationDialog(context, session);
                           },
                           icon: const Icon(Icons.add),
                           label: const Text('Unirse a la Pichanga'),
@@ -431,6 +430,60 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
     } else {
       return DateFormat.MMMd().format(joinedAt);
     }
+  }
+
+  void _showJoinConfirmationDialog(BuildContext context, SessionModel session) {
+    final cost = UserModel.formatCredits(session.costPerPlayer);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Unirse a la Pichanga'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Se te debitarán $cost créditos de tu cuenta.',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.warning_amber, color: Colors.orange, size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'IMPORTANTE: Si decides salir de esta pichanga después de unirte, los créditos NO serán devueltos.',
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text('¿Estás seguro de que quieres continuar?'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.read<SessionDetailBloc>().add(const JoinSession());
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.green),
+            child: const Text('Unirse'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showLeaveConfirmationDialog(BuildContext context) {
