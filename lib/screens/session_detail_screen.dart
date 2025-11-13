@@ -5,16 +5,26 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:proplay/bloc/session_detail/session_detail_bloc.dart';
 import 'package:proplay/bloc/session_detail/session_detail_event.dart';
 import 'package:proplay/bloc/session_detail/session_detail_state.dart';
+import 'package:proplay/bloc/auth/auth_bloc.dart';
+import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/utils/auth_helper.dart';
 
-class SessionDetailScreen extends StatelessWidget {
+class SessionDetailScreen extends StatefulWidget {
   final String sessionId;
 
   const SessionDetailScreen({super.key, required this.sessionId});
+
+  @override
+  State<SessionDetailScreen> createState() => _SessionDetailScreenState();
+}
+
+class _SessionDetailScreenState extends State<SessionDetailScreen> {
+  bool _wasProcessingJoin = false;
+  bool _wasProcessingLeave = false;
 
   @override
   Widget build(BuildContext context) {
@@ -25,12 +35,39 @@ class SessionDetailScreen extends StatelessWidget {
         sessionService: SessionService(),
         groupService: GroupService(userService: UserService()),
         currentUser: currentUser,
-      )..add(LoadSessionDetail(sessionId)),
+      )..add(LoadSessionDetail(widget.sessionId)),
       child: Scaffold(
         appBar: AppBar(title: const Text('Detalles de la Pichanga')),
         body: BlocConsumer<SessionDetailBloc, SessionDetailState>(
           listener: (context, state) {
+            // Track if we're processing a join or leave action
+            if (state is SessionDetailProcessing) {
+              if (state.action == 'joining') {
+                _wasProcessingJoin = true;
+              } else if (state.action == 'leaving') {
+                _wasProcessingLeave = true;
+              }
+            }
+
+            // If we successfully joined, refresh user credits
+            if (state is SessionDetailLoaded &&
+                _wasProcessingJoin &&
+                state.isCurrentUserJoined) {
+              _wasProcessingJoin = false;
+              context.read<AuthBloc>().add(const AuthRefreshUserRequested());
+            }
+
+            // If we successfully left, refresh user credits
+            if (state is SessionDetailLoaded &&
+                _wasProcessingLeave &&
+                !state.isCurrentUserJoined) {
+              _wasProcessingLeave = false;
+              context.read<AuthBloc>().add(const AuthRefreshUserRequested());
+            }
+
             if (state is SessionDetailError) {
+              _wasProcessingJoin = false;
+              _wasProcessingLeave = false;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
