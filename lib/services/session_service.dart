@@ -53,8 +53,6 @@ class SessionService {
       cutOffDate: template.cutOffDate.toDate(),
       status: 'OPEN',
       playerCount: 0,
-      waitingListCount:
-          template.maxWaitingList, // This is max capacity, not current count
       maxPlayers: template.maxPlayers,
       costPerPlayer: template.costPerPlayer ?? 0,
     );
@@ -73,21 +71,23 @@ class SessionService {
 
       return snapshot.docs.map((doc) {
         final data = doc.data();
-        // Only include fields needed for list view, exclude players and waitingList
+        // Only include fields needed for list view, exclude players
         final filteredData = {
           'id': doc.id,
           'templateId': data['templateId'] ?? '',
           'groupId': data['groupId'],
           'title': data['title'],
           'eventDate': data['eventDate'],
-          'eventEndDate': data['eventEndDate'] ?? data['eventDate'], // Fallback to eventDate
-          'cutOffDate': data['cutOffDate'] ?? data['eventDate'], // Fallback to eventDate
+          'eventEndDate':
+              data['eventEndDate'] ??
+              data['eventDate'], // Fallback to eventDate
+          'cutOffDate':
+              data['cutOffDate'] ?? data['eventDate'], // Fallback to eventDate
           'status': data['status'],
           'playerCount': data['playerCount'] ?? 0,
-          'waitingListCount': data['waitingListCount'] ?? 0,
           'maxPlayers': data['maxPlayers'],
           'costPerPlayer': data['costPerPlayer'] ?? 0,
-          // Explicitly exclude players and waitingList
+          // Explicitly exclude players
         };
         return SessionModel.fromMap(doc.id, filteredData);
       }).toList();
@@ -152,10 +152,8 @@ class SessionService {
 
         // Check if user is already in the session or waiting list
         final players = session.players ?? [];
-        final waitingList = session.waitingList ?? [];
 
-        if (players.any((p) => p.uid == user.uid) ||
-            waitingList.any((p) => p.uid == user.uid)) {
+        if (players.any((p) => p.uid == user.uid)) {
           throw Exception('You have already joined this session');
         }
 
@@ -165,9 +163,7 @@ class SessionService {
 
         // Update user's credits
         final userRef = _firestore.collection('users').doc(user.uid);
-        transaction.update(userRef, {
-          'credits': newCreditsFormatted,
-        });
+        transaction.update(userRef, {'credits': newCreditsFormatted});
 
         // Check if there's space in the main player list
         if (players.length < session.maxPlayers) {
@@ -177,14 +173,8 @@ class SessionService {
             'players': updatedPlayers.map((p) => p.toMap()).toList(),
             'playerCount': updatedPlayers.length,
           });
-        } else if (waitingList.length < session.waitingListCount) {
-          // Add to waiting list (waitingListCount is the max capacity)
-          final updatedWaitingList = [...waitingList, sessionUser];
-          transaction.update(sessionRef, {
-            'waitingList': updatedWaitingList.map((p) => p.toMap()).toList(),
-          });
         } else {
-          throw Exception('Session is full, including waiting list');
+          throw Exception('Session is full');
         }
       });
     } catch (e) {
@@ -206,32 +196,14 @@ class SessionService {
         final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
 
         final players = session.players ?? [];
-        final waitingList = session.waitingList ?? [];
 
         // Check if user is in the main player list
         if (players.any((p) => p.uid == userId)) {
           var updatedPlayers = players.where((p) => p.uid != userId).toList();
-          var updatedWaitingList = List<SessionUserModel>.from(waitingList);
-
-          // If there's someone on the waiting list, promote them
-          if (updatedWaitingList.isNotEmpty) {
-            final promotedPlayer = updatedWaitingList.removeAt(0);
-            updatedPlayers.add(promotedPlayer);
-          }
 
           transaction.update(sessionRef, {
             'players': updatedPlayers.map((p) => p.toMap()).toList(),
             'playerCount': updatedPlayers.length,
-            'waitingList': updatedWaitingList.map((p) => p.toMap()).toList(),
-          });
-        }
-        // Check if user is in the waiting list
-        else if (waitingList.any((p) => p.uid == userId)) {
-          final updatedWaitingList = waitingList
-              .where((p) => p.uid != userId)
-              .toList();
-          transaction.update(sessionRef, {
-            'waitingList': updatedWaitingList.map((p) => p.toMap()).toList(),
           });
         } else {
           throw Exception('You are not part of this session');
@@ -260,7 +232,6 @@ class SessionService {
         final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
 
         final players = session.players ?? [];
-        final waitingList = session.waitingList ?? [];
 
         // Find the user in either players or waiting list and update
         bool found = false;
@@ -269,22 +240,7 @@ class SessionService {
         final updatedPlayers = players.map((player) {
           if (player.uid == userId) {
             found = true;
-            return player.copyWith(
-              receiptUrl: receiptUrl,
-              isConfirmed: true,
-            );
-          }
-          return player;
-        }).toList();
-
-        // Check waiting list if not found in players
-        final updatedWaitingList = waitingList.map((player) {
-          if (player.uid == userId) {
-            found = true;
-            return player.copyWith(
-              receiptUrl: receiptUrl,
-              isConfirmed: true,
-            );
+            return player.copyWith(receiptUrl: receiptUrl, isConfirmed: true);
           }
           return player;
         }).toList();
@@ -296,7 +252,6 @@ class SessionService {
         // Update Firestore
         transaction.update(sessionRef, {
           'players': updatedPlayers.map((p) => p.toMap()).toList(),
-          'waitingList': updatedWaitingList.map((p) => p.toMap()).toList(),
         });
       });
     } catch (e) {
@@ -321,117 +276,17 @@ class SessionService {
         final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
 
         final players = session.players ?? [];
-        final waitingList = session.waitingList ?? [];
 
         // Remove from players list
         final updatedPlayers = players.where((p) => p.uid != userId).toList();
 
-        // Remove from waiting list
-        final updatedWaitingList = waitingList.where((p) => p.uid != userId).toList();
-
         transaction.update(sessionRef, {
           'players': updatedPlayers.map((p) => p.toMap()).toList(),
           'playerCount': updatedPlayers.length,
-          'waitingList': updatedWaitingList.map((p) => p.toMap()).toList(),
         });
       });
     } catch (e) {
       rethrow;
     }
-  }
-
-  /// Admin: Move user from players to waiting list
-  Future<void> moveUserToWaitingList({
-    required String sessionId,
-    required String userId,
-  }) async {
-    try {
-      await _firestore.runTransaction((transaction) async {
-        final sessionRef = _firestore.collection('liveSessions').doc(sessionId);
-        final sessionDoc = await transaction.get(sessionRef);
-
-        if (!sessionDoc.exists) {
-          throw Exception('Session not found');
-        }
-
-        final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
-
-        final players = session.players ?? [];
-        final waitingList = session.waitingList ?? [];
-
-        // Find user in players list
-        final userToMove = players.firstWhere(
-          (p) => p.uid == userId,
-          orElse: () => throw Exception('User not found in players list'),
-        );
-
-        // Check if waiting list is full
-        if (waitingList.length >= session.waitingListCount) {
-          throw Exception('Waiting list is full');
-        }
-
-        // Remove from players and add to waiting list
-        final updatedPlayers = players.where((p) => p.uid != userId).toList();
-        final updatedWaitingList = [...waitingList, userToMove];
-
-        transaction.update(sessionRef, {
-          'players': updatedPlayers.map((p) => p.toMap()).toList(),
-          'playerCount': updatedPlayers.length,
-          'waitingList': updatedWaitingList.map((p) => p.toMap()).toList(),
-        });
-      });
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Admin: Move user from waiting list to players
-  Future<void> moveUserToPlayers({
-    required String sessionId,
-    required String userId,
-  }) async {
-    try {
-      await _firestore.runTransaction((transaction) async {
-        final sessionRef = _firestore.collection('liveSessions').doc(sessionId);
-        final sessionDoc = await transaction.get(sessionRef);
-
-        if (!sessionDoc.exists) {
-          throw Exception('Session not found');
-        }
-
-        final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
-
-        final players = session.players ?? [];
-        final waitingList = session.waitingList ?? [];
-
-        // Find user in waiting list
-        final userToMove = waitingList.firstWhere(
-          (p) => p.uid == userId,
-          orElse: () => throw Exception('User not found in waiting list'),
-        );
-
-        // Check if players list is full
-        if (players.length >= session.maxPlayers) {
-          throw Exception('Players list is full');
-        }
-
-        // Remove from waiting list and add to players
-        final updatedWaitingList = waitingList.where((p) => p.uid != userId).toList();
-        final updatedPlayers = [...players, userToMove];
-
-        transaction.update(sessionRef, {
-          'players': updatedPlayers.map((p) => p.toMap()).toList(),
-          'playerCount': updatedPlayers.length,
-          'waitingList': updatedWaitingList.map((p) => p.toMap()).toList(),
-        });
-      });
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Get group by ID to check admin status
-  Future<DocumentSnapshot> getGroup(String groupId) async {
-    return await _firestore.collection('groups').doc(groupId).get();
   }
 }

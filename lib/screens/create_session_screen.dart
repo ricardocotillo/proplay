@@ -32,7 +32,6 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _maxPlayersController = TextEditingController();
-  final _maxWaitingListController = TextEditingController();
   final _totalCostController = TextEditingController();
 
   DateTime? _joinDate;
@@ -47,7 +46,6 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   void dispose() {
     _titleController.dispose();
     _maxPlayersController.dispose();
-    _maxWaitingListController.dispose();
     _totalCostController.dispose();
     super.dispose();
   }
@@ -102,7 +100,6 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         eventDate: Timestamp.fromDate(eventDateTime),
         eventEndDate: Timestamp.fromDate(eventEndDateTime),
         maxPlayers: int.parse(_maxPlayersController.text),
-        maxWaitingList: int.parse(_maxWaitingListController.text),
         totalCost: double.parse(_totalCostController.text),
         isRecurring: _isRecurring,
         rrule: _isRecurring ? 'FREQ=WEEKLY' : null,
@@ -184,17 +181,6 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                   keyboardType: TextInputType.number,
                   validator: (value) => value!.isEmpty
                       ? 'Por favor, ingresa el número de jugadores'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _maxWaitingListController,
-                  decoration: const InputDecoration(
-                    labelText: 'Máximo en lista de espera',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) => value!.isEmpty
-                      ? 'Por favor, ingresa el número máximo en lista de espera'
                       : null,
                 ),
                 const SizedBox(height: 16),

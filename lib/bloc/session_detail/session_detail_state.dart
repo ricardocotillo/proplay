@@ -22,23 +22,16 @@ class SessionDetailLoading extends SessionDetailState {
 class SessionDetailLoaded extends SessionDetailState {
   final SessionModel session;
   final bool isCurrentUserJoined;
-  final bool isCurrentUserInWaitingList;
   final bool isOwnerOrAdmin;
 
   const SessionDetailLoaded({
     required this.session,
     required this.isCurrentUserJoined,
-    required this.isCurrentUserInWaitingList,
     this.isOwnerOrAdmin = false,
   });
 
   @override
-  List<Object?> get props => [
-        session,
-        isCurrentUserJoined,
-        isCurrentUserInWaitingList,
-        isOwnerOrAdmin,
-      ];
+  List<Object?> get props => [session, isCurrentUserJoined, isOwnerOrAdmin];
 }
 
 /// Processing join/leave action
@@ -46,10 +39,7 @@ class SessionDetailProcessing extends SessionDetailState {
   final SessionModel session;
   final String action; // 'joining' or 'leaving'
 
-  const SessionDetailProcessing({
-    required this.session,
-    required this.action,
-  });
+  const SessionDetailProcessing({required this.session, required this.action});
 
   @override
   List<Object?> get props => [session, action];

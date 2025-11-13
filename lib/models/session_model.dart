@@ -12,11 +12,9 @@ class SessionModel extends Equatable {
   final DateTime cutOffDate;
   final String status;
   final int playerCount;
-  final int waitingListCount;
   final int maxPlayers;
   final double costPerPlayer;
   final List<SessionUserModel>? players;
-  final List<SessionUserModel>? waitingList;
 
   const SessionModel({
     required this.id,
@@ -28,11 +26,9 @@ class SessionModel extends Equatable {
     required this.cutOffDate,
     required this.status,
     required this.playerCount,
-    required this.waitingListCount,
     required this.maxPlayers,
     required this.costPerPlayer,
     this.players,
-    this.waitingList,
   });
 
   @override
@@ -46,11 +42,9 @@ class SessionModel extends Equatable {
     cutOffDate,
     status,
     playerCount,
-    waitingListCount,
     maxPlayers,
     costPerPlayer,
     players,
-    waitingList,
   ];
 
   SessionModel copyWith({
@@ -63,11 +57,9 @@ class SessionModel extends Equatable {
     DateTime? cutOffDate,
     String? status,
     int? playerCount,
-    int? waitingListCount,
     int? maxPlayers,
     double? costPerPlayer,
     List<SessionUserModel>? players,
-    List<SessionUserModel>? waitingList,
   }) {
     return SessionModel(
       id: id ?? this.id,
@@ -79,11 +71,9 @@ class SessionModel extends Equatable {
       cutOffDate: cutOffDate ?? this.cutOffDate,
       status: status ?? this.status,
       playerCount: playerCount ?? this.playerCount,
-      waitingListCount: waitingListCount ?? this.waitingListCount,
       maxPlayers: maxPlayers ?? this.maxPlayers,
       costPerPlayer: costPerPlayer ?? this.costPerPlayer,
       players: players ?? this.players,
-      waitingList: waitingList ?? this.waitingList,
     );
   }
 
@@ -97,12 +87,9 @@ class SessionModel extends Equatable {
       'cutOffDate': Timestamp.fromDate(cutOffDate),
       'status': status,
       'playerCount': playerCount,
-      'waitingListCount': waitingListCount,
       'maxPlayers': maxPlayers,
       'costPerPlayer': costPerPlayer,
       if (players != null) 'players': players!.map((p) => p.toMap()).toList(),
-      if (waitingList != null)
-        'waitingList': waitingList!.map((p) => p.toMap()).toList(),
     };
   }
 
@@ -117,16 +104,10 @@ class SessionModel extends Equatable {
       cutOffDate: (map['cutOffDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       status: map['status'] as String,
       playerCount: map['playerCount'] as int,
-      waitingListCount: map['waitingListCount'] as int,
       maxPlayers: map['maxPlayers'] as int,
       costPerPlayer: (map['costPerPlayer'] as num).toDouble(),
       players: map['players'] != null
           ? (map['players'] as List)
-                .map((p) => SessionUserModel.fromMap(p as Map<String, dynamic>))
-                .toList()
-          : null,
-      waitingList: map['waitingList'] != null
-          ? (map['waitingList'] as List)
                 .map((p) => SessionUserModel.fromMap(p as Map<String, dynamic>))
                 .toList()
           : null,

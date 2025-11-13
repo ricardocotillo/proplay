@@ -51,23 +51,3 @@ class RemoveUserFromSession extends SessionDetailEvent {
   @override
   List<Object?> get props => [userId];
 }
-
-/// Move user from players to waiting list (admin only)
-class MoveUserToWaitingList extends SessionDetailEvent {
-  final String userId;
-
-  const MoveUserToWaitingList(this.userId);
-
-  @override
-  List<Object?> get props => [userId];
-}
-
-/// Move user from waiting list to players (admin only)
-class MoveUserToPlayers extends SessionDetailEvent {
-  final String userId;
-
-  const MoveUserToPlayers(this.userId);
-
-  @override
-  List<Object?> get props => [userId];
-}

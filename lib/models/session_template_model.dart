@@ -12,7 +12,6 @@ class SessionTemplateModel extends Equatable {
   final Timestamp eventEndDate;
   final int? durationInMinutes;
   final int maxPlayers;
-  final int maxWaitingList;
   final double totalCost;
   final double? costPerPlayer;
   final bool isRecurring;
@@ -29,7 +28,6 @@ class SessionTemplateModel extends Equatable {
     required this.eventEndDate,
     this.durationInMinutes,
     required this.maxPlayers,
-    required this.maxWaitingList,
     required this.totalCost,
     this.costPerPlayer,
     required this.isRecurring,
@@ -48,7 +46,6 @@ class SessionTemplateModel extends Equatable {
         eventEndDate,
         durationInMinutes,
         maxPlayers,
-        maxWaitingList,
         totalCost,
         costPerPlayer,
         isRecurring,
@@ -66,7 +63,6 @@ class SessionTemplateModel extends Equatable {
     Timestamp? eventEndDate,
     int? durationInMinutes,
     int? maxPlayers,
-    int? maxWaitingList,
     double? totalCost,
     double? costPerPlayer,
     bool? isRecurring,
@@ -83,7 +79,6 @@ class SessionTemplateModel extends Equatable {
       eventEndDate: eventEndDate ?? this.eventEndDate,
       durationInMinutes: durationInMinutes,
       maxPlayers: maxPlayers ?? this.maxPlayers,
-      maxWaitingList: maxWaitingList ?? this.maxWaitingList,
       totalCost: totalCost ?? this.totalCost,
       costPerPlayer: costPerPlayer,
       isRecurring: isRecurring ?? this.isRecurring,
@@ -102,7 +97,6 @@ class SessionTemplateModel extends Equatable {
       'eventEndDate': eventEndDate,
       'durationInMinutes': durationInMinutes,
       'maxPlayers': maxPlayers,
-      'maxWaitingList': maxWaitingList,
       'totalCost': totalCost,
       'costPerPlayer': costPerPlayer,
       'isRecurring': isRecurring,
@@ -122,7 +116,6 @@ class SessionTemplateModel extends Equatable {
       eventEndDate: map['eventEndDate'] as Timestamp,
       durationInMinutes: map['durationInMinutes'] as int?,
       maxPlayers: map['maxPlayers'] as int,
-      maxWaitingList: map['maxWaitingList'] as int,
       totalCost: (map['totalCost'] as num).toDouble(),
       costPerPlayer: (map['costPerPlayer'] as num?)?.toDouble(),
       isRecurring: map['isRecurring'] as bool,

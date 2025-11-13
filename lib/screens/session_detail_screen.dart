@@ -7,6 +7,8 @@ import 'package:proplay/bloc/session_detail/session_detail_event.dart';
 import 'package:proplay/bloc/session_detail/session_detail_state.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/session_service.dart';
+import 'package:proplay/services/group_service.dart';
+import 'package:proplay/services/user_service.dart';
 import 'package:proplay/utils/auth_helper.dart';
 
 class SessionDetailScreen extends StatelessWidget {
@@ -21,6 +23,7 @@ class SessionDetailScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) => SessionDetailBloc(
         sessionService: SessionService(),
+        groupService: GroupService(userService: UserService()),
         currentUser: currentUser,
       )..add(LoadSessionDetail(sessionId)),
       child: Scaffold(
@@ -73,14 +76,10 @@ class SessionDetailScreen extends StatelessWidget {
             final isLoaded = state is SessionDetailLoaded;
             final isProcessing = state is SessionDetailProcessing;
             final isJoined = isLoaded ? state.isCurrentUserJoined : false;
-            final isInWaitingList = isLoaded
-                ? state.isCurrentUserInWaitingList
-                : false;
             final isOwnerOrAdmin = isLoaded ? state.isOwnerOrAdmin : false;
 
             final players = session.players ?? [];
-            final waitingList = session.waitingList ?? [];
-            final hasPlayers = players.isNotEmpty || waitingList.isNotEmpty;
+            final hasPlayers = players.isNotEmpty;
 
             return Column(
               children: [
@@ -143,23 +142,12 @@ class SessionDetailScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      // Player count badges
-                      Row(
-                        children: [
-                          _buildBadge(
-                            context,
-                            '${players.length}/${session.maxPlayers}',
-                            'Jugadores',
-                            Colors.green,
-                          ),
-                          const SizedBox(width: 12),
-                          _buildBadge(
-                            context,
-                            '${waitingList.length}/${session.waitingListCount}',
-                            'Lista de Espera',
-                            Colors.orange,
-                          ),
-                        ],
+                      // Player count badge
+                      _buildBadge(
+                        context,
+                        '${players.length}/${session.maxPlayers}',
+                        'Jugadores',
+                        Colors.green,
                       ),
                     ],
                   ),
@@ -194,36 +182,6 @@ class SessionDetailScreen extends StatelessWidget {
                                   context,
                                   player,
                                   index + 1,
-                                  false,
-                                  isOwnerOrAdmin,
-                                );
-                              }),
-                            ],
-                            if (waitingList.isNotEmpty) ...[
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  16,
-                                  16,
-                                  8,
-                                ),
-                                child: Text(
-                                  'Lista de Espera',
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.orange,
-                                      ),
-                                ),
-                              ),
-                              ...waitingList.asMap().entries.map((entry) {
-                                final index = entry.key;
-                                final player = entry.value;
-                                return _buildPlayerTile(
-                                  context,
-                                  player,
-                                  index + 1,
-                                  true,
                                   isOwnerOrAdmin,
                                 );
                               }),
@@ -271,7 +229,7 @@ class SessionDetailScreen extends StatelessWidget {
                   ),
                   child: isProcessing
                       ? const Center(child: CircularProgressIndicator())
-                      : isJoined || isInWaitingList
+                      : isJoined
                       ? ElevatedButton.icon(
                           onPressed: () {
                             _showLeaveConfirmationDialog(context);
@@ -291,12 +249,7 @@ class SessionDetailScreen extends StatelessWidget {
                             );
                           },
                           icon: const Icon(Icons.add),
-                          label: Text(
-                            _getJoinButtonText(
-                              players.length,
-                              session.maxPlayers,
-                            ),
-                          ),
+                          label: const Text('Unirse a la Pichanga'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Theme.of(context).primaryColor,
                             foregroundColor: Colors.white,
@@ -347,7 +300,6 @@ class SessionDetailScreen extends StatelessWidget {
     BuildContext context,
     SessionUserModel player,
     int position,
-    bool isWaitingList,
     bool isOwnerOrAdmin,
   ) {
     final initials = '${player.firstName[0]}${player.lastName[0]}'
@@ -362,9 +314,9 @@ class SessionDetailScreen extends StatelessWidget {
             width: 24,
             child: Text(
               '$position.',
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                color: isWaitingList ? Colors.orange : Colors.green,
+                color: Colors.green,
               ),
             ),
           ),
@@ -379,7 +331,7 @@ class SessionDetailScreen extends StatelessWidget {
                 )
               : CircleAvatar(
                   radius: 20,
-                  backgroundColor: isWaitingList ? Colors.orange : Colors.green,
+                  backgroundColor: Colors.green,
                   child: Text(
                     initials,
                     style: const TextStyle(
@@ -400,58 +352,14 @@ class SessionDetailScreen extends StatelessWidget {
       ),
       trailing: isOwnerOrAdmin
           ? PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert, size: 20),
+              icon: const Icon(Icons.more_vert, size: 20),
               onSelected: (value) {
                 if (value == 'remove') {
                   _showRemoveUserDialog(context, player);
-                } else if (value == 'move_to_waiting') {
-                  _showMoveUserDialog(context, player, toWaitingList: true);
-                } else if (value == 'move_to_players') {
-                  _showMoveUserDialog(context, player, toWaitingList: false);
                 }
               },
               itemBuilder: (BuildContext context) {
-                final items = <PopupMenuEntry<String>>[];
-
-                // Move between lists options
-                if (isWaitingList) {
-                  items.add(
-                    const PopupMenuItem<String>(
-                      value: 'move_to_players',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.arrow_upward,
-                            size: 18,
-                            color: Colors.green,
-                          ),
-                          SizedBox(width: 8),
-                          Text('Mover a Jugadores'),
-                        ],
-                      ),
-                    ),
-                  );
-                } else {
-                  items.add(
-                    const PopupMenuItem<String>(
-                      value: 'move_to_waiting',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.arrow_downward,
-                            size: 18,
-                            color: Colors.orange,
-                          ),
-                          SizedBox(width: 8),
-                          Text('Mover a Lista de Espera'),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                // Remove option
-                items.add(
+                return [
                   const PopupMenuItem<String>(
                     value: 'remove',
                     child: Row(
@@ -462,23 +370,11 @@ class SessionDetailScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                );
-
-                return items;
+                ];
               },
             )
-          : isWaitingList
-          ? Icon(Icons.hourglass_empty, color: Colors.orange[700], size: 20)
           : Icon(Icons.check_circle, color: Colors.green[700], size: 20),
     );
-  }
-
-  String _getJoinButtonText(int currentPlayers, int maxPlayers) {
-    if (currentPlayers < maxPlayers) {
-      return 'Unirse a la Pichanga';
-    } else {
-      return 'Unirse a Lista de Espera';
-    }
   }
 
   String _formatJoinTime(DateTime joinedAt) {
@@ -548,50 +444,6 @@ class SessionDetailScreen extends StatelessWidget {
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Eliminar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showMoveUserDialog(
-    BuildContext context,
-    SessionUserModel player, {
-    required bool toWaitingList,
-  }) {
-    final String action = toWaitingList
-        ? 'mover a la lista de espera'
-        : 'mover a la lista de jugadores';
-    final String title = toWaitingList
-        ? 'Mover a Lista de Espera'
-        : 'Mover a Jugadores';
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(title),
-        content: Text(
-          '¿Estás seguro de que quieres $action a ${player.firstName} ${player.lastName}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              if (toWaitingList) {
-                context.read<SessionDetailBloc>().add(
-                  MoveUserToWaitingList(player.uid),
-                );
-              } else {
-                context.read<SessionDetailBloc>().add(
-                  MoveUserToPlayers(player.uid),
-                );
-              }
-            },
-            child: const Text('Confirmar'),
           ),
         ],
       ),

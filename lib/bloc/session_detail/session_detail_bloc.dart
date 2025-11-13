@@ -6,21 +6,24 @@ import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/models/group_model.dart';
 import 'package:proplay/services/session_service.dart';
+import 'package:proplay/services/group_service.dart';
 
 class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
   final SessionService sessionService;
+  final GroupService groupService;
   final UserModel currentUser;
   StreamSubscription<SessionModel>? _sessionSubscription;
   bool _isOwnerOrAdmin = false;
 
-  SessionDetailBloc({required this.sessionService, required this.currentUser})
-    : super(const SessionDetailInitial()) {
+  SessionDetailBloc({
+    required this.sessionService,
+    required this.groupService,
+    required this.currentUser,
+  }) : super(const SessionDetailInitial()) {
     on<LoadSessionDetail>(_onLoadSessionDetail);
     on<JoinSession>(_onJoinSession);
     on<LeaveSession>(_onLeaveSession);
     on<RemoveUserFromSession>(_onRemoveUserFromSession);
-    on<MoveUserToWaitingList>(_onMoveUserToWaitingList);
-    on<MoveUserToPlayers>(_onMoveUserToPlayers);
     on<_UpdateSessionState>(_onUpdateSessionState);
     on<_SessionError>(_onSessionError);
   }
@@ -42,11 +45,8 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
 
       // Check if current user is owner/admin of the group
       try {
-        final groupDoc = await sessionService.getGroup(firstSession.groupId);
-        if (groupDoc.exists) {
-          final group = GroupModel.fromMap(
-            groupDoc.data() as Map<String, dynamic>,
-          );
+        final group = await groupService.getGroup(firstSession.groupId);
+        if (group != null) {
           _isOwnerOrAdmin = group.createdBy == currentUser.uid;
         }
       } catch (e) {
@@ -61,18 +61,13 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
             (session) {
               // Check if current user is in the session
               final players = session.players ?? [];
-              final waitingList = session.waitingList ?? [];
 
               final isJoined = players.any((p) => p.uid == currentUser.uid);
-              final isInWaitingList = waitingList.any(
-                (p) => p.uid == currentUser.uid,
-              );
 
               add(
                 _UpdateSessionState(
                   session: session,
                   isCurrentUserJoined: isJoined,
-                  isCurrentUserInWaitingList: isInWaitingList,
                 ),
               );
             },
@@ -134,7 +129,6 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
       SessionDetailLoaded(
         session: event.session,
         isCurrentUserJoined: event.isCurrentUserJoined,
-        isCurrentUserInWaitingList: event.isCurrentUserInWaitingList,
         isOwnerOrAdmin: _isOwnerOrAdmin,
       ),
     );
@@ -175,76 +169,6 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
     }
   }
 
-  Future<void> _onMoveUserToWaitingList(
-    MoveUserToWaitingList event,
-    Emitter<SessionDetailState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! SessionDetailLoaded) return;
-
-    if (!_isOwnerOrAdmin) {
-      emit(
-        SessionDetailError(
-          'No tienes permisos para realizar esta acción',
-          session: currentState.session,
-        ),
-      );
-      return;
-    }
-
-    emit(
-      SessionDetailProcessing(
-        session: currentState.session,
-        action: 'moving_user',
-      ),
-    );
-
-    try {
-      await sessionService.moveUserToWaitingList(
-        sessionId: currentState.session.id,
-        userId: event.userId,
-      );
-      // The stream will automatically update the state
-    } catch (e) {
-      emit(SessionDetailError(e.toString(), session: currentState.session));
-    }
-  }
-
-  Future<void> _onMoveUserToPlayers(
-    MoveUserToPlayers event,
-    Emitter<SessionDetailState> emit,
-  ) async {
-    final currentState = state;
-    if (currentState is! SessionDetailLoaded) return;
-
-    if (!_isOwnerOrAdmin) {
-      emit(
-        SessionDetailError(
-          'No tienes permisos para realizar esta acción',
-          session: currentState.session,
-        ),
-      );
-      return;
-    }
-
-    emit(
-      SessionDetailProcessing(
-        session: currentState.session,
-        action: 'moving_user',
-      ),
-    );
-
-    try {
-      await sessionService.moveUserToPlayers(
-        sessionId: currentState.session.id,
-        userId: event.userId,
-      );
-      // The stream will automatically update the state
-    } catch (e) {
-      emit(SessionDetailError(e.toString(), session: currentState.session));
-    }
-  }
-
   Future<void> _onSessionError(
     _SessionError event,
     Emitter<SessionDetailState> emit,
@@ -263,20 +187,14 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
 class _UpdateSessionState extends SessionDetailEvent {
   final SessionModel session;
   final bool isCurrentUserJoined;
-  final bool isCurrentUserInWaitingList;
 
   const _UpdateSessionState({
     required this.session,
     required this.isCurrentUserJoined,
-    required this.isCurrentUserInWaitingList,
   });
 
   @override
-  List<Object?> get props => [
-    session,
-    isCurrentUserJoined,
-    isCurrentUserInWaitingList,
-  ];
+  List<Object?> get props => [session, isCurrentUserJoined];
 }
 
 class _SessionError extends SessionDetailEvent {
