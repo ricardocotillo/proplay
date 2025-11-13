@@ -69,4 +69,28 @@ class StorageService {
       throw Exception('Failed to get download URL: $e');
     }
   }
+
+  /// Upload payment receipt to Firebase Storage
+  /// Returns the download URL of the uploaded receipt
+  Future<String> uploadPaymentReceipt(String uid, File imageFile) async {
+    try {
+      // Create a unique file name with timestamp
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final fileName = 'receipt_${uid}_$timestamp.jpg';
+      final ref = _storage.ref().child('payment_receipts/$fileName');
+
+      // Upload the file
+      final uploadTask = ref.putFile(imageFile);
+
+      // Wait for upload to complete
+      final snapshot = await uploadTask;
+
+      // Get the download URL
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+
+      return downloadUrl;
+    } catch (e) {
+      throw Exception('Failed to upload payment receipt: $e');
+    }
+  }
 }

@@ -1,12 +1,15 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/app_drawer.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/group/group_event.dart';
 import 'package:proplay/bloc/group/group_state.dart';
+import 'package:proplay/services/storage_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -63,7 +66,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -411,11 +416,105 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showAddCreditsDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Agregar Créditos'),
-        content: const Text(
-          '¿Deseas agregar más créditos a tu cuenta?',
+      builder: (context) => const _AddCreditsDialog(),
+    );
+  }
+}
+
+class _AddCreditsDialog extends StatefulWidget {
+  const _AddCreditsDialog();
+
+  @override
+  State<_AddCreditsDialog> createState() => _AddCreditsDialogState();
+}
+
+class _AddCreditsDialogState extends State<_AddCreditsDialog> {
+  bool _showUploadStep = false;
+  File? _selectedImage;
+  bool _isUploading = false;
+  final ImagePicker _picker = ImagePicker();
+  final StorageService _storageService = StorageService();
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedImage = File(image.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al seleccionar imagen: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadReceipt() async {
+    if (_selectedImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor selecciona una imagen'),
+          backgroundColor: Colors.orange,
         ),
+      );
+      return;
+    }
+
+    final user = context.currentUser;
+    if (user == null) return;
+
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      final downloadUrl = await _storageService.uploadPaymentReceipt(
+        user.uid,
+        _selectedImage!,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Comprobante enviado exitosamente. Tu crédito será agregado pronto.',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al subir comprobante: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_showUploadStep) {
+      return AlertDialog(
+        title: const Text('Agregar Créditos'),
+        content: const Text('¿Deseas agregar más créditos a tu cuenta?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -423,13 +522,106 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
-              // TODO: Navigate to add credits screen
+              setState(() {
+                _showUploadStep = true;
+              });
             },
             child: const Text('Agregar'),
           ),
         ],
+      );
+    }
+
+    return AlertDialog(
+      title: const Text('Subir Comprobante'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Envía tu pago por Yape o Plin al número:',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.phone,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '970001095',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Luego sube una captura de pantalla del comprobante:',
+              style: TextStyle(fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 12),
+            if (_selectedImage != null) ...[
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxHeight: 200,
+                      maxWidth: 300,
+                    ),
+                    child: Image.file(_selectedImage!, fit: BoxFit.contain),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _isUploading ? null : _pickImage,
+                icon: const Icon(Icons.image),
+                label: Text(
+                  _selectedImage == null
+                      ? 'Seleccionar Imagen'
+                      : 'Cambiar Imagen',
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
+      actions: [
+        TextButton(
+          onPressed: _isUploading ? null : () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: _isUploading ? null : _uploadReceipt,
+          child: _isUploading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Enviar'),
+        ),
+      ],
     );
   }
 }
