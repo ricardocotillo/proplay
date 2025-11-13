@@ -51,7 +51,6 @@ class SessionModel extends Equatable {
     String? title,
     DateTime? eventDate,
     DateTime? eventEndDate,
-    DateTime? cutOffDate,
     String? status,
     int? playerCount,
     int? maxPlayers,

@@ -12,8 +12,6 @@ class SessionTemplateModel extends Equatable {
   final int maxPlayers;
   final double totalCost;
   final double? costPerPlayer;
-  final bool isRecurring;
-  final String? rrule;
 
   const SessionTemplateModel({
     this.id,
@@ -26,8 +24,6 @@ class SessionTemplateModel extends Equatable {
     required this.maxPlayers,
     required this.totalCost,
     this.costPerPlayer,
-    required this.isRecurring,
-    this.rrule,
   });
 
   @override
@@ -42,8 +38,6 @@ class SessionTemplateModel extends Equatable {
     maxPlayers,
     totalCost,
     costPerPlayer,
-    isRecurring,
-    rrule,
   ];
 
   SessionTemplateModel copyWith({
@@ -57,8 +51,6 @@ class SessionTemplateModel extends Equatable {
     int? maxPlayers,
     double? totalCost,
     double? costPerPlayer,
-    bool? isRecurring,
-    String? rrule,
   }) {
     return SessionTemplateModel(
       id: id ?? this.id,
@@ -71,8 +63,6 @@ class SessionTemplateModel extends Equatable {
       maxPlayers: maxPlayers ?? this.maxPlayers,
       totalCost: totalCost ?? this.totalCost,
       costPerPlayer: costPerPlayer,
-      isRecurring: isRecurring ?? this.isRecurring,
-      rrule: rrule,
     );
   }
 
@@ -87,8 +77,6 @@ class SessionTemplateModel extends Equatable {
       'maxPlayers': maxPlayers,
       'totalCost': totalCost,
       'costPerPlayer': costPerPlayer,
-      'isRecurring': isRecurring,
-      'rrule': rrule,
     };
   }
 
@@ -104,8 +92,6 @@ class SessionTemplateModel extends Equatable {
       maxPlayers: map['maxPlayers'] as int,
       totalCost: (map['totalCost'] as num).toDouble(),
       costPerPlayer: (map['costPerPlayer'] as num?)?.toDouble(),
-      isRecurring: map['isRecurring'] as bool,
-      rrule: map['rrule'] as String?,
     );
   }
 }

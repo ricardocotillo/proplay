@@ -80,8 +80,6 @@ class SessionService {
           'eventEndDate':
               data['eventEndDate'] ??
               data['eventDate'], // Fallback to eventDate
-          'cutOffDate':
-              data['cutOffDate'] ?? data['eventDate'], // Fallback to eventDate
           'status': data['status'],
           'playerCount': data['playerCount'] ?? 0,
           'maxPlayers': data['maxPlayers'],

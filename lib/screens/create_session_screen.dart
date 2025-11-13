@@ -34,13 +34,10 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   final _maxPlayersController = TextEditingController();
   final _totalCostController = TextEditingController();
 
-  DateTime? _joinDate;
-  DateTime? _cutOffDate;
   DateTime? _eventDate;
   TimeOfDay? _eventTime;
   DateTime? _eventEndDate;
   TimeOfDay? _eventEndTime;
-  bool _isRecurring = false;
 
   @override
   void dispose() {
@@ -97,8 +94,6 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         eventEndDate: Timestamp.fromDate(eventEndDateTime),
         maxPlayers: int.parse(_maxPlayersController.text),
         totalCost: double.parse(_totalCostController.text),
-        isRecurring: _isRecurring,
-        rrule: _isRecurring ? 'FREQ=WEEKLY' : null,
       );
 
       context.read<CreateSessionBloc>().add(CreateSessionTemplate(template));
@@ -174,17 +169,6 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                       ? 'Por favor, ingresa el costo total'
                       : null,
                 ),
-                if (_isRecurring)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      'La sesión se repetirá semanalmente en el mismo día y hora',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
                 const SizedBox(height: 32),
                 Center(
                   child: BlocBuilder<CreateSessionBloc, CreateSessionState>(
