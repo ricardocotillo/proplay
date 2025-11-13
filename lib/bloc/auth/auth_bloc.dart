@@ -28,6 +28,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthGoogleSignInRequested>(_onAuthGoogleSignInRequested);
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
     on<AuthUserChanged>(_onAuthUserChanged);
+    on<AuthRefreshUserRequested>(_onAuthRefreshUserRequested);
 
     // Start listening to auth state changes
     _authSubscription = _authService.authStateChanges.listen(
@@ -219,6 +220,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthUnauthenticated());
     } catch (e) {
       emit(AuthError(e.toString()));
+    }
+  }
+
+  Future<void> _onAuthRefreshUserRequested(
+    AuthRefreshUserRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    final user = _authService.currentUser;
+    if (user != null) {
+      try {
+        // Fetch fresh user data from Firestore
+        final userModel = await _userService.getUser(user.uid);
+        if (userModel != null) {
+          emit(AuthAuthenticated(firebaseUser: user, userModel: userModel));
+        }
+      } catch (e) {
+        // If refresh fails, maintain current state
+        print('Failed to refresh user data: $e');
+      }
     }
   }
 

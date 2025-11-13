@@ -71,7 +71,7 @@ class UserModel {
   final String lastName;
   final String? profileImageUrl;
   final DateTime createdAt;
-  final int credits;
+  final String credits;
   final bool superUser;
 
   UserModel({
@@ -81,9 +81,17 @@ class UserModel {
     required this.lastName,
     this.profileImageUrl,
     required this.createdAt,
-    this.credits = 0,
+    this.credits = '0.00',
     this.superUser = false,
   });
+
+  // Get credits as double value
+  double get creditsValue => double.tryParse(credits) ?? 0.0;
+
+  // Helper method to format any credit value to exactly 2 decimal precision
+  static String formatCredits(double value) {
+    return value.toStringAsFixed(2);
+  }
 
   // Convert UserModel to Map for Firestore
   Map<String, dynamic> toMap() {
@@ -101,6 +109,21 @@ class UserModel {
 
   // Create UserModel from Firestore document
   factory UserModel.fromMap(Map<String, dynamic> map) {
+    // Handle credits field - support both string and numeric values for backward compatibility
+    // Always enforce 2 decimal precision
+    final creditsValue = map['credits'];
+    String creditsString;
+    if (creditsValue is String) {
+      // Parse and reformat to ensure 2 decimal precision
+      final parsed = double.tryParse(creditsValue) ?? 0.0;
+      creditsString = parsed.toStringAsFixed(2);
+    } else if (creditsValue is num) {
+      // Convert numeric to string with 2 decimal precision
+      creditsString = creditsValue.toDouble().toStringAsFixed(2);
+    } else {
+      creditsString = '0.00';
+    }
+
     return UserModel(
       uid: map['uid'] ?? '',
       email: map['email'] ?? '',
@@ -108,7 +131,7 @@ class UserModel {
       lastName: map['lastName'] ?? '',
       profileImageUrl: map['profileImageUrl'],
       createdAt: (map['createdAt'] as Timestamp).toDate(),
-      credits: map['credits'] ?? 0,
+      credits: creditsString,
       superUser: map['superUser'] ?? false,
     );
   }

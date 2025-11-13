@@ -247,13 +247,16 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
       }
 
       final currentUser = UserModel.fromDocument(userDoc);
-      final currentCredits = currentUser.credits;
-      final newCreditAmount = currentCredits + creditsToAdd;
+      final currentCreditsValue = currentUser.creditsValue;
+      final newCreditValue = currentCreditsValue + creditsToAdd;
+
+      // Format as string with exactly 2 decimal precision
+      final newCreditAmount = UserModel.formatCredits(newCreditValue);
 
       debugPrint('Approving credits:');
       debugPrint('  User ID: $targetUserId');
       debugPrint('  User Name: ${currentUser.fullName}');
-      debugPrint('  Current Credits: $currentCredits');
+      debugPrint('  Current Credits: ${currentUser.credits}');
       debugPrint('  Adding Credits: $creditsToAdd');
       debugPrint('  New Total: $newCreditAmount');
 
@@ -283,7 +286,7 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Créditos aprobados exitosamente para ${currentUser.fullName} (${currentCredits} → ${newCreditAmount})',
+              'Créditos aprobados exitosamente para ${currentUser.fullName} (${currentUser.credits} → $newCreditAmount)',
             ),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 4),

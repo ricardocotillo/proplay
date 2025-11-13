@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/app_drawer.dart';
+import 'package:proplay/bloc/auth/auth_bloc.dart';
+import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/group/group_event.dart';
 import 'package:proplay/bloc/group/group_state.dart';
@@ -60,7 +62,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           GestureDetector(
-            onTap: _showAddCreditsDialog,
+            onTap: () {
+              // Refresh user data from Firestore to get latest credits
+              context.read<AuthBloc>().add(const AuthRefreshUserRequested());
+              _showAddCreditsDialog();
+            },
             child: Container(
               margin: const EdgeInsets.only(right: 12.0),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -84,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '${user?.credits ?? 0}',
+                    user?.credits ?? '0.00',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.bold,
@@ -501,10 +507,13 @@ class _AddCreditsDialogState extends State<_AddCreditsDialog> {
     });
 
     try {
+      // Read file bytes (more reliable for temp files from image picker)
+      final bytes = await _selectedImage!.readAsBytes();
+
       // Upload receipt to Firebase Storage
       final downloadUrl = await _storageService.uploadPaymentReceipt(
         user.uid,
-        _selectedImage!,
+        bytes,
       );
 
       // Create credit history entry in Firestore
@@ -535,6 +544,7 @@ class _AddCreditsDialogState extends State<_AddCreditsDialog> {
         );
       }
     } catch (e) {
+      print(e);
       if (mounted) {
         setState(() {
           _isUploading = false;

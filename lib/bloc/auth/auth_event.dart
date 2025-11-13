@@ -58,3 +58,7 @@ class AuthGoogleSignInRequested extends AuthEvent {
 }
 
 class AuthLogoutRequested extends AuthEvent {}
+
+class AuthRefreshUserRequested extends AuthEvent {
+  const AuthRefreshUserRequested();
+}
