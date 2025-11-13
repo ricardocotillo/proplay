@@ -7,7 +7,6 @@ import 'package:proplay/bloc/session_detail/session_detail_event.dart';
 import 'package:proplay/bloc/session_detail/session_detail_state.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/session_service.dart';
-import 'package:proplay/services/receipt_upload_service.dart';
 import 'package:proplay/utils/auth_helper.dart';
 
 class SessionDetailScreen extends StatelessWidget {
@@ -22,7 +21,6 @@ class SessionDetailScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) => SessionDetailBloc(
         sessionService: SessionService(),
-        receiptUploadService: ReceiptUploadService(),
         currentUser: currentUser,
       )..add(LoadSessionDetail(sessionId)),
       child: Scaffold(
@@ -83,23 +81,6 @@ class SessionDetailScreen extends StatelessWidget {
             final players = session.players ?? [];
             final waitingList = session.waitingList ?? [];
             final hasPlayers = players.isNotEmpty || waitingList.isNotEmpty;
-
-            // Check if current user is confirmed
-            final currentUserPlayer = players.firstWhere(
-              (p) => p.uid == currentUser.uid,
-              orElse: () => waitingList.firstWhere(
-                (p) => p.uid == currentUser.uid,
-                orElse: () => SessionUserModel(
-                  uid: '',
-                  firstName: '',
-                  lastName: '',
-                  joinedAt: DateTime.now(),
-                ),
-              ),
-            );
-            final isCurrentUserConfirmed = currentUserPlayer.uid.isNotEmpty
-                ? currentUserPlayer.isConfirmed
-                : false;
 
             return Column(
               children: [
@@ -291,70 +272,17 @@ class SessionDetailScreen extends StatelessWidget {
                   child: isProcessing
                       ? const Center(child: CircularProgressIndicator())
                       : isJoined || isInWaitingList
-                      ? Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Show upload receipt button if not confirmed
-                            if (!isCurrentUserConfirmed) ...[
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: Colors.orange,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.warning_amber,
-                                      color: Colors.orange,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const Expanded(
-                                      child: Text(
-                                        'Debes subir tu comprobante para confirmar',
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  context.read<SessionDetailBloc>().add(
-                                    const UploadReceipt(),
-                                  );
-                                },
-                                icon: const Icon(Icons.upload_file),
-                                label: const Text('Subir Comprobante'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                            ],
-                            // Leave button
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                _showLeaveConfirmationDialog(context);
-                              },
-                              icon: const Icon(Icons.exit_to_app),
-                              label: const Text('Salir de la Pichanga'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                            ),
-                          ],
+                      ? ElevatedButton.icon(
+                          onPressed: () {
+                            _showLeaveConfirmationDialog(context);
+                          },
+                          icon: const Icon(Icons.exit_to_app),
+                          label: const Text('Salir de la Pichanga'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
                         )
                       : ElevatedButton.icon(
                           onPressed: () {
@@ -466,47 +394,15 @@ class SessionDetailScreen extends StatelessWidget {
         '${player.firstName} ${player.lastName}',
         style: const TextStyle(fontWeight: FontWeight.w500),
       ),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _formatJoinTime(player.joinedAt),
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
-          if (!player.isConfirmed && !isWaitingList) ...[
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Text(
-                'Pendiente comprobante',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.orange,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ],
+      subtitle: Text(
+        _formatJoinTime(player.joinedAt),
+        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
       ),
       trailing: isOwnerOrAdmin
           ? PopupMenuButton<String>(
               icon: Icon(Icons.more_vert, size: 20),
               onSelected: (value) {
-                if (value == 'view_receipt') {
-                  if (player.receiptUrl != null && player.receiptUrl!.isNotEmpty) {
-                    context.read<SessionDetailBloc>().add(
-                      ViewReceipt(player.receiptUrl!),
-                    );
-                  }
-                } else if (value == 'remove') {
+                if (value == 'remove') {
                   _showRemoveUserDialog(context, player);
                 } else if (value == 'move_to_waiting') {
                   _showMoveUserDialog(context, player, toWaitingList: true);
@@ -517,22 +413,6 @@ class SessionDetailScreen extends StatelessWidget {
               itemBuilder: (BuildContext context) {
                 final items = <PopupMenuEntry<String>>[];
 
-                // View receipt option (only if receipt exists)
-                if (player.receiptUrl != null && player.receiptUrl!.isNotEmpty) {
-                  items.add(
-                    const PopupMenuItem<String>(
-                      value: 'view_receipt',
-                      child: Row(
-                        children: [
-                          Icon(Icons.receipt, size: 18),
-                          SizedBox(width: 8),
-                          Text('Ver comprobante'),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
                 // Move between lists options
                 if (isWaitingList) {
                   items.add(
@@ -540,7 +420,11 @@ class SessionDetailScreen extends StatelessWidget {
                       value: 'move_to_players',
                       child: Row(
                         children: [
-                          Icon(Icons.arrow_upward, size: 18, color: Colors.green),
+                          Icon(
+                            Icons.arrow_upward,
+                            size: 18,
+                            color: Colors.green,
+                          ),
                           SizedBox(width: 8),
                           Text('Mover a Jugadores'),
                         ],
@@ -553,7 +437,11 @@ class SessionDetailScreen extends StatelessWidget {
                       value: 'move_to_waiting',
                       child: Row(
                         children: [
-                          Icon(Icons.arrow_downward, size: 18, color: Colors.orange),
+                          Icon(
+                            Icons.arrow_downward,
+                            size: 18,
+                            color: Colors.orange,
+                          ),
                           SizedBox(width: 8),
                           Text('Mover a Lista de Espera'),
                         ],
@@ -580,10 +468,8 @@ class SessionDetailScreen extends StatelessWidget {
               },
             )
           : isWaitingList
-              ? Icon(Icons.hourglass_empty, color: Colors.orange[700], size: 20)
-              : player.isConfirmed
-                  ? Icon(Icons.check_circle, color: Colors.green[700], size: 20)
-                  : Icon(Icons.pending, color: Colors.orange[700], size: 20),
+          ? Icon(Icons.hourglass_empty, color: Colors.orange[700], size: 20)
+          : Icon(Icons.check_circle, color: Colors.green[700], size: 20),
     );
   }
 

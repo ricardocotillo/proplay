@@ -119,6 +119,7 @@ class SessionService {
   }
 
   /// Join a session with race condition protection using Firestore transaction
+  /// Also debits the cost from user's credits
   Future<void> joinSession(String sessionId, UserModel user) async {
     final sessionUser = SessionUserModel(
       uid: user.uid,
@@ -139,6 +140,16 @@ class SessionService {
 
         final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
 
+        // Check if user has enough credits
+        final userCredits = user.creditsValue;
+        final costPerPlayer = session.costPerPlayer;
+
+        if (userCredits < costPerPlayer) {
+          throw Exception(
+            'No tienes suficientes créditos. Necesitas ${UserModel.formatCredits(costPerPlayer)} pero solo tienes ${user.credits}',
+          );
+        }
+
         // Check if user is already in the session or waiting list
         final players = session.players ?? [];
         final waitingList = session.waitingList ?? [];
@@ -147,6 +158,16 @@ class SessionService {
             waitingList.any((p) => p.uid == user.uid)) {
           throw Exception('You have already joined this session');
         }
+
+        // Calculate new credit balance
+        final newCredits = userCredits - costPerPlayer;
+        final newCreditsFormatted = UserModel.formatCredits(newCredits);
+
+        // Update user's credits
+        final userRef = _firestore.collection('users').doc(user.uid);
+        transaction.update(userRef, {
+          'credits': newCreditsFormatted,
+        });
 
         // Check if there's space in the main player list
         if (players.length < session.maxPlayers) {
