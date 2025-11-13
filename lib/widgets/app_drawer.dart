@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/screens/credit_history_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -80,6 +81,19 @@ class AppDrawer extends StatelessWidget {
                   onTap: () {
                     context.pop(); // Close drawer
                     context.push('/edit-profile');
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.history),
+                  title: const Text('Credit History'),
+                  onTap: () {
+                    context.pop(); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreditHistoryScreen(),
+                      ),
+                    );
                   },
                 ),
                 const Divider(),

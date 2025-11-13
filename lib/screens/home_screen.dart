@@ -11,6 +11,7 @@ import 'package:proplay/bloc/group/group_event.dart';
 import 'package:proplay/bloc/group/group_state.dart';
 import 'package:proplay/services/storage_service.dart';
 import 'package:proplay/services/credit_history_service.dart';
+import 'package:proplay/screens/credit_history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -517,6 +518,13 @@ class _AddCreditsDialogState extends State<_AddCreditsDialog> {
 
       if (mounted) {
         Navigator.pop(context);
+
+        // Navigate to credit history screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CreditHistoryScreen()),
+        );
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -593,7 +601,9 @@ class _AddCreditsDialogState extends State<_AddCreditsDialog> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primaryContainer,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primaryContainer,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
