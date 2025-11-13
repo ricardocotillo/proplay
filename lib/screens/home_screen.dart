@@ -10,6 +10,7 @@ import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/group/group_event.dart';
 import 'package:proplay/bloc/group/group_state.dart';
 import 'package:proplay/services/storage_service.dart';
+import 'package:proplay/services/credit_history_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -429,11 +430,22 @@ class _AddCreditsDialog extends StatefulWidget {
 }
 
 class _AddCreditsDialogState extends State<_AddCreditsDialog> {
-  bool _showUploadStep = false;
+  int _currentStep = 0; // 0: confirmation, 1: package selection, 2: upload
   File? _selectedImage;
   bool _isUploading = false;
+  int? _selectedCoins;
+  int? _selectedPrice;
   final ImagePicker _picker = ImagePicker();
   final StorageService _storageService = StorageService();
+  final CreditHistoryService _creditHistoryService = CreditHistoryService();
+
+  static const String _phoneNumber = '970001095';
+
+  final List<Map<String, int>> _packages = [
+    {'coins': 15, 'price': 16},
+    {'coins': 25, 'price': 27},
+    {'coins': 50, 'price': 52},
+  ];
 
   Future<void> _pickImage() async {
     try {
@@ -473,14 +485,34 @@ class _AddCreditsDialogState extends State<_AddCreditsDialog> {
     final user = context.currentUser;
     if (user == null) return;
 
+    if (_selectedCoins == null || _selectedPrice == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error: No se seleccionó un paquete'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isUploading = true;
     });
 
     try {
+      // Upload receipt to Firebase Storage
       final downloadUrl = await _storageService.uploadPaymentReceipt(
         user.uid,
         _selectedImage!,
+      );
+
+      // Create credit history entry in Firestore
+      await _creditHistoryService.createCreditHistory(
+        userId: user.uid,
+        creditAmount: _selectedCoins!,
+        phoneNumber: _phoneNumber,
+        amountPaid: _selectedPrice!.toDouble(),
+        receiptUrl: downloadUrl,
       );
 
       if (mounted) {
@@ -511,7 +543,8 @@ class _AddCreditsDialogState extends State<_AddCreditsDialog> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_showUploadStep) {
+    // Step 0: Confirmation
+    if (_currentStep == 0) {
       return AlertDialog(
         title: const Text('Agregar Créditos'),
         content: const Text('¿Deseas agregar más créditos a tu cuenta?'),
@@ -523,7 +556,7 @@ class _AddCreditsDialogState extends State<_AddCreditsDialog> {
           ElevatedButton(
             onPressed: () {
               setState(() {
-                _showUploadStep = true;
+                _currentStep = 1;
               });
             },
             child: const Text('Agregar'),
@@ -532,6 +565,90 @@ class _AddCreditsDialogState extends State<_AddCreditsDialog> {
       );
     }
 
+    // Step 1: Package Selection
+    if (_currentStep == 1) {
+      return AlertDialog(
+        title: const Text('Selecciona un Paquete'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _packages.map((package) {
+              final coins = package['coins']!;
+              final price = package['price']!;
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedCoins = coins;
+                      _selectedPrice = price;
+                      _currentStep = 2;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primaryContainer,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.account_balance_wallet,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '$coins Créditos',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'S/ $price.00',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+        ],
+      );
+    }
+
+    // Step 2: Upload Receipt
     return AlertDialog(
       title: const Text('Subir Comprobante'),
       content: SingleChildScrollView(
@@ -539,6 +656,33 @@ class _AddCreditsDialogState extends State<_AddCreditsDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.account_balance_wallet,
+                    color: Theme.of(context).colorScheme.secondary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '$_selectedCoins Créditos - S/ $_selectedPrice.00',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
             const Text(
               'Envía tu pago por Yape o Plin al número:',
               style: TextStyle(fontWeight: FontWeight.w500),
@@ -559,7 +703,7 @@ class _AddCreditsDialogState extends State<_AddCreditsDialog> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '970001095',
+                    _phoneNumber,
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -608,8 +752,15 @@ class _AddCreditsDialogState extends State<_AddCreditsDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _isUploading ? null : () => Navigator.pop(context),
-          child: const Text('Cancelar'),
+          onPressed: _isUploading
+              ? null
+              : () {
+                  setState(() {
+                    _currentStep = 1;
+                    _selectedImage = null;
+                  });
+                },
+          child: const Text('Atrás'),
         ),
         ElevatedButton(
           onPressed: _isUploading ? null : _uploadReceipt,
