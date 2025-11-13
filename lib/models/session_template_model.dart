@@ -6,8 +6,6 @@ class SessionTemplateModel extends Equatable {
   final String groupId;
   final String creatorId;
   final String title;
-  final Timestamp joinDate;
-  final Timestamp cutOffDate;
   final Timestamp eventDate;
   final Timestamp eventEndDate;
   final int? durationInMinutes;
@@ -22,8 +20,6 @@ class SessionTemplateModel extends Equatable {
     required this.groupId,
     required this.creatorId,
     required this.title,
-    required this.joinDate,
-    required this.cutOffDate,
     required this.eventDate,
     required this.eventEndDate,
     this.durationInMinutes,
@@ -36,29 +32,25 @@ class SessionTemplateModel extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        groupId,
-        creatorId,
-        title,
-        joinDate,
-        cutOffDate,
-        eventDate,
-        eventEndDate,
-        durationInMinutes,
-        maxPlayers,
-        totalCost,
-        costPerPlayer,
-        isRecurring,
-        rrule,
-      ];
+    id,
+    groupId,
+    creatorId,
+    title,
+    eventDate,
+    eventEndDate,
+    durationInMinutes,
+    maxPlayers,
+    totalCost,
+    costPerPlayer,
+    isRecurring,
+    rrule,
+  ];
 
   SessionTemplateModel copyWith({
     String? id,
     String? groupId,
     String? creatorId,
     String? title,
-    Timestamp? joinDate,
-    Timestamp? cutOffDate,
     Timestamp? eventDate,
     Timestamp? eventEndDate,
     int? durationInMinutes,
@@ -73,8 +65,6 @@ class SessionTemplateModel extends Equatable {
       groupId: groupId ?? this.groupId,
       creatorId: creatorId ?? this.creatorId,
       title: title ?? this.title,
-      joinDate: joinDate ?? this.joinDate,
-      cutOffDate: cutOffDate ?? this.cutOffDate,
       eventDate: eventDate ?? this.eventDate,
       eventEndDate: eventEndDate ?? this.eventEndDate,
       durationInMinutes: durationInMinutes,
@@ -91,8 +81,6 @@ class SessionTemplateModel extends Equatable {
       'groupId': groupId,
       'creatorId': creatorId,
       'title': title,
-      'joinDate': joinDate,
-      'cutOffDate': cutOffDate,
       'eventDate': eventDate,
       'eventEndDate': eventEndDate,
       'durationInMinutes': durationInMinutes,
@@ -110,8 +98,6 @@ class SessionTemplateModel extends Equatable {
       groupId: map['groupId'] as String,
       creatorId: map['creatorId'] as String,
       title: map['title'] as String,
-      joinDate: map['joinDate'] as Timestamp,
-      cutOffDate: map['cutOffDate'] as Timestamp,
       eventDate: map['eventDate'] as Timestamp,
       eventEndDate: map['eventEndDate'] as Timestamp,
       durationInMinutes: map['durationInMinutes'] as int?,

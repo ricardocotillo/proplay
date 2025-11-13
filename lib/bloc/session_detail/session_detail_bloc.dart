@@ -4,7 +4,6 @@ import 'package:proplay/bloc/session_detail/session_detail_event.dart';
 import 'package:proplay/bloc/session_detail/session_detail_state.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/user_model.dart';
-import 'package:proplay/models/group_model.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/group_service.dart';
 

@@ -9,7 +9,6 @@ class SessionModel extends Equatable {
   final String title;
   final DateTime eventDate;
   final DateTime eventEndDate;
-  final DateTime cutOffDate;
   final String status;
   final int playerCount;
   final int maxPlayers;
@@ -23,7 +22,6 @@ class SessionModel extends Equatable {
     required this.title,
     required this.eventDate,
     required this.eventEndDate,
-    required this.cutOffDate,
     required this.status,
     required this.playerCount,
     required this.maxPlayers,
@@ -39,7 +37,6 @@ class SessionModel extends Equatable {
     title,
     eventDate,
     eventEndDate,
-    cutOffDate,
     status,
     playerCount,
     maxPlayers,
@@ -68,7 +65,6 @@ class SessionModel extends Equatable {
       title: title ?? this.title,
       eventDate: eventDate ?? this.eventDate,
       eventEndDate: eventEndDate ?? this.eventEndDate,
-      cutOffDate: cutOffDate ?? this.cutOffDate,
       status: status ?? this.status,
       playerCount: playerCount ?? this.playerCount,
       maxPlayers: maxPlayers ?? this.maxPlayers,
@@ -84,7 +80,6 @@ class SessionModel extends Equatable {
       'title': title,
       'eventDate': Timestamp.fromDate(eventDate),
       'eventEndDate': Timestamp.fromDate(eventEndDate),
-      'cutOffDate': Timestamp.fromDate(cutOffDate),
       'status': status,
       'playerCount': playerCount,
       'maxPlayers': maxPlayers,
@@ -100,8 +95,8 @@ class SessionModel extends Equatable {
       groupId: map['groupId'] as String,
       title: map['title'] as String,
       eventDate: (map['eventDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      eventEndDate: (map['eventEndDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      cutOffDate: (map['cutOffDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      eventEndDate:
+          (map['eventEndDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       status: map['status'] as String,
       playerCount: map['playerCount'] as int,
       maxPlayers: map['maxPlayers'] as int,

@@ -95,8 +95,6 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         groupId: widget.groupId,
         creatorId: currentUser.uid,
         title: _titleController.text,
-        joinDate: Timestamp.fromDate(_joinDate!),
-        cutOffDate: Timestamp.fromDate(_cutOffDate!),
         eventDate: Timestamp.fromDate(eventDateTime),
         eventEndDate: Timestamp.fromDate(eventEndDateTime),
         maxPlayers: int.parse(_maxPlayersController.text),
@@ -143,20 +141,6 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                 const SizedBox(height: 16),
                 _buildDateTimePicker(
                   context: context,
-                  label: 'Fecha de inscripción',
-                  date: _joinDate,
-                  onDatePicked: (date) => setState(() => _joinDate = date),
-                ),
-                const SizedBox(height: 16),
-                _buildDateTimePicker(
-                  context: context,
-                  label: 'Fecha de cierre',
-                  date: _cutOffDate,
-                  onDatePicked: (date) => setState(() => _cutOffDate = date),
-                ),
-                const SizedBox(height: 16),
-                _buildDateTimePicker(
-                  context: context,
                   label: 'Fecha de inicio',
                   date: _eventDate,
                   time: _eventTime,
@@ -191,17 +175,6 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                   validator: (value) => value!.isEmpty
                       ? 'Por favor, ingresa el costo total'
                       : null,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Text('¿Es recurrente?'),
-                    Switch(
-                      value: _isRecurring,
-                      onChanged: (value) =>
-                          setState(() => _isRecurring = value),
-                    ),
-                  ],
                 ),
                 if (_isRecurring)
                   const Padding(

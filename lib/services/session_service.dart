@@ -50,7 +50,6 @@ class SessionService {
       title: template.title,
       eventDate: template.eventDate.toDate(),
       eventEndDate: template.eventEndDate.toDate(),
-      cutOffDate: template.cutOffDate.toDate(),
       status: 'OPEN',
       playerCount: 0,
       maxPlayers: template.maxPlayers,
