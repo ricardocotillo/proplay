@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SessionUserModel {
@@ -72,6 +74,7 @@ class UserModel {
   final String? profileImageUrl;
   final DateTime createdAt;
   final int credit;
+  final bool superUser;
 
   UserModel({
     required this.uid,
@@ -81,6 +84,7 @@ class UserModel {
     this.profileImageUrl,
     required this.createdAt,
     this.credit = 0,
+    this.superUser = false,
   });
 
   // Convert UserModel to Map for Firestore
@@ -93,6 +97,7 @@ class UserModel {
       'profileImageUrl': profileImageUrl,
       'createdAt': Timestamp.fromDate(createdAt),
       'credit': credit,
+      'superUser': superUser,
     };
   }
 
@@ -106,6 +111,7 @@ class UserModel {
       profileImageUrl: map['profileImageUrl'],
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       credit: map['credit'] ?? 0,
+      superUser: map['superUser'] ?? false,
     );
   }
 
