@@ -133,7 +133,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     TextFormField(
                       controller: _emailController,
                       decoration: const InputDecoration(
-                        labelText: 'Email',
+                        labelText: 'Correo electrónico',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.email),
                       ),
