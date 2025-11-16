@@ -61,7 +61,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
+      appBar: AppBar(title: const Text('Regístrate')),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
@@ -101,14 +101,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     TextFormField(
                       controller: _firstNameController,
                       decoration: const InputDecoration(
-                        labelText: 'First Name',
+                        labelText: 'Nombre',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.person),
                       ),
                       enabled: !isLoading,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your first name';
+                          return 'Por favor, ingresa tu nombre';
                         }
                         return null;
                       },
@@ -117,14 +117,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     TextFormField(
                       controller: _lastNameController,
                       decoration: const InputDecoration(
-                        labelText: 'Last Name',
+                        labelText: 'Apellido',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.person_outline),
                       ),
                       enabled: !isLoading,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your last name';
+                          return 'Por favor, ingresa tu apellido';
                         }
                         return null;
                       },
@@ -141,10 +141,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       enabled: !isLoading,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
+                          return 'Por favor, ingresa tu correo electrónico';
                         }
                         if (!value.contains('@')) {
-                          return 'Please enter a valid email';
+                          return 'Por favor, ingresa un correo electrónico válido';
                         }
                         return null;
                       },
@@ -153,7 +153,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     TextFormField(
                       controller: _passwordController,
                       decoration: const InputDecoration(
-                        labelText: 'Password',
+                        labelText: 'Contraseña',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.lock),
                       ),
@@ -161,10 +161,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       enabled: !isLoading,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter a password';
+                          return 'Por favor, ingresa una contraseña';
                         }
                         if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
+                          return 'La contraseña debe tener al menos 6 caracteres';
                         }
                         return null;
                       },
@@ -173,7 +173,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     TextFormField(
                       controller: _confirmPasswordController,
                       decoration: const InputDecoration(
-                        labelText: 'Confirm Password',
+                        labelText: 'Confirmar contraseña',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.lock_outline),
                       ),
@@ -181,10 +181,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       enabled: !isLoading,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please confirm your password';
+                          return 'Por favor, confirma tu contraseña';
                         }
                         if (value != _passwordController.text) {
-                          return 'Passwords do not match';
+                          return 'Las contraseñas no coinciden';
                         }
                         return null;
                       },
@@ -211,7 +211,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Register'),
+                          : const Text('Regístrate'),
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -220,7 +220,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
-                            'OR',
+                            'O',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ),
@@ -242,9 +242,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     ),
                     const SizedBox(height: 16),
                     TextButton(
-                      onPressed: isLoading
-                          ? null
-                          : () => context.pop(),
+                      onPressed: isLoading ? null : () => context.pop(),
                       child: const Text('¿Ya tienes una cuenta? Inicia sesión'),
                     ),
                   ],

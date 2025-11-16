@@ -16,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -30,25 +31,21 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     context.read<AuthBloc>().add(
-          AuthLoginRequested(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          ),
-        );
+      AuthLoginRequested(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      ),
+    );
   }
 
   void _signInWithGoogle() {
-    context.read<AuthBloc>().add(
-      const AuthGoogleSignInRequested(),
-    );
+    context.read<AuthBloc>().add(const AuthGoogleSignInRequested());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-      ),
+      appBar: AppBar(title: const Text('Login')),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
@@ -72,15 +69,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(
-                      Icons.lock_outline,
-                      size: 80,
-                    ),
+                    const Icon(Icons.lock_outline, size: 80),
                     const SizedBox(height: 32),
                     TextFormField(
                       controller: _emailController,
                       decoration: const InputDecoration(
-                        labelText: 'Email',
+                        labelText: 'Correo electrónico',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.email),
                       ),
@@ -88,10 +82,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       enabled: !isLoading,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
+                          return 'Por favor, ingresa tu correo electrónico';
                         }
                         if (!value.contains('@')) {
-                          return 'Please enter a valid email';
+                          return 'Por favor, ingresa un correo electrónico válido';
                         }
                         return null;
                       },
@@ -99,19 +93,31 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.lock),
+                      decoration: InputDecoration(
+                        labelText: 'Contraseña',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.lock),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
                       ),
-                      obscureText: true,
+                      obscureText: _obscurePassword,
                       enabled: !isLoading,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
+                          return 'Por favor, ingresa tu contraseña';
                         }
                         if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
+                          return 'La contraseña debe tener al menos 6 caracteres';
                         }
                         return null;
                       },
@@ -128,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Login'),
+                          : const Text('Iniciar sesión'),
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -137,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
-                            'OR',
+                            'O',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ),
@@ -162,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: isLoading
                           ? null
                           : () => context.push('/registration'),
-                      child: const Text("Don't have an account? Register"),
+                      child: const Text("¿No tienes una cuenta? Regístrate"),
                     ),
                   ],
                 ),
