@@ -247,34 +247,52 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
             children: [
-              Expanded(
+              SizedBox(
+                width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    context.push('/create-group').then((result) {
-                      if (result != null) {
-                        _loadGroups();
-                      }
-                    });
+                    context.push('/sessions');
                   },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Crear Grupo'),
+                  icon: const Icon(Icons.sports_soccer),
+                  label: const Text('Pichangas'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => _showJoinGroupDialog(),
-                  icon: const Icon(Icons.group_add),
-                  label: const Text('Unirse a Grupo'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        context.push('/create-group').then((result) {
+                          if (result != null) {
+                            _loadGroups();
+                          }
+                        });
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('Crear Grupo'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showJoinGroupDialog(),
+                      icon: const Icon(Icons.group_add),
+                      label: const Text('Unirse a Grupo'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

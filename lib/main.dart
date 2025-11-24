@@ -19,6 +19,7 @@ import 'package:proplay/screens/edit_profile_screen.dart';
 import 'package:proplay/screens/group_detail_screen_loader.dart';
 import 'package:proplay/screens/group_edit_screen_loader.dart';
 import 'package:proplay/screens/group_info_screen_loader.dart';
+import 'package:proplay/screens/sessions_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -72,6 +73,11 @@ class MyApp extends StatelessWidget {
                   name: 'home',
                   builder: (context, state) => const HomeScreen(),
                   routes: [
+                    GoRoute(
+                      path: 'sessions',
+                      name: 'sessions',
+                      builder: (context, state) => const SessionsScreen(),
+                    ),
                     GoRoute(
                       path: 'create-group',
                       name: 'create-group',

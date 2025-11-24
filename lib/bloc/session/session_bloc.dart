@@ -21,6 +21,7 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
         _currentUserId = currentUserId,
         super(SessionInitial()) {
     on<LoadSessions>(_onLoadSessions);
+    on<LoadAllUserSessions>(_onLoadAllUserSessions);
     on<DeleteSession>(_onDeleteSession);
   }
 
@@ -39,6 +40,21 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
       }
 
       emit(SessionLoaded(sessions, currentUserRole: currentUserRole));
+    } catch (e) {
+      emit(SessionError(e.toString()));
+    }
+  }
+
+  void _onLoadAllUserSessions(
+    LoadAllUserSessions event,
+    Emitter<SessionState> emit,
+  ) async {
+    emit(SessionLoading());
+    try {
+      final sessions = await _sessionService.getUpcomingSessionsForGroups(
+        event.groupIds,
+      );
+      emit(SessionLoaded(sessions));
     } catch (e) {
       emit(SessionError(e.toString()));
     }

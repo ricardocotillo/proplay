@@ -94,6 +94,57 @@ class SessionService {
     }
   }
 
+  Future<List<SessionModel>> getUpcomingSessionsForGroups(
+    List<String> groupIds,
+  ) async {
+    try {
+      if (groupIds.isEmpty) {
+        return [];
+      }
+
+      // Firestore has a limit of 10 items for 'in' queries
+      // If more than 10 groups, we need to batch the requests
+      final List<SessionModel> allSessions = [];
+
+      for (int i = 0; i < groupIds.length; i += 10) {
+        final batchIds = groupIds.skip(i).take(10).toList();
+
+        final snapshot = await _firestore
+            .collection('liveSessions')
+            .where('groupId', whereIn: batchIds)
+            .where('eventDate', isGreaterThanOrEqualTo: Timestamp.now())
+            .get();
+
+        final sessions = snapshot.docs.map((doc) {
+          final data = doc.data();
+          final filteredData = {
+            'id': doc.id,
+            'templateId': data['templateId'] ?? '',
+            'groupId': data['groupId'],
+            'title': data['title'],
+            'eventDate': data['eventDate'],
+            'eventEndDate':
+                data['eventEndDate'] ?? data['eventDate'],
+            'status': data['status'],
+            'playerCount': data['playerCount'] ?? 0,
+            'maxPlayers': data['maxPlayers'],
+            'costPerPlayer': data['costPerPlayer'] ?? 0,
+          };
+          return SessionModel.fromMap(doc.id, filteredData);
+        }).toList();
+
+        allSessions.addAll(sessions);
+      }
+
+      // Sort by event date since we may have sessions from multiple queries
+      allSessions.sort((a, b) => a.eventDate.compareTo(b.eventDate));
+
+      return allSessions;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> deleteSession(String sessionId) async {
     try {
       await _firestore.collection('liveSessions').doc(sessionId).delete();
