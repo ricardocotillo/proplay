@@ -5,6 +5,9 @@ import 'package:proplay/bloc/session/session_bloc.dart';
 import 'package:proplay/screens/create_session_screen.dart';
 import 'package:proplay/screens/session_detail_screen.dart';
 import 'package:proplay/services/session_service.dart';
+import 'package:proplay/services/group_service.dart';
+import 'package:proplay/services/user_service.dart';
+import 'package:proplay/utils/auth_helper.dart';
 
 class GroupsSessionsScreen extends StatelessWidget {
   final String groupId;
@@ -12,33 +15,48 @@ class GroupsSessionsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = context.currentUser;
+
     return BlocProvider(
-      create: (context) =>
-          SessionBloc(sessionService: SessionService())
-            ..add(LoadSessions(groupId)),
+      create: (context) => SessionBloc(
+        sessionService: SessionService(),
+        groupService: GroupService(userService: UserService()),
+        currentUserId: currentUser?.uid,
+      )..add(LoadSessions(groupId)),
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Pichangas'),
           actions: [
-            Builder(
-              builder: (builderContext) => IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: () async {
-                  // Capture the bloc before the async navigation
-                  final sessionBloc = builderContext.read<SessionBloc>();
-                  final result = await Navigator.push(
-                    builderContext,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          CreateSessionScreen(groupId: groupId),
+            BlocBuilder<SessionBloc, SessionState>(
+              builder: (context, state) {
+                // Only show add button if user is owner or admin
+                if (state is SessionLoaded &&
+                    (state.currentUserRole == 'owner' ||
+                        state.currentUserRole == 'admin')) {
+                  return Builder(
+                    builder: (builderContext) => IconButton(
+                      icon: const Icon(Icons.add),
+                      onPressed: () async {
+                        // Capture the bloc before the async navigation
+                        final sessionBloc = builderContext.read<SessionBloc>();
+                        final result = await Navigator.push(
+                          builderContext,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                CreateSessionScreen(groupId: groupId),
+                          ),
+                        );
+                        // Reload sessions if a new session was created
+                        if (result == true) {
+                          sessionBloc.add(LoadSessions(groupId));
+                        }
+                      },
                     ),
                   );
-                  // Reload sessions if a new session was created
-                  if (result == true) {
-                    sessionBloc.add(LoadSessions(groupId));
-                  }
-                },
-              ),
+                }
+                // Return empty container if not authorized
+                return const SizedBox.shrink();
+              },
             ),
           ],
         ),

@@ -13,11 +13,12 @@ class SessionLoading extends SessionState {}
 
 class SessionLoaded extends SessionState {
   final List<SessionModel> sessions;
+  final String? currentUserRole;
 
-  const SessionLoaded(this.sessions);
+  const SessionLoaded(this.sessions, {this.currentUserRole});
 
   @override
-  List<Object> get props => [sessions];
+  List<Object> get props => [sessions, currentUserRole ?? ''];
 }
 
 class SessionError extends SessionState {
