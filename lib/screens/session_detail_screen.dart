@@ -455,7 +455,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'IMPORTANTE: Si decides salir de esta pichanga después de unirte, los créditos NO serán devueltos.',
+                    'IMPORTANTE: No podrás salir de esta pichanga después de unirte, los créditos NO serán devueltos.',
                     style: TextStyle(
                       color: Colors.orange,
                       fontWeight: FontWeight.w500,
