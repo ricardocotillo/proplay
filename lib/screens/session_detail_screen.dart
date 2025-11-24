@@ -25,7 +25,6 @@ class SessionDetailScreen extends StatefulWidget {
 
 class _SessionDetailScreenState extends State<SessionDetailScreen> {
   bool _wasProcessingJoin = false;
-  bool _wasProcessingLeave = false;
 
   @override
   Widget build(BuildContext context) {
@@ -41,12 +40,10 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
         appBar: AppBar(title: const Text('Detalles de la Pichanga')),
         body: BlocConsumer<SessionDetailBloc, SessionDetailState>(
           listener: (context, state) {
-            // Track if we're processing a join or leave action
+            // Track if we're processing a join action
             if (state is SessionDetailProcessing) {
               if (state.action == 'joining') {
                 _wasProcessingJoin = true;
-              } else if (state.action == 'leaving') {
-                _wasProcessingLeave = true;
               }
             }
 
@@ -58,17 +55,8 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
               context.read<AuthBloc>().add(const AuthRefreshUserRequested());
             }
 
-            // If we successfully left, refresh user credits
-            if (state is SessionDetailLoaded &&
-                _wasProcessingLeave &&
-                !state.isCurrentUserJoined) {
-              _wasProcessingLeave = false;
-              context.read<AuthBloc>().add(const AuthRefreshUserRequested());
-            }
-
             if (state is SessionDetailError) {
               _wasProcessingJoin = false;
-              _wasProcessingLeave = false;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
@@ -268,16 +256,27 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                   child: isProcessing
                       ? const Center(child: CircularProgressIndicator())
                       : isJoined
-                      ? ElevatedButton.icon(
-                          onPressed: () {
-                            _showLeaveConfirmationDialog(context);
-                          },
-                          icon: const Icon(Icons.exit_to_app),
-                          label: const Text('Salir de la Pichanga'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.green, width: 2),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.green, size: 24),
+                              SizedBox(width: 8),
+                              Text(
+                                'Ya estás inscrito en esta pichanga',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
                           ),
                         )
                       : ElevatedButton.icon(
@@ -480,32 +479,6 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
             },
             style: TextButton.styleFrom(foregroundColor: Colors.green),
             child: const Text('Unirse'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showLeaveConfirmationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Salir de la Pichanga'),
-        content: const Text(
-          '¿Estás seguro de que quieres salir de esta pichanga?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              context.read<SessionDetailBloc>().add(const LeaveSession());
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Salir'),
           ),
         ],
       ),
