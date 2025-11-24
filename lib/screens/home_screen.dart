@@ -6,8 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/app_drawer.dart';
-import 'package:proplay/bloc/auth/auth_bloc.dart';
-import 'package:proplay/bloc/auth/auth_event.dart';
+import 'package:proplay/widgets/wallet_indicator.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/group/group_event.dart';
 import 'package:proplay/bloc/group/group_state.dart';
@@ -44,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watchUser;
+    final user = context.currentUser;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -61,46 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
           icon: const Icon(Icons.notifications_none),
         ),
         actions: [
-          GestureDetector(
-            onTap: () {
-              // Refresh user data from Firestore to get latest credits
-              context.read<AuthBloc>().add(const AuthRefreshUserRequested());
-              _showAddCreditsDialog();
-            },
-            child: Container(
-              margin: const EdgeInsets.only(right: 12.0),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.primary.withValues(alpha: 0.3),
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.account_balance_wallet,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    user?.credits ?? '0.00',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          WalletIndicator(onTap: _showAddCreditsDialog),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(

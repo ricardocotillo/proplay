@@ -82,6 +82,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         event.password,
       );
 
+      print(userCredential);
+
       // Get user model from Firestore
       final userModel = await _userService.getUser(userCredential.user!.uid);
       if (userModel != null) {
