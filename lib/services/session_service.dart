@@ -54,6 +54,7 @@ class SessionService {
       playerCount: 0,
       maxPlayers: template.maxPlayers,
       costPerPlayer: template.costPerPlayer ?? 0,
+      isPrivate: template.isPrivate,
     );
 
     await _firestore.collection('liveSessions').add(liveSession.toMap());
@@ -84,6 +85,7 @@ class SessionService {
           'playerCount': data['playerCount'] ?? 0,
           'maxPlayers': data['maxPlayers'],
           'costPerPlayer': data['costPerPlayer'] ?? 0,
+          'isPrivate': data['isPrivate'] ?? false,
           // Explicitly exclude players
         };
         return SessionModel.fromMap(doc.id, filteredData);
@@ -129,6 +131,7 @@ class SessionService {
             'playerCount': data['playerCount'] ?? 0,
             'maxPlayers': data['maxPlayers'],
             'costPerPlayer': data['costPerPlayer'] ?? 0,
+            'isPrivate': data['isPrivate'] ?? false,
           };
           return SessionModel.fromMap(doc.id, filteredData);
         }).toList();
@@ -137,6 +140,74 @@ class SessionService {
       }
 
       // Sort by event date since we may have sessions from multiple queries
+      allSessions.sort((a, b) => a.eventDate.compareTo(b.eventDate));
+
+      return allSessions;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Get all upcoming public sessions (isPrivate == false) from all groups
+  Future<List<SessionModel>> getAllPublicSessions() async {
+    try {
+      final snapshot = await _firestore
+          .collection('liveSessions')
+          .where('isPrivate', isEqualTo: false)
+          .where('eventDate', isGreaterThanOrEqualTo: Timestamp.now())
+          .orderBy('eventDate')
+          .get();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        final filteredData = {
+          'id': doc.id,
+          'templateId': data['templateId'] ?? '',
+          'groupId': data['groupId'],
+          'title': data['title'],
+          'eventDate': data['eventDate'],
+          'eventEndDate': data['eventEndDate'] ?? data['eventDate'],
+          'status': data['status'],
+          'playerCount': data['playerCount'] ?? 0,
+          'maxPlayers': data['maxPlayers'],
+          'costPerPlayer': data['costPerPlayer'] ?? 0,
+          'isPrivate': data['isPrivate'] ?? false,
+        };
+        return SessionModel.fromMap(doc.id, filteredData);
+      }).toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Get all upcoming sessions: user's group sessions + public sessions
+  Future<List<SessionModel>> getAllUpcomingSessions(
+    List<String> userGroupIds,
+  ) async {
+    try {
+      // Get sessions from user's groups (both private and public)
+      final groupSessions = await getUpcomingSessionsForGroups(userGroupIds);
+
+      // Get all public sessions
+      final publicSessions = await getAllPublicSessions();
+
+      // Create a map to avoid duplicates (sessions from user's groups)
+      final sessionMap = <String, SessionModel>{};
+
+      // Add group sessions first (they take priority)
+      for (final session in groupSessions) {
+        sessionMap[session.id] = session;
+      }
+
+      // Add public sessions if they're not already in the map
+      for (final session in publicSessions) {
+        if (!sessionMap.containsKey(session.id)) {
+          sessionMap[session.id] = session;
+        }
+      }
+
+      // Convert to list and sort by event date
+      final allSessions = sessionMap.values.toList();
       allSessions.sort((a, b) => a.eventDate.compareTo(b.eventDate));
 
       return allSessions;

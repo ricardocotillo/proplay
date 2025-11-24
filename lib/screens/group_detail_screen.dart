@@ -98,13 +98,14 @@ class GroupDetailScreen extends StatelessWidget {
             child: Text(group.name),
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.calendar_today),
+            TextButton(
+              child: const Text('Pichangas'),
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => GroupsSessionsScreen(groupId: group.id),
+                    builder: (context) =>
+                        GroupsSessionsScreen(groupId: group.id),
                   ),
                 );
               },

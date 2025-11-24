@@ -13,6 +13,7 @@ class SessionModel extends Equatable {
   final int playerCount;
   final int maxPlayers;
   final double costPerPlayer;
+  final bool isPrivate;
   final List<SessionUserModel>? players;
 
   const SessionModel({
@@ -26,6 +27,7 @@ class SessionModel extends Equatable {
     required this.playerCount,
     required this.maxPlayers,
     required this.costPerPlayer,
+    this.isPrivate = false,
     this.players,
   });
 
@@ -41,6 +43,7 @@ class SessionModel extends Equatable {
     playerCount,
     maxPlayers,
     costPerPlayer,
+    isPrivate,
     players,
   ];
 
@@ -55,6 +58,7 @@ class SessionModel extends Equatable {
     int? playerCount,
     int? maxPlayers,
     double? costPerPlayer,
+    bool? isPrivate,
     List<SessionUserModel>? players,
   }) {
     return SessionModel(
@@ -68,6 +72,7 @@ class SessionModel extends Equatable {
       playerCount: playerCount ?? this.playerCount,
       maxPlayers: maxPlayers ?? this.maxPlayers,
       costPerPlayer: costPerPlayer ?? this.costPerPlayer,
+      isPrivate: isPrivate ?? this.isPrivate,
       players: players ?? this.players,
     );
   }
@@ -83,6 +88,7 @@ class SessionModel extends Equatable {
       'playerCount': playerCount,
       'maxPlayers': maxPlayers,
       'costPerPlayer': costPerPlayer,
+      'isPrivate': isPrivate,
       if (players != null) 'players': players!.map((p) => p.toMap()).toList(),
     };
   }
@@ -100,6 +106,7 @@ class SessionModel extends Equatable {
       playerCount: map['playerCount'] as int,
       maxPlayers: map['maxPlayers'] as int,
       costPerPlayer: (map['costPerPlayer'] as num).toDouble(),
+      isPrivate: map['isPrivate'] as bool? ?? false,
       players: map['players'] != null
           ? (map['players'] as List)
                 .map((p) => SessionUserModel.fromMap(p as Map<String, dynamic>))

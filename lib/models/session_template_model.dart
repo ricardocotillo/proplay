@@ -12,6 +12,7 @@ class SessionTemplateModel extends Equatable {
   final int maxPlayers;
   final double totalCost;
   final double? costPerPlayer;
+  final bool isPrivate;
 
   const SessionTemplateModel({
     this.id,
@@ -24,6 +25,7 @@ class SessionTemplateModel extends Equatable {
     required this.maxPlayers,
     required this.totalCost,
     this.costPerPlayer,
+    this.isPrivate = false,
   });
 
   @override
@@ -38,6 +40,7 @@ class SessionTemplateModel extends Equatable {
     maxPlayers,
     totalCost,
     costPerPlayer,
+    isPrivate,
   ];
 
   SessionTemplateModel copyWith({
@@ -51,6 +54,7 @@ class SessionTemplateModel extends Equatable {
     int? maxPlayers,
     double? totalCost,
     double? costPerPlayer,
+    bool? isPrivate,
   }) {
     return SessionTemplateModel(
       id: id ?? this.id,
@@ -63,6 +67,7 @@ class SessionTemplateModel extends Equatable {
       maxPlayers: maxPlayers ?? this.maxPlayers,
       totalCost: totalCost ?? this.totalCost,
       costPerPlayer: costPerPlayer,
+      isPrivate: isPrivate ?? this.isPrivate,
     );
   }
 
@@ -77,6 +82,7 @@ class SessionTemplateModel extends Equatable {
       'maxPlayers': maxPlayers,
       'totalCost': totalCost,
       'costPerPlayer': costPerPlayer,
+      'isPrivate': isPrivate,
     };
   }
 
@@ -92,6 +98,7 @@ class SessionTemplateModel extends Equatable {
       maxPlayers: map['maxPlayers'] as int,
       totalCost: (map['totalCost'] as num).toDouble(),
       costPerPlayer: (map['costPerPlayer'] as num?)?.toDouble(),
+      isPrivate: map['isPrivate'] as bool? ?? false,
     );
   }
 }

@@ -51,7 +51,8 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
   ) async {
     emit(SessionLoading());
     try {
-      final sessions = await _sessionService.getUpcomingSessionsForGroups(
+      // Get both user's group sessions and all public sessions
+      final sessions = await _sessionService.getAllUpcomingSessions(
         event.groupIds,
       );
       emit(SessionLoaded(sessions));

@@ -38,6 +38,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   TimeOfDay? _eventTime;
   DateTime? _eventEndDate;
   TimeOfDay? _eventEndTime;
+  bool _isPrivate = false;
 
   @override
   void dispose() {
@@ -94,6 +95,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         eventEndDate: Timestamp.fromDate(eventEndDateTime),
         maxPlayers: int.parse(_maxPlayersController.text),
         totalCost: double.parse(_totalCostController.text),
+        isPrivate: _isPrivate,
       );
 
       context.read<CreateSessionBloc>().add(CreateSessionTemplate(template));
@@ -168,6 +170,20 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                   validator: (value) => value!.isEmpty
                       ? 'Por favor, ingresa el costo total'
                       : null,
+                ),
+                const SizedBox(height: 16),
+                CheckboxListTile(
+                  title: const Text('Sesión privada'),
+                  subtitle: const Text(
+                    'Solo los miembros del grupo podrán ver esta sesión',
+                  ),
+                  value: _isPrivate,
+                  onChanged: (value) {
+                    setState(() {
+                      _isPrivate = value ?? false;
+                    });
+                  },
+                  controlAffinity: ListTileControlAffinity.leading,
                 ),
                 const SizedBox(height: 32),
                 Center(
