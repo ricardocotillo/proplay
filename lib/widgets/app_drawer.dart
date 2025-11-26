@@ -63,7 +63,7 @@ class AppDrawer extends StatelessWidget {
                     ),
                   ),
             accountName: Text(
-              user != null ? user.fullName : 'User',
+              user != null ? user.fullName : 'Usuario',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             accountEmail: Text(
@@ -78,7 +78,7 @@ class AppDrawer extends StatelessWidget {
               children: [
                 ListTile(
                   leading: const Icon(Icons.edit),
-                  title: const Text('Edit Profile'),
+                  title: const Text('Editar Perfil'),
                   onTap: () {
                     context.pop(); // Close drawer
                     context.push('/edit-profile');
@@ -86,7 +86,7 @@ class AppDrawer extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.history),
-                  title: const Text('Credit History'),
+                  title: const Text('Historial de Créditos'),
                   onTap: () {
                     context.pop(); // Close drawer
                     Navigator.push(
@@ -127,7 +127,7 @@ class AppDrawer extends StatelessWidget {
                 ListTile(
                   leading: const Icon(Icons.logout, color: Colors.red),
                   title: const Text(
-                    'Log Out',
+                    'Cerrar Sesión',
                     style: TextStyle(color: Colors.red),
                   ),
                   onTap: () {
@@ -136,14 +136,14 @@ class AppDrawer extends StatelessWidget {
                     showDialog(
                       context: context,
                       builder: (dialogContext) => AlertDialog(
-                        title: const Text('Log Out'),
+                        title: const Text('Cerrar Sesión'),
                         content: const Text(
-                          'Are you sure you want to log out?',
+                          '¿Estás seguro de que quieres cerrar sesión?',
                         ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(dialogContext),
-                            child: const Text('Cancel'),
+                            child: const Text('Cancelar'),
                           ),
                           TextButton(
                             onPressed: () {
@@ -152,7 +152,7 @@ class AppDrawer extends StatelessWidget {
                               authBloc.add(AuthLogoutRequested());
                             },
                             child: const Text(
-                              'Log Out',
+                              'Cerrar Sesión',
                               style: TextStyle(color: Colors.red),
                             ),
                           ),
