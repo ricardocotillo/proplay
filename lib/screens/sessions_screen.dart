@@ -33,9 +33,9 @@ class SessionsScreen extends StatelessWidget {
             final groupIds = groupState.groups.map((g) => g.id).toList();
 
             return BlocProvider(
-              create: (context) => SessionBloc(
-                sessionService: SessionService(),
-              )..add(LoadAllUserSessions(groupIds)),
+              create: (context) =>
+                  SessionBloc(sessionService: SessionService())
+                    ..add(LoadAllUserSessions(groupIds)),
               child: BlocBuilder<SessionBloc, SessionState>(
                 builder: (context, sessionState) {
                   if (sessionState is SessionLoading) {
@@ -56,7 +56,9 @@ class SessionsScreen extends StatelessWidget {
                         return ListTile(
                           title: Text(session.title),
                           subtitle: Text(
-                            DateFormat.yMMMd().add_jm().format(session.eventDate),
+                            DateFormat.yMMMd().add_jm().format(
+                              session.eventDate,
+                            ),
                           ),
                           trailing: Text(
                             '${session.playerCount}/${session.maxPlayers} jugadores',
@@ -65,9 +67,8 @@ class SessionsScreen extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => SessionDetailScreen(
-                                  sessionId: session.id,
-                                ),
+                                builder: (context) =>
+                                    SessionDetailScreen(sessionId: session.id),
                               ),
                             );
                           },
@@ -77,7 +78,9 @@ class SessionsScreen extends StatelessWidget {
                   }
 
                   if (sessionState is SessionError) {
-                    return Center(child: Text('Error: ${sessionState.message}'));
+                    return Center(
+                      child: Text('Error: ${sessionState.message}'),
+                    );
                   }
 
                   return const Center(
