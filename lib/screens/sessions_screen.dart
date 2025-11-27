@@ -36,9 +36,8 @@ class SessionsScreen extends StatelessWidget {
             final userSports = user?.sports ?? [];
 
             return BlocProvider(
-              create: (context) =>
-                  SessionBloc(sessionService: SessionService())
-                    ..add(LoadAllUserSessions(groupIds, userSports: userSports)),
+              create: (context) => SessionBloc(sessionService: SessionService())
+                ..add(LoadAllUserSessions(groupIds, userSports: userSports)),
               child: BlocBuilder<SessionBloc, SessionState>(
                 builder: (context, sessionState) {
                   if (sessionState is SessionLoading) {
@@ -81,6 +80,7 @@ class SessionsScreen extends StatelessWidget {
                   }
 
                   if (sessionState is SessionError) {
+                    print(sessionState.message);
                     return Center(
                       child: Text('Error: ${sessionState.message}'),
                     );

@@ -87,6 +87,7 @@ class SessionService {
           'maxPlayers': data['maxPlayers'],
           'costPerPlayer': data['costPerPlayer'] ?? 0,
           'isPrivate': data['isPrivate'] ?? false,
+          'sport': data['sport'],
           // Explicitly exclude players
         };
         return SessionModel.fromMap(doc.id, filteredData);
@@ -126,13 +127,13 @@ class SessionService {
             'groupId': data['groupId'],
             'title': data['title'],
             'eventDate': data['eventDate'],
-            'eventEndDate':
-                data['eventEndDate'] ?? data['eventDate'],
+            'eventEndDate': data['eventEndDate'] ?? data['eventDate'],
             'status': data['status'],
             'playerCount': data['playerCount'] ?? 0,
             'maxPlayers': data['maxPlayers'],
             'costPerPlayer': data['costPerPlayer'] ?? 0,
             'isPrivate': data['isPrivate'] ?? false,
+            'sport': data['sport'],
           };
           return SessionModel.fromMap(doc.id, filteredData);
         }).toList();
@@ -173,6 +174,7 @@ class SessionService {
           'maxPlayers': data['maxPlayers'],
           'costPerPlayer': data['costPerPlayer'] ?? 0,
           'isPrivate': data['isPrivate'] ?? false,
+          'sport': data['sport'],
         };
         return SessionModel.fromMap(doc.id, filteredData);
       }).toList();
