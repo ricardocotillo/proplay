@@ -16,10 +16,10 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
     required SessionService sessionService,
     GroupService? groupService,
     String? currentUserId,
-  })  : _sessionService = sessionService,
-        _groupService = groupService,
-        _currentUserId = currentUserId,
-        super(SessionInitial()) {
+  }) : _sessionService = sessionService,
+       _groupService = groupService,
+       _currentUserId = currentUserId,
+       super(SessionInitial()) {
     on<LoadSessions>(_onLoadSessions);
     on<LoadAllUserSessions>(_onLoadAllUserSessions);
     on<DeleteSession>(_onDeleteSession);
@@ -51,9 +51,10 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
   ) async {
     emit(SessionLoading());
     try {
-      // Get both user's group sessions and all public sessions
+      // Get both user's group sessions and public sessions matching user's sports
       final sessions = await _sessionService.getAllUpcomingSessions(
         event.groupIds,
+        userSports: event.userSports,
       );
       emit(SessionLoaded(sessions));
     } catch (e) {
@@ -70,10 +71,12 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
         final updatedSessions = currentState.sessions
             .where((session) => session.id != event.sessionId)
             .toList();
-        emit(SessionLoaded(
-          updatedSessions,
-          currentUserRole: currentState.currentUserRole,
-        ));
+        emit(
+          SessionLoaded(
+            updatedSessions,
+            currentUserRole: currentState.currentUserRole,
+          ),
+        );
       }
     } catch (e) {
       emit(SessionError(e.toString()));

@@ -7,6 +7,7 @@ import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/group/group_state.dart';
 import 'package:proplay/screens/session_detail_screen.dart';
 import 'package:proplay/services/session_service.dart';
+import 'package:proplay/utils/auth_helper.dart';
 
 class SessionsScreen extends StatelessWidget {
   const SessionsScreen({super.key});
@@ -31,11 +32,13 @@ class SessionsScreen extends StatelessWidget {
         builder: (context, groupState) {
           if (groupState is GroupLoaded) {
             final groupIds = groupState.groups.map((g) => g.id).toList();
+            final user = context.currentUser;
+            final userSports = user?.sports ?? [];
 
             return BlocProvider(
               create: (context) =>
                   SessionBloc(sessionService: SessionService())
-                    ..add(LoadAllUserSessions(groupIds)),
+                    ..add(LoadAllUserSessions(groupIds, userSports: userSports)),
               child: BlocBuilder<SessionBloc, SessionState>(
                 builder: (context, sessionState) {
                   if (sessionState is SessionLoading) {

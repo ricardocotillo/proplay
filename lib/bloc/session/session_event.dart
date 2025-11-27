@@ -18,11 +18,12 @@ class LoadSessions extends SessionEvent {
 
 class LoadAllUserSessions extends SessionEvent {
   final List<String> groupIds;
+  final List<String> userSports;
 
-  const LoadAllUserSessions(this.groupIds);
+  const LoadAllUserSessions(this.groupIds, {this.userSports = const []});
 
   @override
-  List<Object> get props => [groupIds];
+  List<Object> get props => [groupIds, userSports];
 }
 
 class DeleteSession extends SessionEvent {

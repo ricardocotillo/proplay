@@ -181,10 +181,11 @@ class SessionService {
     }
   }
 
-  /// Get all upcoming sessions: user's group sessions + public sessions
+  /// Get all upcoming sessions: user's group sessions + public sessions matching user's sports
   Future<List<SessionModel>> getAllUpcomingSessions(
-    List<String> userGroupIds,
-  ) async {
+    List<String> userGroupIds, {
+    List<String> userSports = const [],
+  }) async {
     try {
       // Get sessions from user's groups (both private and public)
       final groupSessions = await getUpcomingSessionsForGroups(userGroupIds);
@@ -201,9 +202,13 @@ class SessionService {
       }
 
       // Add public sessions if they're not already in the map
+      // and if their sport matches user's sports interests
       for (final session in publicSessions) {
         if (!sessionMap.containsKey(session.id)) {
-          sessionMap[session.id] = session;
+          // Only add if user has no sports specified, or if session sport matches user's sports
+          if (userSports.isEmpty || userSports.contains(session.sport)) {
+            sessionMap[session.id] = session;
+          }
         }
       }
 
