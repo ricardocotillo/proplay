@@ -518,7 +518,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 240,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      bottom: 10,
+                    ),
                     itemCount: hasMoreSessions
                         ? displaySessions.length + 1
                         : displaySessions.length,
@@ -583,13 +587,13 @@ class _SessionCarouselCard extends StatelessWidget {
               ),
               child: Image.asset(
                 'assets/thumbnail.png',
-                height: 140,
+                height: 120,
                 width: double.infinity,
                 fit: BoxFit.cover,
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -602,7 +606,7 @@ class _SessionCarouselCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Icon(
@@ -622,7 +626,7 @@ class _SessionCarouselCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
