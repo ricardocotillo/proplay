@@ -18,17 +18,17 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
   final _groupNameController = TextEditingController();
 
   // Available sports
-  final List<String> _availableSports = [
-    'Fútbol',
-    'Baloncesto',
-    'Tenis',
-    'Voleibol',
-    'Béisbol',
-    'Rugby',
-    'Natación',
-    'Ciclismo',
-    'Atletismo',
-    'Gimnasia',
+  final List<Map<String, String>> _availableSports = [
+    {'display': 'Fútbol', 'value': 'fútbol'},
+    {'display': 'Baloncesto', 'value': 'baloncesto'},
+    {'display': 'Voleibol', 'value': 'voleibol'},
+    {'display': 'Tenis', 'value': 'tenis'},
+    {'display': 'Natación', 'value': 'natación'},
+    {'display': 'Running', 'value': 'running'},
+    {'display': 'Ciclismo', 'value': 'ciclismo'},
+    {'display': 'Gimnasio', 'value': 'gimnasio'},
+    {'display': 'Pádel', 'value': 'pádel'},
+    {'display': 'Béisbol', 'value': 'béisbol'},
   ];
 
   final List<String> _selectedSports = [];
@@ -120,18 +120,20 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: _availableSports.map((sport) {
-                      final isSelected = _selectedSports.contains(sport);
+                      final sportDisplay = sport['display']!;
+                      final sportValue = sport['value']!;
+                      final isSelected = _selectedSports.contains(sportValue);
                       return FilterChip(
-                        label: Text(sport),
+                        label: Text(sportDisplay),
                         selected: isSelected,
                         onSelected: isLoading
                             ? null
                             : (selected) {
                                 setState(() {
                                   if (selected) {
-                                    _selectedSports.add(sport);
+                                    _selectedSports.add(sportValue);
                                   } else {
-                                    _selectedSports.remove(sport);
+                                    _selectedSports.remove(sportValue);
                                   }
                                 });
                               },
