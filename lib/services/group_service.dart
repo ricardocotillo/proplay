@@ -89,16 +89,14 @@ class GroupService {
 
   // Stream group by ID for real-time updates
   Stream<GroupModel?> streamGroup(String groupId) {
-    return _firestore
-        .collection(groupsCollection)
-        .doc(groupId)
-        .snapshots()
-        .map((snapshot) {
-      if (snapshot.exists) {
-        return GroupModel.fromDocument(snapshot);
-      }
-      return null;
-    });
+    return _firestore.collection(groupsCollection).doc(groupId).snapshots().map(
+      (snapshot) {
+        if (snapshot.exists) {
+          return GroupModel.fromDocument(snapshot);
+        }
+        return null;
+      },
+    );
   }
 
   // Get group by code
@@ -218,10 +216,7 @@ class GroupService {
           .get();
 
       return snapshot.docs.map((doc) {
-        return {
-          'userId': doc.id,
-          'role': doc.data()['role'],
-        };
+        return {'userId': doc.id, 'role': doc.data()['role']};
       }).toList();
     } catch (e) {
       throw Exception('Failed to get group members: $e');
