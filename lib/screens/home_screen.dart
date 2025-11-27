@@ -428,7 +428,7 @@ class _HomeScreenState extends State<HomeScreen> {
           final user = this.context.currentUser;
           if (user != null && selectedSports.isNotEmpty) {
             try {
-              // Update sports in Firestore
+              // Update sports in Firestore (already in lowercase)
               final userService = UserService();
               await userService.updateUser(user.uid, {
                 'sports': selectedSports,
@@ -436,7 +436,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // Refresh user data in AuthBloc
               if (mounted) {
-                this.context.read<AuthBloc>().add(const AuthRefreshUserRequested());
+                this.context.read<AuthBloc>().add(
+                  const AuthRefreshUserRequested(),
+                );
               }
 
               if (mounted) {
@@ -843,16 +845,24 @@ class _SportsSelectionDialog extends StatefulWidget {
 
 class _SportsSelectionDialogState extends State<_SportsSelectionDialog> {
   final List<Map<String, dynamic>> _availableSports = [
-    {'name': 'Fútbol', 'icon': Icons.sports_soccer},
-    {'name': 'Baloncesto', 'icon': Icons.sports_basketball},
-    {'name': 'Voleibol', 'icon': Icons.sports_volleyball},
-    {'name': 'Tenis', 'icon': Icons.sports_tennis},
-    {'name': 'Natación', 'icon': Icons.pool},
-    {'name': 'Running', 'icon': Icons.directions_run},
-    {'name': 'Ciclismo', 'icon': Icons.directions_bike},
-    {'name': 'Gimnasio', 'icon': Icons.fitness_center},
-    {'name': 'Pádel', 'icon': Icons.sports_tennis},
-    {'name': 'Béisbol', 'icon': Icons.sports_baseball},
+    {'display': 'Fútbol', 'value': 'fútbol', 'icon': Icons.sports_soccer},
+    {
+      'display': 'Baloncesto',
+      'value': 'baloncesto',
+      'icon': Icons.sports_basketball,
+    },
+    {
+      'display': 'Voleibol',
+      'value': 'voleibol',
+      'icon': Icons.sports_volleyball,
+    },
+    {'display': 'Tenis', 'value': 'tenis', 'icon': Icons.sports_tennis},
+    {'display': 'Natación', 'value': 'natación', 'icon': Icons.pool},
+    {'display': 'Running', 'value': 'running', 'icon': Icons.directions_run},
+    {'display': 'Ciclismo', 'value': 'ciclismo', 'icon': Icons.directions_bike},
+    {'display': 'Gimnasio', 'value': 'gimnasio', 'icon': Icons.fitness_center},
+    {'display': 'Pádel', 'value': 'pádel', 'icon': Icons.sports_tennis},
+    {'display': 'Béisbol', 'value': 'béisbol', 'icon': Icons.sports_baseball},
   ];
 
   final Set<String> _selectedSports = {};
@@ -875,18 +885,19 @@ class _SportsSelectionDialogState extends State<_SportsSelectionDialog> {
             ),
             const SizedBox(height: 16),
             ..._availableSports.map((sport) {
-              final sportName = sport['name'] as String;
+              final sportDisplay = sport['display'] as String;
+              final sportValue = sport['value'] as String;
               final sportIcon = sport['icon'] as IconData;
-              final isSelected = _selectedSports.contains(sportName);
+              final isSelected = _selectedSports.contains(sportValue);
 
               return CheckboxListTile(
                 value: isSelected,
                 onChanged: (bool? value) {
                   setState(() {
                     if (value == true) {
-                      _selectedSports.add(sportName);
+                      _selectedSports.add(sportValue);
                     } else {
-                      _selectedSports.remove(sportName);
+                      _selectedSports.remove(sportValue);
                     }
                   });
                 },
@@ -898,7 +909,7 @@ class _SportsSelectionDialogState extends State<_SportsSelectionDialog> {
                       color: Theme.of(context).colorScheme.primary,
                     ),
                     const SizedBox(width: 12),
-                    Text(sportName),
+                    Text(sportDisplay),
                   ],
                 ),
                 dense: true,
