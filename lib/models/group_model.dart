@@ -4,7 +4,7 @@ class GroupModel {
   final String id;
   final String name;
   final String code;
-  final List<String> sports;
+  final String sport;
   final String createdBy;
   final DateTime createdAt;
   final List<String>? members;
@@ -14,7 +14,7 @@ class GroupModel {
     required this.id,
     required this.name,
     required this.code,
-    required this.sports,
+    required this.sport,
     required this.createdBy,
     required this.createdAt,
     this.members,
@@ -27,7 +27,7 @@ class GroupModel {
       'id': id,
       'name': name,
       'code': code,
-      'sports': sports,
+      'sport': sport,
       'createdBy': createdBy,
       'createdAt': Timestamp.fromDate(createdAt),
       'members': members,
@@ -41,7 +41,7 @@ class GroupModel {
       id: map['id'] ?? '',
       name: map['name'] ?? '',
       code: map['code'] ?? '',
-      sports: List<String>.from(map['sports'] ?? []),
+      sport: map['sport'] as String? ?? '',
       createdBy: map['createdBy'] ?? '',
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       members: List<String>.from(map['members'] ?? []),

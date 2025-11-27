@@ -23,7 +23,7 @@ class GroupBloc extends Bloc<GroupEvent, GroupState> {
     try {
       final group = await _groupService.createGroup(
         name: event.name,
-        sports: event.sports,
+        sport: event.sport,
         createdBy: event.createdBy,
       );
       emit(GroupCreateSuccess(group));

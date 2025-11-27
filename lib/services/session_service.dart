@@ -55,6 +55,7 @@ class SessionService {
       maxPlayers: template.maxPlayers,
       costPerPlayer: template.costPerPlayer ?? 0,
       isPrivate: template.isPrivate,
+      sport: template.sport,
     );
 
     await _firestore.collection('liveSessions').add(liveSession.toMap());

@@ -6,6 +6,9 @@ import 'package:intl/intl.dart';
 import 'package:proplay/models/session_template_model.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/services/group_service.dart';
+import 'package:proplay/services/user_service.dart';
+import 'package:proplay/models/group_model.dart';
 
 class CreateSessionScreen extends StatelessWidget {
   final String groupId;
@@ -39,6 +42,36 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   DateTime? _eventEndDate;
   TimeOfDay? _eventEndTime;
   bool _isPrivate = false;
+  GroupModel? _group;
+  bool _isLoadingGroup = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGroup();
+  }
+
+  Future<void> _loadGroup() async {
+    try {
+      final groupService = GroupService(userService: UserService());
+      final group = await groupService.getGroup(widget.groupId);
+      if (mounted) {
+        setState(() {
+          _group = group;
+          _isLoadingGroup = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingGroup = false;
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al cargar el grupo: $e')));
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -72,6 +105,15 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         return;
       }
 
+      if (_group == null || _group!.sport.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error: El grupo no tiene deporte asignado.'),
+          ),
+        );
+        return;
+      }
+
       final eventDateTime = DateTime(
         _eventDate!.year,
         _eventDate!.month,
@@ -96,6 +138,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         maxPlayers: int.parse(_maxPlayersController.text),
         totalCost: double.parse(_totalCostController.text),
         isPrivate: _isPrivate,
+        sport: _group!.sport,
       );
 
       context.read<CreateSessionBloc>().add(CreateSessionTemplate(template));
@@ -106,104 +149,116 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Crear sesión')),
-      body: BlocListener<CreateSessionBloc, CreateSessionState>(
-        listener: (context, state) {
-          if (state is SessionCreationSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Sesión creada exitosamente!')),
-            );
-            Navigator.of(context).pop(true);
-          }
-          if (state is SessionCreationFailure) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Error: ${state.message}')));
-          }
-        },
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextFormField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(labelText: 'Título'),
-                  validator: (value) =>
-                      value!.isEmpty ? 'Por favor, ingresa un título' : null,
-                ),
-                const SizedBox(height: 16),
-                _buildDateTimePicker(
-                  context: context,
-                  label: 'Fecha de inicio',
-                  date: _eventDate,
-                  time: _eventTime,
-                  onDatePicked: (date) => setState(() => _eventDate = date),
-                  onTimePicked: (time) => setState(() => _eventTime = time),
-                ),
-                const SizedBox(height: 16),
-                _buildDateTimePicker(
-                  context: context,
-                  label: 'Fecha de finalización',
-                  date: _eventEndDate,
-                  time: _eventEndTime,
-                  onDatePicked: (date) => setState(() => _eventEndDate = date),
-                  onTimePicked: (time) => setState(() => _eventEndTime = time),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _maxPlayersController,
-                  decoration: const InputDecoration(
-                    labelText: 'Máximo de jugadores',
+      body: _isLoadingGroup
+          ? const Center(child: CircularProgressIndicator())
+          : BlocListener<CreateSessionBloc, CreateSessionState>(
+              listener: (context, state) {
+                if (state is SessionCreationSuccess) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Sesión creada exitosamente!'),
+                    ),
+                  );
+                  Navigator.of(context).pop(true);
+                }
+                if (state is SessionCreationFailure) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error: ${state.message}')),
+                  );
+                }
+              },
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: _titleController,
+                        decoration: const InputDecoration(labelText: 'Título'),
+                        validator: (value) => value!.isEmpty
+                            ? 'Por favor, ingresa un título'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDateTimePicker(
+                        context: context,
+                        label: 'Fecha de inicio',
+                        date: _eventDate,
+                        time: _eventTime,
+                        onDatePicked: (date) =>
+                            setState(() => _eventDate = date),
+                        onTimePicked: (time) =>
+                            setState(() => _eventTime = time),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDateTimePicker(
+                        context: context,
+                        label: 'Fecha de finalización',
+                        date: _eventEndDate,
+                        time: _eventEndTime,
+                        onDatePicked: (date) =>
+                            setState(() => _eventEndDate = date),
+                        onTimePicked: (time) =>
+                            setState(() => _eventEndTime = time),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _maxPlayersController,
+                        decoration: const InputDecoration(
+                          labelText: 'Máximo de jugadores',
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) => value!.isEmpty
+                            ? 'Por favor, ingresa el número de jugadores'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _totalCostController,
+                        decoration: const InputDecoration(
+                          labelText: 'Costo total',
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) => value!.isEmpty
+                            ? 'Por favor, ingresa el costo total'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      CheckboxListTile(
+                        title: const Text('Sesión privada'),
+                        subtitle: const Text(
+                          'Solo los miembros del grupo podrán ver esta sesión',
+                        ),
+                        value: _isPrivate,
+                        onChanged: (value) {
+                          setState(() {
+                            _isPrivate = value ?? false;
+                          });
+                        },
+                        controlAffinity: ListTileControlAffinity.leading,
+                      ),
+                      const SizedBox(height: 32),
+                      Center(
+                        child:
+                            BlocBuilder<CreateSessionBloc, CreateSessionState>(
+                              builder: (context, state) {
+                                if (state is CreateSessionLoading) {
+                                  return const CircularProgressIndicator();
+                                }
+                                return ElevatedButton(
+                                  onPressed: _submitForm,
+                                  child: const Text('Crear Sesión'),
+                                );
+                              },
+                            ),
+                      ),
+                    ],
                   ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) => value!.isEmpty
-                      ? 'Por favor, ingresa el número de jugadores'
-                      : null,
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _totalCostController,
-                  decoration: const InputDecoration(labelText: 'Costo total'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) => value!.isEmpty
-                      ? 'Por favor, ingresa el costo total'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                CheckboxListTile(
-                  title: const Text('Sesión privada'),
-                  subtitle: const Text(
-                    'Solo los miembros del grupo podrán ver esta sesión',
-                  ),
-                  value: _isPrivate,
-                  onChanged: (value) {
-                    setState(() {
-                      _isPrivate = value ?? false;
-                    });
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                const SizedBox(height: 32),
-                Center(
-                  child: BlocBuilder<CreateSessionBloc, CreateSessionState>(
-                    builder: (context, state) {
-                      if (state is CreateSessionLoading) {
-                        return const CircularProgressIndicator();
-                      }
-                      return ElevatedButton(
-                        onPressed: _submitForm,
-                        child: const Text('Crear Sesión'),
-                      );
-                    },
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 

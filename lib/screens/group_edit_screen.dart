@@ -26,26 +26,26 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
   File? _selectedImage;
 
   // Available sports
-  final List<String> _availableSports = [
-    'Fútbol',
-    'Baloncesto',
-    'Tenis',
-    'Voleibol',
-    'Béisbol',
-    'Rugby',
-    'Natación',
-    'Ciclismo',
-    'Atletismo',
-    'Gimnasia',
+  final List<Map<String, String>> _availableSports = [
+    {'display': 'Fútbol', 'value': 'fútbol'},
+    {'display': 'Baloncesto', 'value': 'baloncesto'},
+    {'display': 'Voleibol', 'value': 'voleibol'},
+    {'display': 'Tenis', 'value': 'tenis'},
+    {'display': 'Natación', 'value': 'natación'},
+    {'display': 'Running', 'value': 'running'},
+    {'display': 'Ciclismo', 'value': 'ciclismo'},
+    {'display': 'Gimnasio', 'value': 'gimnasio'},
+    {'display': 'Pádel', 'value': 'pádel'},
+    {'display': 'Béisbol', 'value': 'béisbol'},
   ];
 
-  final List<String> _selectedSports = [];
+  String? _selectedSport;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.group.name);
-    _selectedSports.addAll(widget.group.sports);
+    _selectedSport = widget.group.sport;
   }
 
   @override
@@ -71,10 +71,10 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
 
   void _saveGroup(BuildContext context) {
     if (_formKey.currentState!.validate()) {
-      if (_selectedSports.isEmpty) {
+      if (_selectedSport == null || _selectedSport!.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please select at least one sport'),
+            content: Text('Por favor selecciona un deporte'),
             backgroundColor: Colors.red,
           ),
         );
@@ -85,7 +85,7 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
         GroupEditSubmitted(
           groupId: widget.group.id,
           name: newName,
-          sports: _selectedSports,
+          sport: _selectedSport!,
           profileImage: _selectedImage,
         ),
       );
@@ -203,7 +203,7 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
 
                       // Sports Selection
                       Text(
-                        'Selecciona Deportes',
+                        'Selecciona Deporte',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 12),
@@ -211,19 +211,17 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                         spacing: 8,
                         runSpacing: 8,
                         children: _availableSports.map((sport) {
-                          final isSelected = _selectedSports.contains(sport);
-                          return FilterChip(
-                            label: Text(sport),
+                          final sportDisplay = sport['display']!;
+                          final sportValue = sport['value']!;
+                          final isSelected = _selectedSport == sportValue;
+                          return ChoiceChip(
+                            label: Text(sportDisplay),
                             selected: isSelected,
                             onSelected: isLoading
                                 ? null
                                 : (selected) {
                                     setState(() {
-                                      if (selected) {
-                                        _selectedSports.add(sport);
-                                      } else {
-                                        _selectedSports.remove(sport);
-                                      }
+                                      _selectedSport = selected ? sportValue : null;
                                     });
                                   },
                             selectedColor: Theme.of(
@@ -232,11 +230,11 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                           );
                         }).toList(),
                       ),
-                      if (_selectedSports.isEmpty)
+                      if (_selectedSport == null)
                         Padding(
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Text(
-                            'Por favor selecciona al menos un deporte',
+                            'Por favor selecciona un deporte',
                             style: TextStyle(
                               color: Theme.of(context).colorScheme.error,
                             ),
@@ -247,7 +245,7 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                         const Center(child: CircularProgressIndicator())
                       else ...[
                         ElevatedButton(
-                          onPressed: isLoading || _selectedSports.isEmpty
+                          onPressed: isLoading || _selectedSport == null
                               ? null
                               : () => _saveGroup(context),
                           child: const Text('Save Changes'),

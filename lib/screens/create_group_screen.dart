@@ -31,7 +31,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     {'display': 'Béisbol', 'value': 'béisbol'},
   ];
 
-  final List<String> _selectedSports = [];
+  String? _selectedSport;
 
   @override
   void dispose() {
@@ -44,13 +44,23 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
       return;
     }
 
+    if (_selectedSport == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor selecciona un deporte'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     final user = context.currentUser;
     if (user == null) return;
 
     context.read<GroupBloc>().add(
           GroupCreateRequested(
             name: _groupNameController.text.trim(),
-            sports: _selectedSports,
+            sport: _selectedSport!,
             createdBy: user.uid,
           ),
         );
@@ -112,7 +122,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
 
                   // Sports Selection
                   Text(
-                    'Selecciona Deportes',
+                    'Selecciona Deporte',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 12),
@@ -122,19 +132,15 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     children: _availableSports.map((sport) {
                       final sportDisplay = sport['display']!;
                       final sportValue = sport['value']!;
-                      final isSelected = _selectedSports.contains(sportValue);
-                      return FilterChip(
+                      final isSelected = _selectedSport == sportValue;
+                      return ChoiceChip(
                         label: Text(sportDisplay),
                         selected: isSelected,
                         onSelected: isLoading
                             ? null
                             : (selected) {
                                 setState(() {
-                                  if (selected) {
-                                    _selectedSports.add(sportValue);
-                                  } else {
-                                    _selectedSports.remove(sportValue);
-                                  }
+                                  _selectedSport = selected ? sportValue : null;
                                 });
                               },
                         selectedColor: Theme.of(
@@ -143,11 +149,11 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                       );
                     }).toList(),
                   ),
-                  if (_selectedSports.isEmpty)
+                  if (_selectedSport == null)
                     Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
-                        'Por favor selecciona al menos un deporte',
+                        'Por favor selecciona un deporte',
                         style: TextStyle(color: Theme.of(context).colorScheme.error),
                       ),
                     ),
@@ -192,7 +198,7 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
 
                   // Create Button
                   ElevatedButton(
-                    onPressed: isLoading || _selectedSports.isEmpty ? null : _createGroup,
+                    onPressed: isLoading || _selectedSport == null ? null : _createGroup,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),

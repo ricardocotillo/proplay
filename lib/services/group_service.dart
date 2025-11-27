@@ -38,7 +38,7 @@ class GroupService {
   // Create group
   Future<GroupModel> createGroup({
     required String name,
-    required List<String> sports,
+    required String sport,
     required String createdBy,
   }) async {
     try {
@@ -49,7 +49,7 @@ class GroupService {
         id: docRef.id,
         name: name,
         code: code,
-        sports: sports,
+        sport: sport,
         createdBy: createdBy,
         createdAt: DateTime.now(),
       );

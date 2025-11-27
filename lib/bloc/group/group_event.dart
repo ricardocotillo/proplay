@@ -9,17 +9,17 @@ abstract class GroupEvent extends Equatable {
 
 class GroupCreateRequested extends GroupEvent {
   final String name;
-  final List<String> sports;
+  final String sport;
   final String createdBy;
 
   const GroupCreateRequested({
     required this.name,
-    required this.sports,
+    required this.sport,
     required this.createdBy,
   });
 
   @override
-  List<Object?> get props => [name, sports, createdBy];
+  List<Object?> get props => [name, sport, createdBy];
 }
 
 class GroupJoinRequested extends GroupEvent {

@@ -11,18 +11,18 @@ abstract class GroupEditEvent extends Equatable {
 class GroupEditSubmitted extends GroupEditEvent {
   final String groupId;
   final String name;
-  final List<String> sports;
+  final String sport;
   final dynamic profileImage;
 
   const GroupEditSubmitted({
     required this.groupId,
     required this.name,
-    required this.sports,
+    required this.sport,
     this.profileImage,
   });
 
   @override
-  List<Object> get props => [groupId, name, sports];
+  List<Object> get props => [groupId, name, sport];
 }
 
 class GroupDeleted extends GroupEditEvent {

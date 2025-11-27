@@ -40,7 +40,7 @@ class GroupEditBloc extends bloc.Bloc<GroupEditEvent, GroupEditState> {
 
       final updateData = {
         'name': event.name,
-        'sports': event.sports,
+        'sport': event.sport,
         if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
       };
 

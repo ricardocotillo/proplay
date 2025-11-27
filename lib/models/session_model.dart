@@ -15,6 +15,7 @@ class SessionModel extends Equatable {
   final double costPerPlayer;
   final bool isPrivate;
   final List<SessionUserModel>? players;
+  final String sport;
 
   const SessionModel({
     required this.id,
@@ -29,6 +30,7 @@ class SessionModel extends Equatable {
     required this.costPerPlayer,
     this.isPrivate = false,
     this.players,
+    required this.sport,
   });
 
   @override
@@ -45,6 +47,7 @@ class SessionModel extends Equatable {
     costPerPlayer,
     isPrivate,
     players,
+    sport,
   ];
 
   SessionModel copyWith({
@@ -60,6 +63,7 @@ class SessionModel extends Equatable {
     double? costPerPlayer,
     bool? isPrivate,
     List<SessionUserModel>? players,
+    String? sport,
   }) {
     return SessionModel(
       id: id ?? this.id,
@@ -74,6 +78,7 @@ class SessionModel extends Equatable {
       costPerPlayer: costPerPlayer ?? this.costPerPlayer,
       isPrivate: isPrivate ?? this.isPrivate,
       players: players ?? this.players,
+      sport: sport ?? this.sport,
     );
   }
 
@@ -90,6 +95,7 @@ class SessionModel extends Equatable {
       'costPerPlayer': costPerPlayer,
       'isPrivate': isPrivate,
       if (players != null) 'players': players!.map((p) => p.toMap()).toList(),
+      'sport': sport,
     };
   }
 
@@ -112,6 +118,7 @@ class SessionModel extends Equatable {
                 .map((p) => SessionUserModel.fromMap(p as Map<String, dynamic>))
                 .toList()
           : null,
+      sport: map['sport'] as String,
     );
   }
 }
