@@ -336,7 +336,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   subtitle: Text(
-                    group.sports.join(', '),
+                    group.sports
+                        .map(
+                          (sport) =>
+                              sport[0].toUpperCase() + sport.substring(1),
+                        )
+                        .join(', '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
