@@ -73,6 +73,7 @@ class UserModel {
   final DateTime createdAt;
   final String credits;
   final bool superUser;
+  final List<String> sports;
 
   UserModel({
     required this.uid,
@@ -83,6 +84,7 @@ class UserModel {
     required this.createdAt,
     this.credits = '0.00',
     this.superUser = false,
+    this.sports = const [],
   });
 
   // Get credits as double value
@@ -104,6 +106,7 @@ class UserModel {
       'createdAt': Timestamp.fromDate(createdAt),
       'credits': credits,
       'superUser': superUser,
+      'sports': sports,
     };
   }
 
@@ -133,6 +136,7 @@ class UserModel {
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       credits: creditsString,
       superUser: map['superUser'] ?? false,
+      sports: List<String>.from(map['sports'] ?? []),
     );
   }
 
