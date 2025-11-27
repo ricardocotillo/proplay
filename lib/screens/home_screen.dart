@@ -4,15 +4,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/app_drawer.dart';
 import 'package:proplay/widgets/wallet_indicator.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/group/group_event.dart';
 import 'package:proplay/bloc/group/group_state.dart';
+import 'package:proplay/bloc/session/session_bloc.dart';
+import 'package:proplay/models/session_model.dart';
 import 'package:proplay/services/storage_service.dart';
 import 'package:proplay/services/credit_history_service.dart';
+import 'package:proplay/services/session_service.dart';
 import 'package:proplay/screens/credit_history_screen.dart';
+import 'package:proplay/screens/session_detail_screen.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
@@ -256,56 +261,46 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildGroupsList(List groups) {
+    final user = context.currentUser;
+    final userSports = user?.sports ?? [];
+    final groupIds = groups.map((g) => g.id as String).toList();
+
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: _buildSessionsCarousel(groupIds, userSports),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Row(
             children: [
-              SizedBox(
-                width: double.infinity,
+              Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    context.push('/sessions');
+                    context.push('/create-group').then((result) {
+                      if (result != null) {
+                        _loadGroups();
+                      }
+                    });
                   },
-                  icon: const Icon(Icons.sports_soccer),
-                  label: const Text('Pichangas'),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Crear Grupo'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        context.push('/create-group').then((result) {
-                          if (result != null) {
-                            _loadGroups();
-                          }
-                        });
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text('Crear Grupo'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _showJoinGroupDialog(),
+                  icon: const Icon(Icons.group_add),
+                  label: const Text('Unirse a Grupo'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _showJoinGroupDialog(),
-                      icon: const Icon(Icons.group_add),
-                      label: const Text('Unirse a Grupo'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -337,7 +332,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   subtitle: Text(
                     group.sport.isNotEmpty
-                        ? group.sport[0].toUpperCase() + group.sport.substring(1)
+                        ? group.sport[0].toUpperCase() +
+                              group.sport.substring(1)
                         : '',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -463,6 +459,268 @@ class _HomeScreenState extends State<HomeScreen> {
             }
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildSessionsCarousel(
+    List<String> groupIds,
+    List<String> userSports,
+  ) {
+    return BlocProvider(
+      create: (context) =>
+          SessionBloc(sessionService: SessionService())
+            ..add(LoadAllUserSessions(groupIds, userSports: userSports)),
+      child: BlocBuilder<SessionBloc, SessionState>(
+        builder: (context, sessionState) {
+          if (sessionState is SessionLoading) {
+            return const SizedBox(
+              height: 240,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          if (sessionState is SessionLoaded) {
+            final sessions = sessionState.sessions;
+
+            if (sessions.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            final displaySessions = sessions.take(5).toList();
+            final hasMoreSessions = sessions.length > 5;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Próximas Pichangas',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      if (sessions.isNotEmpty)
+                        TextButton(
+                          onPressed: () {
+                            context.push('/sessions');
+                          },
+                          child: const Text('Ver Todas'),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 240,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: hasMoreSessions
+                        ? displaySessions.length + 1
+                        : displaySessions.length,
+                    itemBuilder: (context, index) {
+                      if (hasMoreSessions && index == displaySessions.length) {
+                        return const _SeeAllSessionsCard();
+                      }
+                      return _SessionCarouselCard(
+                        session: displaySessions[index],
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          }
+
+          // Error or initial state - show nothing
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+  }
+}
+
+class _SessionCarouselCard extends StatelessWidget {
+  final SessionModel session;
+
+  const _SessionCarouselCard({required this.session});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SessionDetailScreen(sessionId: session.id),
+          ),
+        );
+      },
+      child: Container(
+        width: 280,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
+              child: Image.asset(
+                'assets/thumbnail.png',
+                height: 140,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    session.title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.secondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        DateFormat(
+                          'MMM d, y • h:mm a',
+                        ).format(session.eventDate),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.account_balance_wallet,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'S/ ${session.costPerPlayer.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.people,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${session.playerCount}/${session.maxPlayers}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SeeAllSessionsCard extends StatelessWidget {
+  const _SeeAllSessionsCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        context.push('/sessions');
+      },
+      child: Container(
+        width: 280,
+        margin: const EdgeInsets.only(right: 12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.primary,
+            width: 2,
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.sports_soccer,
+                size: 48,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Ver Todas las\nPichangas',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Icon(
+                Icons.arrow_forward,
+                size: 24,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
