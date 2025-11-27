@@ -13,6 +13,9 @@ import 'package:proplay/bloc/group/group_state.dart';
 import 'package:proplay/services/storage_service.dart';
 import 'package:proplay/services/credit_history_service.dart';
 import 'package:proplay/screens/credit_history_screen.dart';
+import 'package:proplay/services/user_service.dart';
+import 'package:proplay/bloc/auth/auth_bloc.dart';
+import 'package:proplay/bloc/auth/auth_event.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +31,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadGroups();
+    _checkSportsSelection();
+  }
+
+  void _checkSportsSelection() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = context.currentUser;
+      if (user != null && user.sports.isEmpty) {
+        _showSportsSelectionDialog();
+      }
+    });
   }
 
   void _loadGroups() {
@@ -405,6 +418,50 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) => const _AddCreditsDialog(),
     );
   }
+
+  void _showSportsSelectionDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _SportsSelectionDialog(
+        onSportsSelected: (selectedSports) async {
+          final user = this.context.currentUser;
+          if (user != null && selectedSports.isNotEmpty) {
+            try {
+              // Update sports in Firestore
+              final userService = UserService();
+              await userService.updateUser(user.uid, {
+                'sports': selectedSports,
+              });
+
+              // Refresh user data in AuthBloc
+              if (mounted) {
+                this.context.read<AuthBloc>().add(const AuthRefreshUserRequested());
+              }
+
+              if (mounted) {
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Deportes guardados exitosamente'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(this.context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error al guardar deportes: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          }
+        },
+      ),
+    );
+  }
 }
 
 class _AddCreditsDialog extends StatefulWidget {
@@ -769,6 +826,97 @@ class _AddCreditsDialogState extends State<_AddCreditsDialog> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Text('Enviar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _SportsSelectionDialog extends StatefulWidget {
+  final Function(List<String>) onSportsSelected;
+
+  const _SportsSelectionDialog({required this.onSportsSelected});
+
+  @override
+  State<_SportsSelectionDialog> createState() => _SportsSelectionDialogState();
+}
+
+class _SportsSelectionDialogState extends State<_SportsSelectionDialog> {
+  final List<Map<String, dynamic>> _availableSports = [
+    {'name': 'Fútbol', 'icon': Icons.sports_soccer},
+    {'name': 'Baloncesto', 'icon': Icons.sports_basketball},
+    {'name': 'Voleibol', 'icon': Icons.sports_volleyball},
+    {'name': 'Tenis', 'icon': Icons.sports_tennis},
+    {'name': 'Natación', 'icon': Icons.pool},
+    {'name': 'Running', 'icon': Icons.directions_run},
+    {'name': 'Ciclismo', 'icon': Icons.directions_bike},
+    {'name': 'Gimnasio', 'icon': Icons.fitness_center},
+    {'name': 'Pádel', 'icon': Icons.sports_tennis},
+    {'name': 'Béisbol', 'icon': Icons.sports_baseball},
+  ];
+
+  final Set<String> _selectedSports = {};
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(
+        'Selecciona tus Deportes',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Elige los deportes que te interesan:',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            ..._availableSports.map((sport) {
+              final sportName = sport['name'] as String;
+              final sportIcon = sport['icon'] as IconData;
+              final isSelected = _selectedSports.contains(sportName);
+
+              return CheckboxListTile(
+                value: isSelected,
+                onChanged: (bool? value) {
+                  setState(() {
+                    if (value == true) {
+                      _selectedSports.add(sportName);
+                    } else {
+                      _selectedSports.remove(sportName);
+                    }
+                  });
+                },
+                title: Row(
+                  children: [
+                    Icon(
+                      sportIcon,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(sportName),
+                  ],
+                ),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+      actions: [
+        ElevatedButton(
+          onPressed: _selectedSports.isEmpty
+              ? null
+              : () {
+                  widget.onSportsSelected(_selectedSports.toList());
+                  Navigator.pop(context);
+                },
+          child: const Text('Guardar'),
         ),
       ],
     );
