@@ -70,6 +70,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '979151294493',
     projectId: 'proplay-eac23',
     storageBucket: 'proplay-eac23.firebasestorage.app',
-    iosBundleId: 'com.example.proplay',
+    iosBundleId: 'com.proplay.proplay',
   );
 }
