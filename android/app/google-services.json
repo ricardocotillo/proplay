@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "979151294493",
+    "project_id": "proplay-eac23",
+    "storage_bucket": "proplay-eac23.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:979151294493:android:f794bdf5086bc29020f6f4",
+        "android_client_info": {
+          "package_name": "com.proplay.proplay"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "979151294493-r6i4p7cb03emnmjfhnoeg9kf06l8scau.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.proplay.proplay",
+            "certificate_hash": "fd2c6e297744d31035fb9c701bc7c5bd925b0bef"
+          }
+        },
+        {
+          "client_id": "979151294493-f8e9dc74bna070m7q5n5inst6iigt5nl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZY0zvn5s0I2Eh5aEGy06QelTsC2SeUYg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "979151294493-f8e9dc74bna070m7q5n5inst6iigt5nl.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "979151294493-e3640r0vi32epm1kjle2taq2iqnu7bh4.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.proplay"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
