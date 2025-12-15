@@ -1,4 +1,4 @@
-package com.proplay.proplay
+package com.proplayapp.proplay
 
 import io.flutter.embedding.android.FlutterActivity
 
