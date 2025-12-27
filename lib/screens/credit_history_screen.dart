@@ -211,7 +211,7 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
                         decoration: BoxDecoration(
                           color: Theme.of(
                             context,
-                          ).colorScheme.primaryContainer.withOpacity(0.5),
+                          ).colorScheme.primaryContainer.withValues(alpha: 0.5),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -246,7 +246,7 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
                             decoration: BoxDecoration(
                               color: _getStatusColor(
                                 history.status,
-                              ).withOpacity(0.2),
+                              ).withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: _getStatusColor(history.status),

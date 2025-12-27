@@ -80,7 +80,6 @@ class SessionsScreen extends StatelessWidget {
                   }
 
                   if (sessionState is SessionError) {
-                    print(sessionState.message);
                     return Center(
                       child: Text('Error: ${sessionState.message}'),
                     );

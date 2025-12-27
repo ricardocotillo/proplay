@@ -82,8 +82,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         event.password,
       );
 
-      print(userCredential);
-
       // Get user model from Firestore
       final userModel = await _userService.getUser(userCredential.user!.uid);
       if (userModel != null) {
@@ -206,7 +204,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       emit(AuthAuthenticated(firebaseUser: firebaseUser, userModel: userModel));
     } catch (e) {
-      print(e);
       emit(AuthError(e.toString()));
       emit(AuthUnauthenticated());
     }
@@ -239,7 +236,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         }
       } catch (e) {
         // If refresh fails, maintain current state
-        print('Failed to refresh user data: $e');
+        // print('Failed to refresh user data: $e');
       }
     }
   }

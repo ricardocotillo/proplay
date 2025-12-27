@@ -389,7 +389,7 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
                               CircleAvatar(
                                 backgroundColor: Theme.of(
                                   context,
-                                ).colorScheme.primary.withOpacity(0.2),
+                                ).colorScheme.primary.withValues(alpha: 0.2),
                                 child: Text(
                                   '${user.firstName[0]}${user.lastName[0]}'
                                       .toUpperCase(),
@@ -478,7 +478,7 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
                                 decoration: BoxDecoration(
                                   color: _getStatusColor(
                                     creditHistory.status,
-                                  ).withOpacity(0.2),
+                                  ).withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: _getStatusColor(
