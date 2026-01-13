@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "979151294493-2o0u183hh9bj2gga95nhcouc3aou9s50.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.proplayapp.proplay",
+            "certificate_hash": "ae79ed9671dafd3002a3d39064c2679e30813bc1"
+          }
+        },
+        {
+          "client_id": "979151294493-ijebebb5qpeoagl1fsug0ccc25hlciq3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.proplayapp.proplay",
+            "certificate_hash": "fd2c6e297744d31035fb9c701bc7c5bd925b0bef"
+          }
+        },
+        {
           "client_id": "979151294493-f8e9dc74bna070m7q5n5inst6iigt5nl.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -31,10 +47,10 @@
               "client_type": 3
             },
             {
-              "client_id": "979151294493-e3640r0vi32epm1kjle2taq2iqnu7bh4.apps.googleusercontent.com",
+              "client_id": "979151294493-e0seef5l1b22ij3qt1pujqn50us4tht8.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.proplay"
+                "bundle_id": "com.proplayapp.proplay"
               }
             }
           ]
