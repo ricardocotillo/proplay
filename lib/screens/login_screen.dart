@@ -43,6 +43,21 @@ class _LoginScreenState extends State<LoginScreen> {
     context.read<AuthBloc>().add(const AuthGoogleSignInRequested());
   }
 
+  void _sendPasswordReset() {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please enter a valid email to reset password.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    context.read<AuthBloc>().add(AuthPasswordResetRequested(email: email));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,6 +71,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 backgroundColor: Theme.of(context).colorScheme.error,
               ),
             );
+          }
+          if (state is AuthPasswordResetEmailSent) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
           }
         },
         builder: (context, state) {
@@ -122,6 +142,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         }
                         return null;
                       },
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: isLoading ? null : _sendPasswordReset,
+                        child: const Text('¿Olvidaste tu contraseña?'),
+                      ),
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(

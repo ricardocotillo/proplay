@@ -29,6 +29,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
     on<AuthUserChanged>(_onAuthUserChanged);
     on<AuthRefreshUserRequested>(_onAuthRefreshUserRequested);
+    on<AuthPasswordResetRequested>(_onAuthPasswordResetRequested);
 
     // Start listening to auth state changes
     _authSubscription = _authService.authStateChanges.listen(
@@ -49,6 +50,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(AuthUnauthenticated());
       }
     } else {
+      emit(AuthUnauthenticated());
+    }
+  }
+
+  Future<void> _onAuthPasswordResetRequested(
+    AuthPasswordResetRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      await _authService.sendPasswordResetEmail(event.email);
+      emit(
+        const AuthPasswordResetEmailSent(
+          'Password reset email sent. Please check your inbox.',
+        ),
+      );
+      emit(AuthUnauthenticated());
+    } catch (e) {
+      emit(AuthError(e.toString()));
       emit(AuthUnauthenticated());
     }
   }

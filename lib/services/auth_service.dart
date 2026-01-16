@@ -34,6 +34,7 @@ class AuthService {
         password: password,
       );
     } on FirebaseAuthException catch (e) {
+      print(e);
       throw _handleAuthException(e);
     }
   }
@@ -73,6 +74,14 @@ class AuthService {
       throw _handleAuthException(e);
     } catch (e) {
       throw Exception('Failed to sign in with Google: ${e.toString()}');
+    }
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
     }
   }
 

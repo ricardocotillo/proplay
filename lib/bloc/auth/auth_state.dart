@@ -51,3 +51,12 @@ class AuthSuccessWithInfo extends AuthState {
   @override
   List<Object?> get props => [message, firebaseUser, userModel];
 }
+
+class AuthPasswordResetEmailSent extends AuthState {
+  final String message;
+
+  const AuthPasswordResetEmailSent(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
