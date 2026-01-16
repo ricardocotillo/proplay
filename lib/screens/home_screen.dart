@@ -31,118 +31,6 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _MatchInfoDialog extends StatefulWidget {
-  final void Function() onDismissed;
-  final void Function({
-    required String? gender,
-    required int? age,
-    required String? location,
-  })
-  onSaved;
-
-  const _MatchInfoDialog({required this.onDismissed, required this.onSaved});
-
-  @override
-  State<_MatchInfoDialog> createState() => _MatchInfoDialogState();
-}
-
-class _MatchInfoDialogState extends State<_MatchInfoDialog> {
-  final _ageController = TextEditingController();
-  final _locationController = TextEditingController();
-  String? _gender;
-  bool _actionTaken = false;
-
-  @override
-  void dispose() {
-    _ageController.dispose();
-    _locationController.dispose();
-    super.dispose();
-  }
-
-  void _handleSave() {
-    _actionTaken = true;
-    final ageText = _ageController.text.trim();
-    final locationText = _locationController.text.trim();
-
-    final int? age = ageText.isEmpty ? null : int.tryParse(ageText);
-    final String? location = locationText.isEmpty ? null : locationText;
-
-    widget.onSaved(gender: _gender, age: age, location: location);
-    Navigator.pop(context);
-  }
-
-  void _handleDismiss() {
-    _actionTaken = true;
-    widget.onDismissed();
-    Navigator.pop(context);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!_actionTaken) {
-          widget.onDismissed();
-        }
-      },
-      child: AlertDialog(
-        title: const Text('Completa tu perfil'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Estos datos nos ayudan a encontrarte mejores partidos y eventos.',
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: _gender,
-                decoration: const InputDecoration(
-                  labelText: 'Género (opcional)',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'male', child: Text('Masculino')),
-                  DropdownMenuItem(value: 'female', child: Text('Femenino')),
-                  DropdownMenuItem(value: 'other', child: Text('Otro')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _gender = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _ageController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Edad (opcional)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _locationController,
-                decoration: const InputDecoration(
-                  labelText: 'Ubicación (opcional)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: _handleDismiss, child: const Text('Ahora no')),
-          ElevatedButton(onPressed: _handleSave, child: const Text('Guardar')),
-        ],
-      ),
-    );
-  }
-}
-
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -150,36 +38,24 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadGroups();
-    _checkSportsSelection();
-    _checkMatchInfoCompletion();
+    _checkProfileSetup();
   }
 
-  void _checkSportsSelection() {
+  void _checkProfileSetup() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = context.currentUser;
-      if (user != null && user.sports.isEmpty) {
-        _showSportsSelectionDialog();
-      }
-    });
-  }
+      if (user == null) return;
 
-  void _checkMatchInfoCompletion() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final user = context.currentUser;
+      final needsSports = user.sports.isEmpty;
+      final needsMatchInfo = !user.isMatchInfoComplete;
+      final shouldPromptMatchInfo =
+          needsMatchInfo && !user.profileCompletionDismissed;
 
-      if (user == null) {
+      if (!needsSports && !shouldPromptMatchInfo) {
         return;
       }
 
-      if (user.profileCompletionDismissed) {
-        return;
-      }
-
-      if (user.isMatchInfoComplete) {
-        return;
-      }
-
-      _showMatchInfoDialog();
+      _showProfileSetupDialog(forceSports: needsSports);
     });
   }
 
@@ -341,46 +217,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showMatchInfoDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => _MatchInfoDialog(
-        onDismissed: () {
-          final user = this.context.currentUser;
-          if (user == null) return;
-
-          this.context.read<UserBloc>().add(
-            UserProfileCompletionDismissedRequested(uid: user.uid),
-          );
-          this.context.read<AuthBloc>().add(const AuthRefreshUserRequested());
-        },
-        onSaved:
-            ({
-              required String? gender,
-              required int? age,
-              required String? location,
-            }) {
-              final user = this.context.currentUser;
-              if (user == null) return;
-
-              this.context.read<UserBloc>().add(
-                UserMatchInfoUpdateRequested(
-                  uid: user.uid,
-                  gender: gender,
-                  age: age,
-                  location: location,
-                  profileCompletionDismissed: true,
-                ),
-              );
-              this.context.read<AuthBloc>().add(
-                const AuthRefreshUserRequested(),
-              );
-            },
       ),
     );
   }
@@ -592,48 +428,73 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showSportsSelectionDialog() {
+  void _showProfileSetupDialog({required bool forceSports}) {
+    final user = context.currentUser;
+    if (user == null) return;
+
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => _SportsSelectionDialog(
-        onSportsSelected: (selectedSports) async {
-          final user = this.context.currentUser;
-          if (user != null && selectedSports.isNotEmpty) {
-            try {
-              // Update sports in Firestore (already in lowercase)
-              final userService = UserService();
-              await userService.updateUser(user.uid, {
-                'sports': selectedSports,
-              });
+      barrierDismissible: !forceSports,
+      builder: (dialogContext) => _ProfileSetupDialog(
+        initialSelectedSports: user.sports,
+        initialGender: user.gender,
+        initialAge: user.age,
+        initialLocation: user.location,
+        forceSports: forceSports,
+        onDismissed: () {
+          if (forceSports) return;
 
-              // Refresh user data in AuthBloc
-              if (mounted) {
-                this.context.read<AuthBloc>().add(
-                  const AuthRefreshUserRequested(),
-                );
-              }
+          final currentUser = context.currentUser;
+          if (currentUser == null) return;
 
-              if (mounted) {
-                ScaffoldMessenger.of(this.context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Deportes guardados exitosamente'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              }
-            } catch (e) {
-              if (mounted) {
-                ScaffoldMessenger.of(this.context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error al guardar deportes: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            }
-          }
+          context.read<UserBloc>().add(
+            UserProfileCompletionDismissedRequested(uid: currentUser.uid),
+          );
+          context.read<AuthBloc>().add(const AuthRefreshUserRequested());
         },
+        onSaved:
+            ({
+              required List<String> sports,
+              required String? gender,
+              required int? age,
+              required String? location,
+            }) async {
+              final currentUser = context.currentUser;
+              if (currentUser == null) return;
+
+              final userService = context.read<UserService>();
+              final userBloc = context.read<UserBloc>();
+              final authBloc = context.read<AuthBloc>();
+
+              try {
+                await userService.updateUser(currentUser.uid, {
+                  'sports': sports,
+                });
+
+                if (!mounted) return;
+
+                userBloc.add(
+                  UserMatchInfoUpdateRequested(
+                    uid: currentUser.uid,
+                    gender: gender,
+                    age: age,
+                    location: location,
+                    profileCompletionDismissed: true,
+                  ),
+                );
+
+                authBloc.add(const AuthRefreshUserRequested());
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error al guardar perfil: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
       ),
     );
   }
@@ -1272,16 +1133,36 @@ class _AddCreditsDialogState extends State<_AddCreditsDialog> {
   }
 }
 
-class _SportsSelectionDialog extends StatefulWidget {
-  final Function(List<String>) onSportsSelected;
+class _ProfileSetupDialog extends StatefulWidget {
+  final List<String> initialSelectedSports;
+  final String? initialGender;
+  final int? initialAge;
+  final String? initialLocation;
+  final bool forceSports;
+  final void Function() onDismissed;
+  final void Function({
+    required List<String> sports,
+    required String? gender,
+    required int? age,
+    required String? location,
+  })
+  onSaved;
 
-  const _SportsSelectionDialog({required this.onSportsSelected});
+  const _ProfileSetupDialog({
+    required this.initialSelectedSports,
+    required this.initialGender,
+    required this.initialAge,
+    required this.initialLocation,
+    required this.forceSports,
+    required this.onDismissed,
+    required this.onSaved,
+  });
 
   @override
-  State<_SportsSelectionDialog> createState() => _SportsSelectionDialogState();
+  State<_ProfileSetupDialog> createState() => _ProfileSetupDialogState();
 }
 
-class _SportsSelectionDialogState extends State<_SportsSelectionDialog> {
+class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
   final List<Map<String, dynamic>> _availableSports = [
     {'display': 'Fútbol', 'value': 'fútbol', 'icon': Icons.sports_soccer},
     {
@@ -1303,71 +1184,168 @@ class _SportsSelectionDialogState extends State<_SportsSelectionDialog> {
     {'display': 'Béisbol', 'value': 'béisbol', 'icon': Icons.sports_baseball},
   ];
 
-  final Set<String> _selectedSports = {};
+  late final TextEditingController _ageController;
+  late final TextEditingController _locationController;
+  late final Set<String> _selectedSports;
+  String? _gender;
+  bool _actionTaken = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ageController = TextEditingController(
+      text: widget.initialAge?.toString() ?? '',
+    );
+    _locationController = TextEditingController(
+      text: widget.initialLocation ?? '',
+    );
+    _selectedSports = widget.initialSelectedSports.toSet();
+    _gender = widget.initialGender;
+  }
+
+  @override
+  void dispose() {
+    _ageController.dispose();
+    _locationController.dispose();
+    super.dispose();
+  }
+
+  void _handleSave() {
+    final sports = _selectedSports.toList();
+    if (widget.forceSports && sports.isEmpty) {
+      return;
+    }
+
+    _actionTaken = true;
+
+    final ageText = _ageController.text.trim();
+    final locationText = _locationController.text.trim();
+    final int? age = ageText.isEmpty ? null : int.tryParse(ageText);
+    final String? location = locationText.isEmpty ? null : locationText;
+
+    widget.onSaved(
+      sports: sports,
+      gender: _gender,
+      age: age,
+      location: location,
+    );
+    Navigator.pop(context);
+  }
+
+  void _handleDismiss() {
+    if (widget.forceSports) {
+      return;
+    }
+
+    _actionTaken = true;
+    widget.onDismissed();
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text(
-        'Selecciona tus Deportes',
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Elige los deportes que te interesan:',
-              style: TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 16),
-            ..._availableSports.map((sport) {
-              final sportDisplay = sport['display'] as String;
-              final sportValue = sport['value'] as String;
-              final sportIcon = sport['icon'] as IconData;
-              final isSelected = _selectedSports.contains(sportValue);
+    return PopScope(
+      canPop: !widget.forceSports,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!widget.forceSports && !_actionTaken) {
+          widget.onDismissed();
+        }
+      },
+      child: AlertDialog(
+        title: const Text('Completa tu perfil'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Selecciona tus deportes y (opcional) completa tus datos. Esto nos ayuda a encontrarte mejores partidos y eventos.',
+              ),
+              const SizedBox(height: 16),
+              ..._availableSports.map((sport) {
+                final sportDisplay = sport['display'] as String;
+                final sportValue = sport['value'] as String;
+                final sportIcon = sport['icon'] as IconData;
+                final isSelected = _selectedSports.contains(sportValue);
 
-              return CheckboxListTile(
-                value: isSelected,
-                onChanged: (bool? value) {
+                return CheckboxListTile(
+                  value: isSelected,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      if (value == true) {
+                        _selectedSports.add(sportValue);
+                      } else {
+                        _selectedSports.remove(sportValue);
+                      }
+                    });
+                  },
+                  title: Row(
+                    children: [
+                      Icon(
+                        sportIcon,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 12),
+                      Text(sportDisplay),
+                    ],
+                  ),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                );
+              }),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: _gender,
+                decoration: const InputDecoration(
+                  labelText: 'Género (opcional)',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'male', child: Text('Masculino')),
+                  DropdownMenuItem(value: 'female', child: Text('Femenino')),
+                  DropdownMenuItem(value: 'other', child: Text('Otro')),
+                ],
+                onChanged: (value) {
                   setState(() {
-                    if (value == true) {
-                      _selectedSports.add(sportValue);
-                    } else {
-                      _selectedSports.remove(sportValue);
-                    }
+                    _gender = value;
                   });
                 },
-                title: Row(
-                  children: [
-                    Icon(
-                      sportIcon,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(sportDisplay),
-                  ],
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _ageController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Edad (opcional)',
+                  border: OutlineInputBorder(),
                 ),
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-              );
-            }),
-          ],
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Ubicación (opcional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
         ),
+        actions: [
+          if (!widget.forceSports)
+            TextButton(
+              onPressed: _handleDismiss,
+              child: const Text('Ahora no'),
+            ),
+          ElevatedButton(
+            onPressed: widget.forceSports && _selectedSports.isEmpty
+                ? null
+                : _handleSave,
+            child: const Text('Guardar'),
+          ),
+        ],
       ),
-      actions: [
-        ElevatedButton(
-          onPressed: _selectedSports.isEmpty
-              ? null
-              : () {
-                  widget.onSportsSelected(_selectedSports.toList());
-                  Navigator.pop(context);
-                },
-          child: const Text('Guardar'),
-        ),
-      ],
     );
   }
 }
