@@ -70,6 +70,9 @@ class UserModel {
   final String firstName;
   final String lastName;
   final String? profileImageUrl;
+  final String? gender;
+  final int? age;
+  final String? location;
   final DateTime createdAt;
   final String credits;
   final bool superUser;
@@ -81,6 +84,9 @@ class UserModel {
     required this.firstName,
     required this.lastName,
     this.profileImageUrl,
+    this.gender,
+    this.age,
+    this.location,
     required this.createdAt,
     this.credits = '0.00',
     this.superUser = false,
@@ -103,6 +109,9 @@ class UserModel {
       'firstName': firstName,
       'lastName': lastName,
       'profileImageUrl': profileImageUrl,
+      'gender': gender,
+      'age': age,
+      'location': location,
       'createdAt': Timestamp.fromDate(createdAt),
       'credits': credits,
       'superUser': superUser,
@@ -127,12 +136,23 @@ class UserModel {
       creditsString = '0.00';
     }
 
+    final ageValue = map['age'];
+    final int? parsedAge = switch (ageValue) {
+      int v => v,
+      num v => v.toInt(),
+      String v => int.tryParse(v),
+      _ => null,
+    };
+
     return UserModel(
       uid: map['uid'] ?? '',
       email: map['email'] ?? '',
       firstName: map['firstName'] ?? '',
       lastName: map['lastName'] ?? '',
       profileImageUrl: map['profileImageUrl'],
+      gender: map['gender'],
+      age: parsedAge,
+      location: map['location'],
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       credits: creditsString,
       superUser: map['superUser'] ?? false,
