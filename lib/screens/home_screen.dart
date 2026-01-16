@@ -21,12 +21,126 @@ import 'package:proplay/screens/session_detail_screen.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
+import 'package:proplay/bloc/user/user_bloc.dart';
+import 'package:proplay/bloc/user/user_event.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _MatchInfoDialog extends StatefulWidget {
+  final void Function() onDismissed;
+  final void Function({
+    required String? gender,
+    required int? age,
+    required String? location,
+  })
+  onSaved;
+
+  const _MatchInfoDialog({required this.onDismissed, required this.onSaved});
+
+  @override
+  State<_MatchInfoDialog> createState() => _MatchInfoDialogState();
+}
+
+class _MatchInfoDialogState extends State<_MatchInfoDialog> {
+  final _ageController = TextEditingController();
+  final _locationController = TextEditingController();
+  String? _gender;
+  bool _actionTaken = false;
+
+  @override
+  void dispose() {
+    _ageController.dispose();
+    _locationController.dispose();
+    super.dispose();
+  }
+
+  void _handleSave() {
+    _actionTaken = true;
+    final ageText = _ageController.text.trim();
+    final locationText = _locationController.text.trim();
+
+    final int? age = ageText.isEmpty ? null : int.tryParse(ageText);
+    final String? location = locationText.isEmpty ? null : locationText;
+
+    widget.onSaved(gender: _gender, age: age, location: location);
+    Navigator.pop(context);
+  }
+
+  void _handleDismiss() {
+    _actionTaken = true;
+    widget.onDismissed();
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!_actionTaken) {
+          widget.onDismissed();
+        }
+      },
+      child: AlertDialog(
+        title: const Text('Completa tu perfil'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Estos datos nos ayudan a encontrarte mejores partidos y eventos.',
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: _gender,
+                decoration: const InputDecoration(
+                  labelText: 'Género (opcional)',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'male', child: Text('Masculino')),
+                  DropdownMenuItem(value: 'female', child: Text('Femenino')),
+                  DropdownMenuItem(value: 'other', child: Text('Otro')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _gender = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _ageController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Edad (opcional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Ubicación (opcional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: _handleDismiss, child: const Text('Ahora no')),
+          ElevatedButton(onPressed: _handleSave, child: const Text('Guardar')),
+        ],
+      ),
+    );
+  }
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -37,6 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadGroups();
     _checkSportsSelection();
+    _checkMatchInfoCompletion();
   }
 
   void _checkSportsSelection() {
@@ -45,6 +160,26 @@ class _HomeScreenState extends State<HomeScreen> {
       if (user != null && user.sports.isEmpty) {
         _showSportsSelectionDialog();
       }
+    });
+  }
+
+  void _checkMatchInfoCompletion() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = context.currentUser;
+
+      if (user == null) {
+        return;
+      }
+
+      if (user.profileCompletionDismissed) {
+        return;
+      }
+
+      if (user.isMatchInfoComplete) {
+        return;
+      }
+
+      _showMatchInfoDialog();
     });
   }
 
@@ -206,6 +341,46 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showMatchInfoDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => _MatchInfoDialog(
+        onDismissed: () {
+          final user = this.context.currentUser;
+          if (user == null) return;
+
+          this.context.read<UserBloc>().add(
+            UserProfileCompletionDismissedRequested(uid: user.uid),
+          );
+          this.context.read<AuthBloc>().add(const AuthRefreshUserRequested());
+        },
+        onSaved:
+            ({
+              required String? gender,
+              required int? age,
+              required String? location,
+            }) {
+              final user = this.context.currentUser;
+              if (user == null) return;
+
+              this.context.read<UserBloc>().add(
+                UserMatchInfoUpdateRequested(
+                  uid: user.uid,
+                  gender: gender,
+                  age: age,
+                  location: location,
+                  profileCompletionDismissed: true,
+                ),
+              );
+              this.context.read<AuthBloc>().add(
+                const AuthRefreshUserRequested(),
+              );
+            },
       ),
     );
   }

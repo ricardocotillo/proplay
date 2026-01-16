@@ -31,9 +31,9 @@ class UserMatchInfoUpdateRequested extends UserEvent {
 
   const UserMatchInfoUpdateRequested({
     required this.uid,
-    this.gender,
-    this.age,
-    this.location,
+    required this.gender,
+    required this.age,
+    required this.location,
     this.profileCompletionDismissed,
   });
 

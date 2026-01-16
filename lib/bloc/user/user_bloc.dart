@@ -53,13 +53,13 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     emit(UserLoading());
     try {
       await _userService.updateUser(event.uid, {
-        if (event.gender != null) 'gender': event.gender,
-        if (event.age != null) 'age': event.age,
-        if (event.location != null) 'location': event.location,
+        'gender': event.gender,
+        'age': event.age,
+        'location': event.location,
         if (event.profileCompletionDismissed != null)
           'profileCompletionDismissed': event.profileCompletionDismissed,
       });
-      emit(const UserUpdateSuccess('Profile updated successfully'));
+      emit(const UserUpdateSuccess('Match info updated successfully'));
     } catch (e) {
       emit(UserUpdateFailure(e.toString()));
     }
@@ -74,7 +74,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       await _userService.updateUser(event.uid, {
         'profileCompletionDismissed': true,
       });
-      emit(const UserUpdateSuccess('Profile updated successfully'));
+      emit(const UserUpdateSuccess('Profile completion dismissed'));
     } catch (e) {
       emit(UserUpdateFailure(e.toString()));
     }

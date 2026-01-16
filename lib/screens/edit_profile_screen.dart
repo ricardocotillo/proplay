@@ -23,6 +23,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
+  late final TextEditingController _ageController;
+  late final TextEditingController _locationController;
+  String? _gender;
   final _imagePicker = ImagePicker();
   final _storageService = StorageService();
   File? _selectedImage;
@@ -34,12 +37,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final user = context.currentUser;
     _firstNameController = TextEditingController(text: user?.firstName ?? '');
     _lastNameController = TextEditingController(text: user?.lastName ?? '');
+    _ageController = TextEditingController(text: user?.age?.toString() ?? '');
+    _locationController = TextEditingController(text: user?.location ?? '');
+    _gender = user?.gender;
   }
 
   @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
+    _ageController.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
@@ -99,11 +107,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       if (mounted) {
         context.read<UserBloc>().add(
-              UserProfileImageUpdateRequested(
-                uid: user.uid,
-                imageUrl: imageUrl,
-              ),
-            );
+          UserProfileImageUpdateRequested(uid: user.uid, imageUrl: imageUrl),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -132,13 +137,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final user = context.currentUser;
     if (user == null) return;
 
+    final ageText = _ageController.text.trim();
+    final int? parsedAge = ageText.isEmpty ? null : int.tryParse(ageText);
+    final locationText = _locationController.text.trim();
+    final String? parsedLocation = locationText.isEmpty ? null : locationText;
+
     context.read<UserBloc>().add(
-          UserUpdateRequested(
-            uid: user.uid,
-            firstName: _firstNameController.text.trim(),
-            lastName: _lastNameController.text.trim(),
-          ),
-        );
+      UserUpdateRequested(
+        uid: user.uid,
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+      ),
+    );
+
+    context.read<UserBloc>().add(
+      UserMatchInfoUpdateRequested(
+        uid: user.uid,
+        gender: _gender,
+        age: parsedAge,
+        location: parsedLocation,
+        profileCompletionDismissed: true,
+      ),
+    );
   }
 
   @override
@@ -195,71 +215,73 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 child: CircularProgressIndicator(),
                               )
                             : user?.profileImageUrl != null
-                                ? CachedNetworkImage(
-                                    imageUrl: user!.profileImageUrl!,
-                                    imageBuilder: (context, imageProvider) =>
-                                        CircleAvatar(
+                            ? CachedNetworkImage(
+                                imageUrl: user!.profileImageUrl!,
+                                imageBuilder: (context, imageProvider) =>
+                                    CircleAvatar(
                                       radius: 60,
                                       backgroundImage: imageProvider,
                                     ),
-                                    placeholder: (context, url) =>
-                                        const CircleAvatar(
+                                placeholder: (context, url) =>
+                                    const CircleAvatar(
                                       radius: 60,
                                       child: CircularProgressIndicator(),
                                     ),
-                                    errorWidget: (context, url, error) =>
-                                        CircleAvatar(
-                                      radius: 60,
-                                      backgroundColor: Theme.of(context)
-                                          .colorScheme
-                                          .primary,
-                                      child: Text(
-                                        user.firstName.isNotEmpty &&
-                                                user.lastName.isNotEmpty
-                                            ? '${user.firstName[0]}${user.lastName[0]}'
-                                                .toUpperCase()
-                                            : 'U',
-                                        style: TextStyle(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
-                                          fontSize: 48,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : CircleAvatar(
-                                    radius: 60,
-                                    backgroundColor:
-                                        Theme.of(context).colorScheme.primary,
-                                    child: Text(
-                                      user != null
-                                          ? '${user.firstName[0]}${user.lastName[0]}'
+                                errorWidget: (context, url, error) => CircleAvatar(
+                                  radius: 60,
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.primary,
+                                  child: Text(
+                                    user.firstName.isNotEmpty &&
+                                            user.lastName.isNotEmpty
+                                        ? '${user.firstName[0]}${user.lastName[0]}'
                                               .toUpperCase()
-                                          : 'U',
-                                      style: TextStyle(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary,
-                                        fontSize: 48,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                        : 'U',
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimary,
+                                      fontSize: 48,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
+                                ),
+                              )
+                            : CircleAvatar(
+                                radius: 60,
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary,
+                                child: Text(
+                                  user != null
+                                      ? '${user.firstName[0]}${user.lastName[0]}'
+                                            .toUpperCase()
+                                      : 'U',
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimary,
+                                    fontSize: 48,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                         Positioned(
                           bottom: 0,
                           right: 0,
                           child: CircleAvatar(
                             radius: 20,
-                            backgroundColor:
-                                Theme.of(context).colorScheme.secondary,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.secondary,
                             child: IconButton(
                               icon: Icon(
                                 Icons.camera_alt,
                                 size: 20,
-                                color:
-                                    Theme.of(context).colorScheme.onSecondary,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSecondary,
                               ),
                               onPressed: isLoading || _isUploadingImage
                                   ? null
@@ -317,6 +339,61 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       }
                       return null;
                     },
+                  ),
+                  const SizedBox(height: 32),
+
+                  DropdownButtonFormField<String>(
+                    initialValue: _gender,
+                    decoration: const InputDecoration(
+                      labelText: 'Gender (optional)',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'male', child: Text('Male')),
+                      DropdownMenuItem(value: 'female', child: Text('Female')),
+                      DropdownMenuItem(value: 'other', child: Text('Other')),
+                    ],
+                    onChanged: isLoading
+                        ? null
+                        : (value) {
+                            setState(() {
+                              _gender = value;
+                            });
+                          },
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _ageController,
+                    decoration: const InputDecoration(
+                      labelText: 'Age (optional)',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.numbers),
+                    ),
+                    enabled: !isLoading,
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return null;
+                      }
+
+                      final parsed = int.tryParse(value.trim());
+                      if (parsed == null) {
+                        return 'Please enter a valid age';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _locationController,
+                    decoration: const InputDecoration(
+                      labelText: 'Location (optional)',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.location_on_outlined),
+                    ),
+                    enabled: !isLoading,
                   ),
                   const SizedBox(height: 32),
 
