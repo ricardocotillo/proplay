@@ -73,6 +73,7 @@ class UserModel {
   final String? gender;
   final int? age;
   final String? location;
+  final bool profileCompletionDismissed;
   final DateTime createdAt;
   final String credits;
   final bool superUser;
@@ -87,11 +88,15 @@ class UserModel {
     this.gender,
     this.age,
     this.location,
+    this.profileCompletionDismissed = false,
     required this.createdAt,
     this.credits = '0.00',
     this.superUser = false,
     this.sports = const [],
   });
+
+  bool get isMatchInfoComplete =>
+      gender != null && age != null && location != null;
 
   // Get credits as double value
   double get creditsValue => double.tryParse(credits) ?? 0.0;
@@ -112,6 +117,7 @@ class UserModel {
       'gender': gender,
       'age': age,
       'location': location,
+      'profileCompletionDismissed': profileCompletionDismissed,
       'createdAt': Timestamp.fromDate(createdAt),
       'credits': credits,
       'superUser': superUser,
@@ -153,6 +159,7 @@ class UserModel {
       gender: map['gender'],
       age: parsedAge,
       location: map['location'],
+      profileCompletionDismissed: map['profileCompletionDismissed'] ?? false,
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       credits: creditsString,
       superUser: map['superUser'] ?? false,
