@@ -1,21 +1,12 @@
-import 'dart:io';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  bool _googleInitialized = false;
 
-  AuthService() {
-    // check if we are in android device
-    if (Platform.isAndroid) {
-      _googleSignIn.initialize(
-        clientId:
-            '979151294493-f8e9dc74bna070m7q5n5inst6iigt5nl.apps.googleusercontent.com',
-      );
-    }
-  }
+  AuthService();
 
   // Get current user
   User? get currentUser => _auth.currentUser;
@@ -54,14 +45,30 @@ class AuthService {
     }
   }
 
+  Future<void> _ensureGoogleInitialized() async {
+    if (_googleInitialized) return;
+
+    // Initialize exactly once before calling authenticate().
+    // On Android, the client id is read from google-services.json; providing it here can break the flow.
+    await _googleSignIn.initialize();
+
+    _googleInitialized = true;
+  }
+
   // Sign in with Google
   Future<UserCredential> signInWithGoogle() async {
     try {
+      await _ensureGoogleInitialized();
+
       // Trigger the authentication flow
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
 
       // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      if (googleAuth.idToken == null) {
+        throw Exception('Google sign-in did not return an idToken.');
+      }
 
       // Create a new credential using the ID token
       final credential = GoogleAuthProvider.credential(
@@ -71,8 +78,19 @@ class AuthService {
       // Sign in to Firebase with the Google credential
       return await _auth.signInWithCredential(credential);
     } on FirebaseAuthException catch (e) {
+      print(
+        'FirebaseAuthException during Google sign-in: ${e.code} ${e.message}',
+      );
       throw _handleAuthException(e);
+    } on GoogleSignInException catch (e) {
+      print(
+        'GoogleSignInException during Google sign-in: ${e.code} ${e.description}',
+      );
+      throw Exception(
+        'Failed to sign in with Google (GoogleSignInException: ${e.code}).',
+      );
     } catch (e) {
+      print('Unknown exception during Google sign-in: $e');
       throw Exception('Failed to sign in with Google: ${e.toString()}');
     }
   }
