@@ -38,6 +38,14 @@
           }
         },
         {
+          "client_id": "979151294493-sfn94pj4lg0hn5g1ge4h4rqompkuaufs.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.proplayapp.proplay",
+            "certificate_hash": "53a460054068548da08e068df27b118021330bf8"
+          }
+        },
+        {
           "client_id": "979151294493-f8e9dc74bna070m7q5n5inst6iigt5nl.apps.googleusercontent.com",
           "client_type": 3
         }
