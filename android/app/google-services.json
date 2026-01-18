@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "979151294493-2u9ha3qdgr3nh5fhrbgrl4knje7u7vno.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.proplayapp.proplay",
+            "certificate_hash": "22e8372f44adb5a48adfc40ec8c0deda5c57767e"
+          }
+        },
+        {
           "client_id": "979151294493-ijebebb5qpeoagl1fsug0ccc25hlciq3.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
