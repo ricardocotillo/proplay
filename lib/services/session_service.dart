@@ -157,6 +157,30 @@ class SessionService {
     }
   }
 
+  bool _matchesGenderRequirement({
+    required String sessionDesiredGender,
+    required String? userGender,
+  }) {
+    if (sessionDesiredGender == 'any') {
+      return true;
+    }
+    if (userGender == null) {
+      return false;
+    }
+    return sessionDesiredGender == userGender;
+  }
+
+  bool _matchesAgeRequirement({
+    required int sessionMinAge,
+    required int sessionMaxAge,
+    required int? userAge,
+  }) {
+    if (userAge == null) {
+      return false;
+    }
+    return userAge >= sessionMinAge && userAge <= sessionMaxAge;
+  }
+
   /// Get all upcoming public sessions (isPrivate == false) from all groups
   Future<List<SessionModel>> getAllPublicSessions() async {
     try {
@@ -182,6 +206,9 @@ class SessionService {
           'costPerPlayer': data['costPerPlayer'] ?? 0,
           'isPrivate': data['isPrivate'] ?? false,
           'sport': data['sport'],
+          'minAge': data['minAge'],
+          'maxAge': data['maxAge'],
+          'desiredGender': data['desiredGender'],
         };
         return SessionModel.fromMap(doc.id, filteredData);
       }).toList();
@@ -194,6 +221,8 @@ class SessionService {
   Future<List<SessionModel>> getAllUpcomingSessions(
     List<String> userGroupIds, {
     List<String> userSports = const [],
+    String? userGender,
+    int? userAge,
   }) async {
     try {
       // Get sessions from user's groups (both private and public)
@@ -215,7 +244,19 @@ class SessionService {
       for (final session in publicSessions) {
         if (!sessionMap.containsKey(session.id)) {
           // Only add if user has no sports specified, or if session sport matches user's sports
-          if (userSports.isEmpty || userSports.contains(session.sport)) {
+          final sportMatch =
+              userSports.isEmpty || userSports.contains(session.sport);
+          final genderMatch = _matchesGenderRequirement(
+            sessionDesiredGender: session.desiredGender,
+            userGender: userGender,
+          );
+          final ageMatch = _matchesAgeRequirement(
+            sessionMinAge: session.minAge,
+            sessionMaxAge: session.maxAge,
+            userAge: userAge,
+          );
+
+          if (sportMatch && genderMatch && ageMatch) {
             sessionMap[session.id] = session;
           }
         }

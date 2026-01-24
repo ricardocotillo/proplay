@@ -4,7 +4,7 @@ abstract class SessionEvent extends Equatable {
   const SessionEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class LoadSessions extends SessionEvent {
@@ -13,17 +13,24 @@ class LoadSessions extends SessionEvent {
   const LoadSessions(this.groupId);
 
   @override
-  List<Object> get props => [groupId];
+  List<Object?> get props => [groupId];
 }
 
 class LoadAllUserSessions extends SessionEvent {
   final List<String> groupIds;
   final List<String> userSports;
+  final String? userGender;
+  final int? userAge;
 
-  const LoadAllUserSessions(this.groupIds, {this.userSports = const []});
+  const LoadAllUserSessions(
+    this.groupIds, {
+    this.userSports = const [],
+    this.userGender,
+    this.userAge,
+  });
 
   @override
-  List<Object> get props => [groupIds, userSports];
+  List<Object?> get props => [groupIds, userSports, userGender, userAge];
 }
 
 class DeleteSession extends SessionEvent {
@@ -32,5 +39,5 @@ class DeleteSession extends SessionEvent {
   const DeleteSession(this.sessionId);
 
   @override
-  List<Object> get props => [sessionId];
+  List<Object?> get props => [sessionId];
 }

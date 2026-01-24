@@ -55,6 +55,8 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
       final sessions = await _sessionService.getAllUpcomingSessions(
         event.groupIds,
         userSports: event.userSports,
+        userGender: event.userGender,
+        userAge: event.userAge,
       );
       emit(SessionLoaded(sessions));
     } catch (e) {

@@ -500,10 +500,17 @@ class _HomeScreenState extends State<HomeScreen> {
     List<String> groupIds,
     List<String> userSports,
   ) {
+    final user = context.currentUser;
     return BlocProvider(
-      create: (context) =>
-          SessionBloc(sessionService: SessionService())
-            ..add(LoadAllUserSessions(groupIds, userSports: userSports)),
+      create: (context) => SessionBloc(sessionService: SessionService())
+        ..add(
+          LoadAllUserSessions(
+            groupIds,
+            userSports: userSports,
+            userGender: user?.gender,
+            userAge: user?.age,
+          ),
+        ),
       child: BlocBuilder<SessionBloc, SessionState>(
         builder: (context, sessionState) {
           if (sessionState is SessionLoading) {
@@ -548,7 +555,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 8),
                 SizedBox(
-                  height: 240,
+                  height: 250,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.only(
@@ -588,6 +595,12 @@ class _SessionCarouselCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String genderText = switch (session.desiredGender) {
+      'male' => 'Masculino',
+      'female' => 'Femenino',
+      _ => 'Cualquiera',
+    };
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -691,6 +704,46 @@ class _SessionCarouselCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             '${session.playerCount}/${session.maxPlayers}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.badge,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            genderText,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.cake,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${session.minAge}-${session.maxAge}',
                             style: TextStyle(
                               fontSize: 13,
                               color: Theme.of(context).colorScheme.secondary,

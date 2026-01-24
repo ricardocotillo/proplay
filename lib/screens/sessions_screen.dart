@@ -36,8 +36,15 @@ class SessionsScreen extends StatelessWidget {
             final userSports = user?.sports ?? [];
 
             return BlocProvider(
-              create: (context) => SessionBloc(sessionService: SessionService())
-                ..add(LoadAllUserSessions(groupIds, userSports: userSports)),
+              create: (context) =>
+                  SessionBloc(sessionService: SessionService())..add(
+                    LoadAllUserSessions(
+                      groupIds,
+                      userSports: userSports,
+                      userGender: user?.gender,
+                      userAge: user?.age,
+                    ),
+                  ),
               child: BlocBuilder<SessionBloc, SessionState>(
                 builder: (context, sessionState) {
                   if (sessionState is SessionLoading) {
