@@ -55,7 +55,6 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       await _userService.updateUser(event.uid, {
         'gender': event.gender,
         'age': event.age,
-        'location': event.location,
         if (event.profileCompletionDismissed != null)
           'profileCompletionDismissed': event.profileCompletionDismissed,
       });

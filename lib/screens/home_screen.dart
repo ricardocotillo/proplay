@@ -439,7 +439,6 @@ class _HomeScreenState extends State<HomeScreen> {
         initialSelectedSports: user.sports,
         initialGender: user.gender,
         initialAge: user.age,
-        initialLocation: user.location,
         forceSports: forceSports,
         onDismissed: () {
           if (forceSports) return;
@@ -457,7 +456,6 @@ class _HomeScreenState extends State<HomeScreen> {
               required List<String> sports,
               required String? gender,
               required int? age,
-              required String? location,
             }) async {
               final currentUser = context.currentUser;
               if (currentUser == null) return;
@@ -478,7 +476,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     uid: currentUser.uid,
                     gender: gender,
                     age: age,
-                    location: location,
                     profileCompletionDismissed: true,
                   ),
                 );
@@ -1137,14 +1134,12 @@ class _ProfileSetupDialog extends StatefulWidget {
   final List<String> initialSelectedSports;
   final String? initialGender;
   final int? initialAge;
-  final String? initialLocation;
   final bool forceSports;
   final void Function() onDismissed;
   final void Function({
     required List<String> sports,
     required String? gender,
     required int? age,
-    required String? location,
   })
   onSaved;
 
@@ -1152,7 +1147,6 @@ class _ProfileSetupDialog extends StatefulWidget {
     required this.initialSelectedSports,
     required this.initialGender,
     required this.initialAge,
-    required this.initialLocation,
     required this.forceSports,
     required this.onDismissed,
     required this.onSaved,
@@ -1185,7 +1179,6 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
   ];
 
   late final TextEditingController _ageController;
-  late final TextEditingController _locationController;
   late final Set<String> _selectedSports;
   String? _gender;
   bool _actionTaken = false;
@@ -1196,9 +1189,6 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
     _ageController = TextEditingController(
       text: widget.initialAge?.toString() ?? '',
     );
-    _locationController = TextEditingController(
-      text: widget.initialLocation ?? '',
-    );
     _selectedSports = widget.initialSelectedSports.toSet();
     _gender = widget.initialGender;
   }
@@ -1206,7 +1196,6 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
   @override
   void dispose() {
     _ageController.dispose();
-    _locationController.dispose();
     super.dispose();
   }
 
@@ -1219,16 +1208,9 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
     _actionTaken = true;
 
     final ageText = _ageController.text.trim();
-    final locationText = _locationController.text.trim();
     final int? age = ageText.isEmpty ? null : int.tryParse(ageText);
-    final String? location = locationText.isEmpty ? null : locationText;
 
-    widget.onSaved(
-      sports: sports,
-      gender: _gender,
-      age: age,
-      location: location,
-    );
+    widget.onSaved(sports: sports, gender: _gender, age: age);
     Navigator.pop(context);
   }
 
@@ -1318,14 +1300,6 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Edad (opcional)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _locationController,
-                decoration: const InputDecoration(
-                  labelText: 'Ubicación (opcional)',
                   border: OutlineInputBorder(),
                 ),
               ),

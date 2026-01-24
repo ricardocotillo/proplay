@@ -24,7 +24,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
   late final TextEditingController _ageController;
-  late final TextEditingController _locationController;
   String? _gender;
   final _imagePicker = ImagePicker();
   final _storageService = StorageService();
@@ -38,7 +37,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _firstNameController = TextEditingController(text: user?.firstName ?? '');
     _lastNameController = TextEditingController(text: user?.lastName ?? '');
     _ageController = TextEditingController(text: user?.age?.toString() ?? '');
-    _locationController = TextEditingController(text: user?.location ?? '');
     _gender = user?.gender;
   }
 
@@ -47,7 +45,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _ageController.dispose();
-    _locationController.dispose();
     super.dispose();
   }
 
@@ -139,8 +136,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     final ageText = _ageController.text.trim();
     final int? parsedAge = ageText.isEmpty ? null : int.tryParse(ageText);
-    final locationText = _locationController.text.trim();
-    final String? parsedLocation = locationText.isEmpty ? null : locationText;
 
     context.read<UserBloc>().add(
       UserUpdateRequested(
@@ -155,7 +150,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         uid: user.uid,
         gender: _gender,
         age: parsedAge,
-        location: parsedLocation,
         profileCompletionDismissed: true,
       ),
     );
@@ -383,17 +377,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       }
                       return null;
                     },
-                  ),
-                  const SizedBox(height: 16),
-
-                  TextFormField(
-                    controller: _locationController,
-                    decoration: const InputDecoration(
-                      labelText: 'Location (optional)',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.location_on_outlined),
-                    ),
-                    enabled: !isLoading,
                   ),
                   const SizedBox(height: 32),
 

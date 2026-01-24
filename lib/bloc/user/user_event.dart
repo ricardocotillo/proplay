@@ -26,25 +26,17 @@ class UserMatchInfoUpdateRequested extends UserEvent {
   final String uid;
   final String? gender;
   final int? age;
-  final String? location;
   final bool? profileCompletionDismissed;
 
   const UserMatchInfoUpdateRequested({
     required this.uid,
     required this.gender,
     required this.age,
-    required this.location,
     this.profileCompletionDismissed,
   });
 
   @override
-  List<Object?> get props => [
-    uid,
-    gender,
-    age,
-    location,
-    profileCompletionDismissed,
-  ];
+  List<Object?> get props => [uid, gender, age, profileCompletionDismissed];
 }
 
 class UserProfileCompletionDismissedRequested extends UserEvent {
