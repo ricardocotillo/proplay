@@ -91,6 +91,9 @@ class SessionService {
           'costPerPlayer': data['costPerPlayer'] ?? 0,
           'isPrivate': data['isPrivate'] ?? false,
           'sport': data['sport'],
+          'minAge': data['minAge'],
+          'maxAge': data['maxAge'],
+          'desiredGender': data['desiredGender'],
           // Explicitly exclude players
         };
         return SessionModel.fromMap(doc.id, filteredData);
@@ -121,7 +124,6 @@ class SessionService {
             .where('groupId', whereIn: batchIds)
             .where('eventDate', isGreaterThanOrEqualTo: Timestamp.now())
             .get();
-
         final sessions = snapshot.docs.map((doc) {
           final data = doc.data();
           final filteredData = {
@@ -137,10 +139,12 @@ class SessionService {
             'costPerPlayer': data['costPerPlayer'] ?? 0,
             'isPrivate': data['isPrivate'] ?? false,
             'sport': data['sport'],
+            'minAge': data['minAge'],
+            'maxAge': data['maxAge'],
+            'desiredGender': data['desiredGender'],
           };
           return SessionModel.fromMap(doc.id, filteredData);
         }).toList();
-
         allSessions.addAll(sessions);
       }
 
