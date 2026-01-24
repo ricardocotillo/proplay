@@ -16,6 +16,30 @@ El sistema de matchmaking utiliza los siguientes criterios para emparejar usuari
 
 ---
 
+## Estado de Implementación (Código)
+
+### Hecho ✅
+
+- [x] **Perfil de usuario**: `gender` y `age` existen en `UserModel` (nullable) y se persisten en Firestore.
+- [x] **Creación de sesión**: se requiere `desiredGender` + rango de edad `minAge/maxAge` (UI con `RangeSlider` 18–80).
+- [x] **Persistencia de sesión**: `SessionTemplateModel` y `SessionModel` incluyen `desiredGender`, `minAge`, `maxAge` en `toMap/fromMap`.
+- [x] **Creación de live session**: `SessionService` copia `desiredGender/minAge/maxAge` del template al primer `liveSession`.
+- [x] **Lecturas Firestore**: `getUpcomingSessionsForGroups()` y `getAllPublicSessions()` incluyen `desiredGender/minAge/maxAge` al construir `SessionModel`.
+- [x] **Matchmaking (filtrado)**: `SessionService.getAllUpcomingSessions()` filtra sesiones públicas por:
+  - [x] deporte
+  - [x] género (`desiredGender` vs `userGender`)
+  - [x] edad (`minAge/maxAge` vs `userAge`)
+- [x] **BLoC de sesiones**: `LoadAllUserSessions` acepta `userGender` y `userAge` y los envía al service.
+- [x] **Home UI**: `HomeScreen` pasa `userGender/userAge` al cargar sesiones y muestra `desiredGender` + `minAge-maxAge` en el card del carrusel.
+- [x] **Sessions UI**: `SessionsScreen` pasa `userGender/userAge` al cargar sesiones.
+
+### Próximo 🚧
+
+- [ ] **Ubicación**: persistir ubicación del usuario y de la sesión (modelo + UI + Firestore).
+- [ ] **Matchmaking por distancia**: filtrar/ordenar por distancia y/o radio máximo.
+
+---
+
 ## Arquitectura del Sistema
 
 ### Flujo de Matchmaking
