@@ -36,9 +36,8 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   final _titleController = TextEditingController();
   final _maxPlayersController = TextEditingController();
   final _totalCostController = TextEditingController();
-  final _minAgeController = TextEditingController();
-  final _maxAgeController = TextEditingController();
   String? _desiredGender;
+  RangeValues _ageRange = const RangeValues(18, 80);
 
   DateTime? _eventDate;
   TimeOfDay? _eventTime;
@@ -81,8 +80,6 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
     _titleController.dispose();
     _maxPlayersController.dispose();
     _totalCostController.dispose();
-    _minAgeController.dispose();
-    _maxAgeController.dispose();
     super.dispose();
   }
 
@@ -128,16 +125,8 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         return;
       }
 
-      final minAge = int.tryParse(_minAgeController.text.trim());
-      final maxAge = int.tryParse(_maxAgeController.text.trim());
-      if (minAge == null || maxAge == null || minAge > maxAge) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Por favor, ingresa un rango de edad válido.'),
-          ),
-        );
-        return;
-      }
+      final minAge = _ageRange.start.round();
+      final maxAge = _ageRange.end.round();
 
       final eventDateTime = DateTime(
         _eventDate!.year,
@@ -254,40 +243,61 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                             : null,
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _minAgeController,
-                              decoration: const InputDecoration(
-                                labelText: 'Edad mínima',
+                      FormField<RangeValues>(
+                        initialValue: _ageRange,
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Por favor, selecciona un rango de edad';
+                          }
+                          if (value.start < 18 || value.end > 80) {
+                            return 'El rango debe ser entre 18 y 80';
+                          }
+                          if (value.start > value.end) {
+                            return 'Por favor, selecciona un rango válido';
+                          }
+                          return null;
+                        },
+                        builder: (field) {
+                          final range = field.value ?? _ageRange;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Rango de edad: ${range.start.round()} - ${range.end.round()}',
+                                style: Theme.of(context).textTheme.titleMedium,
                               ),
-                              keyboardType: TextInputType.number,
-                              validator: (value) =>
-                                  value == null || value.isEmpty
-                                  ? 'Requerido'
-                                  : int.tryParse(value) == null
-                                  ? 'Inválido'
-                                  : null,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _maxAgeController,
-                              decoration: const InputDecoration(
-                                labelText: 'Edad máxima',
+                              RangeSlider(
+                                values: range,
+                                min: 18,
+                                max: 80,
+                                divisions: 62,
+                                labels: RangeLabels(
+                                  '${range.start.round()}',
+                                  '${range.end.round()}',
+                                ),
+                                onChanged: (newRange) {
+                                  setState(() {
+                                    _ageRange = newRange;
+                                  });
+                                  field.didChange(newRange);
+                                },
                               ),
-                              keyboardType: TextInputType.number,
-                              validator: (value) =>
-                                  value == null || value.isEmpty
-                                  ? 'Requerido'
-                                  : int.tryParse(value) == null
-                                  ? 'Inválido'
-                                  : null,
-                            ),
-                          ),
-                        ],
+                              if (field.hasError)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    field.errorText ?? '',
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.error,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
