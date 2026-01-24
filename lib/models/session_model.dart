@@ -16,6 +16,9 @@ class SessionModel extends Equatable {
   final bool isPrivate;
   final List<SessionUserModel>? players;
   final String sport;
+  final int minAge;
+  final int maxAge;
+  final String desiredGender;
 
   const SessionModel({
     required this.id,
@@ -31,6 +34,9 @@ class SessionModel extends Equatable {
     this.isPrivate = false,
     this.players,
     required this.sport,
+    required this.minAge,
+    required this.maxAge,
+    required this.desiredGender,
   });
 
   @override
@@ -48,6 +54,9 @@ class SessionModel extends Equatable {
     isPrivate,
     players,
     sport,
+    minAge,
+    maxAge,
+    desiredGender,
   ];
 
   SessionModel copyWith({
@@ -64,6 +73,9 @@ class SessionModel extends Equatable {
     bool? isPrivate,
     List<SessionUserModel>? players,
     String? sport,
+    int? minAge,
+    int? maxAge,
+    String? desiredGender,
   }) {
     return SessionModel(
       id: id ?? this.id,
@@ -79,6 +91,9 @@ class SessionModel extends Equatable {
       isPrivate: isPrivate ?? this.isPrivate,
       players: players ?? this.players,
       sport: sport ?? this.sport,
+      minAge: minAge ?? this.minAge,
+      maxAge: maxAge ?? this.maxAge,
+      desiredGender: desiredGender ?? this.desiredGender,
     );
   }
 
@@ -96,6 +111,9 @@ class SessionModel extends Equatable {
       'isPrivate': isPrivate,
       if (players != null) 'players': players!.map((p) => p.toMap()).toList(),
       'sport': sport,
+      'minAge': minAge,
+      'maxAge': maxAge,
+      'desiredGender': desiredGender,
     };
   }
 
@@ -119,6 +137,9 @@ class SessionModel extends Equatable {
                 .toList()
           : null,
       sport: map['sport'] as String,
+      minAge: map['minAge'] as int,
+      maxAge: map['maxAge'] as int,
+      desiredGender: map['desiredGender'] as String,
     );
   }
 }

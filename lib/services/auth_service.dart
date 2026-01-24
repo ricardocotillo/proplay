@@ -25,7 +25,6 @@ class AuthService {
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      print(e);
       throw _handleAuthException(e);
     }
   }

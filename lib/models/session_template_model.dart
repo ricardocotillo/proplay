@@ -14,6 +14,9 @@ class SessionTemplateModel extends Equatable {
   final double? costPerPlayer;
   final bool isPrivate;
   final String sport;
+  final int minAge;
+  final int maxAge;
+  final String desiredGender;
 
   const SessionTemplateModel({
     this.id,
@@ -28,6 +31,9 @@ class SessionTemplateModel extends Equatable {
     this.costPerPlayer,
     this.isPrivate = false,
     required this.sport,
+    required this.minAge,
+    required this.maxAge,
+    required this.desiredGender,
   });
 
   @override
@@ -44,6 +50,9 @@ class SessionTemplateModel extends Equatable {
     costPerPlayer,
     isPrivate,
     sport,
+    minAge,
+    maxAge,
+    desiredGender,
   ];
 
   SessionTemplateModel copyWith({
@@ -59,6 +68,9 @@ class SessionTemplateModel extends Equatable {
     double? costPerPlayer,
     bool? isPrivate,
     String? sport,
+    int? minAge,
+    int? maxAge,
+    String? desiredGender,
   }) {
     return SessionTemplateModel(
       id: id ?? this.id,
@@ -73,6 +85,9 @@ class SessionTemplateModel extends Equatable {
       costPerPlayer: costPerPlayer,
       isPrivate: isPrivate ?? this.isPrivate,
       sport: sport ?? this.sport,
+      minAge: minAge ?? this.minAge,
+      maxAge: maxAge ?? this.maxAge,
+      desiredGender: desiredGender ?? this.desiredGender,
     );
   }
 
@@ -89,6 +104,9 @@ class SessionTemplateModel extends Equatable {
       'costPerPlayer': costPerPlayer,
       'isPrivate': isPrivate,
       'sport': sport,
+      'minAge': minAge,
+      'maxAge': maxAge,
+      'desiredGender': desiredGender,
     };
   }
 
@@ -106,6 +124,9 @@ class SessionTemplateModel extends Equatable {
       costPerPlayer: (map['costPerPlayer'] as num?)?.toDouble(),
       isPrivate: map['isPrivate'] as bool? ?? false,
       sport: map['sport'] as String,
+      minAge: map['minAge'] as int,
+      maxAge: map['maxAge'] as int,
+      desiredGender: map['desiredGender'] as String,
     );
   }
 }

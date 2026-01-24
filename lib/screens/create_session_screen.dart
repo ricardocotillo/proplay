@@ -36,6 +36,9 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   final _titleController = TextEditingController();
   final _maxPlayersController = TextEditingController();
   final _totalCostController = TextEditingController();
+  final _minAgeController = TextEditingController();
+  final _maxAgeController = TextEditingController();
+  String? _desiredGender;
 
   DateTime? _eventDate;
   TimeOfDay? _eventTime;
@@ -78,6 +81,8 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
     _titleController.dispose();
     _maxPlayersController.dispose();
     _totalCostController.dispose();
+    _minAgeController.dispose();
+    _maxAgeController.dispose();
     super.dispose();
   }
 
@@ -114,6 +119,26 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         return;
       }
 
+      if (_desiredGender == null || _desiredGender!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Por favor, selecciona el género deseado.'),
+          ),
+        );
+        return;
+      }
+
+      final minAge = int.tryParse(_minAgeController.text.trim());
+      final maxAge = int.tryParse(_maxAgeController.text.trim());
+      if (minAge == null || maxAge == null || minAge > maxAge) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Por favor, ingresa un rango de edad válido.'),
+          ),
+        );
+        return;
+      }
+
       final eventDateTime = DateTime(
         _eventDate!.year,
         _eventDate!.month,
@@ -139,6 +164,9 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         totalCost: double.parse(_totalCostController.text),
         isPrivate: _isPrivate,
         sport: _group!.sport,
+        minAge: minAge,
+        maxAge: maxAge,
+        desiredGender: _desiredGender!,
       );
 
       context.read<CreateSessionBloc>().add(CreateSessionTemplate(template));
@@ -223,6 +251,72 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                         keyboardType: TextInputType.number,
                         validator: (value) => value!.isEmpty
                             ? 'Por favor, ingresa el costo total'
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _minAgeController,
+                              decoration: const InputDecoration(
+                                labelText: 'Edad mínima',
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                  ? 'Requerido'
+                                  : int.tryParse(value) == null
+                                  ? 'Inválido'
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _maxAgeController,
+                              decoration: const InputDecoration(
+                                labelText: 'Edad máxima',
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                  ? 'Requerido'
+                                  : int.tryParse(value) == null
+                                  ? 'Inválido'
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        initialValue: _desiredGender,
+                        decoration: const InputDecoration(
+                          labelText: 'Género deseado',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'any',
+                            child: Text('Cualquiera'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'male',
+                            child: Text('Masculino'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'female',
+                            child: Text('Femenino'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _desiredGender = value;
+                          });
+                        },
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? 'Por favor, selecciona una opción'
                             : null,
                       ),
                       const SizedBox(height: 16),
