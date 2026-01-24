@@ -11,7 +11,7 @@ El sistema de matchmaking utiliza los siguientes criterios para emparejar usuari
 ### 1. Deporte Preferido
 ### 2. Género
 ### 3. Edad
-### 4. Ubicación Geográfica
+### 4. Ubicación Geográfica (próximamente)
 ### 5. Grupos del Usuario
 
 ---
@@ -313,7 +313,7 @@ class SessionModel extends Equatable {
   final bool isPrivate;
   final List<SessionUserModel>? players;
   final String sport;
-  final String? genderPreference;  // 🚻 'male', 'female', 'mixed', null = sin preferencia
+  final String desiredGender;  // 🚻 'any', 'male', 'female'
 
   const SessionModel({
     required this.id,
@@ -329,23 +329,23 @@ class SessionModel extends Equatable {
     this.isPrivate = false,
     this.players,
     required this.sport,
-    this.genderPreference,  // null = abierto a todos
+    required this.desiredGender,
   });
 
   // Verificar si usuario cumple requisito de género
   bool matchesGenderRequirement(String? userGender) {
-    // Sin preferencia = acepta todos
-    if (genderPreference == null || genderPreference == 'mixed') {
+    // Sesión abierta a todos
+    if (desiredGender == 'any') {
       return true;
     }
 
-    // Usuario sin género especificado = puede unirse a sesiones mixtas
+    // Usuario sin género especificado = no puede unirse a sesiones restringidas
     if (userGender == null) {
-      return genderPreference == 'mixed';
+      return false;
     }
 
     // Comparar género del usuario con requisito de sesión
-    return genderPreference == userGender;
+    return desiredGender == userGender;
   }
 }
 ```
@@ -358,6 +358,7 @@ Future<List<SessionModel>> getAllUpcomingSessions(
   List<String> userGroupIds, {
   List<String> userSports = const [],
   String? userGender,  // 🚻 Género del usuario
+  int? userAge,         // 🎂 Edad del usuario
 }) async {
   try {
     final groupSessions = await getUpcomingSessionsForGroups(userGroupIds);
@@ -369,7 +370,7 @@ Future<List<SessionModel>> getAllUpcomingSessions(
       sessionMap[session.id] = session;
     }
 
-    // Filtrado por deporte y género
+    // Filtrado por deporte + género + edad
     for (final session in publicSessions) {
       if (!sessionMap.containsKey(session.id)) {
         // ✅ Filtro de deporte
@@ -378,8 +379,11 @@ Future<List<SessionModel>> getAllUpcomingSessions(
         // ✅ Filtro de género
         final genderMatch = session.matchesGenderRequirement(userGender);
 
-        // Solo agregar si cumple AMBOS criterios
-        if (sportMatch && genderMatch) {
+        // ✅ Filtro de edad
+        final ageMatch = session.matchesAgeRequirement(userAge);
+
+        // Solo agregar si cumple TODOS los criterios
+        if (sportMatch && genderMatch && ageMatch) {
           sessionMap[session.id] = session;
         }
       }
@@ -415,7 +419,7 @@ context.read<SessionBloc>().add(
 
 ## 3. Emparejamiento por Edad
 
-### Modelo de Usuario con Fecha de Nacimiento
+### Modelo de Usuario con Edad
 
 ```dart
 // lib/models/user_model.dart (EXTENSIÓN)
@@ -430,7 +434,7 @@ class UserModel {
   final bool superUser;
   final List<String> sports;
   final String? gender;
-  final DateTime? dateOfBirth;  // 🎂 Fecha de nacimiento
+  final int? age;  // 🎂 Edad
 
   UserModel({
     required this.uid,
@@ -443,20 +447,8 @@ class UserModel {
     this.superUser = false,
     this.sports = const [],
     this.gender,
-    this.dateOfBirth,
+    this.age,
   });
-
-  // Calcular edad del usuario
-  int? get age {
-    if (dateOfBirth == null) return null;
-    final now = DateTime.now();
-    int age = now.year - dateOfBirth!.year;
-    if (now.month < dateOfBirth!.month ||
-        (now.month == dateOfBirth!.month && now.day < dateOfBirth!.day)) {
-      age--;
-    }
-    return age;
-  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -470,7 +462,7 @@ class UserModel {
       'superUser': superUser,
       'sports': sports,
       'gender': gender,
-      'dateOfBirth': dateOfBirth != null ? Timestamp.fromDate(dateOfBirth!) : null,
+      'age': age,
     };
   }
 }
@@ -494,9 +486,9 @@ class SessionModel extends Equatable {
   final bool isPrivate;
   final List<SessionUserModel>? players;
   final String sport;
-  final String? genderPreference;
-  final int? minAge;  // 🎂 Edad mínima (null = sin restricción)
-  final int? maxAge;  // 🎂 Edad máxima (null = sin restricción)
+  final String desiredGender;
+  final int minAge;  // 🎂 Edad mínima
+  final int maxAge;  // 🎂 Edad máxima
 
   const SessionModel({
     required this.id,
@@ -512,29 +504,24 @@ class SessionModel extends Equatable {
     this.isPrivate = false,
     this.players,
     required this.sport,
-    this.genderPreference,
-    this.minAge,
-    this.maxAge,
+    required this.desiredGender,
+    required this.minAge,
+    required this.maxAge,
   });
 
   // Verificar si usuario cumple requisito de edad
   bool matchesAgeRequirement(int? userAge) {
     // Usuario sin edad especificada = no puede unirse a sesiones con restricción
-    if (userAge == null && (minAge != null || maxAge != null)) {
+    if (userAge == null) {
       return false;
-    }
-
-    // Sin restricción de edad = acepta todos
-    if (minAge == null && maxAge == null) {
-      return true;
     }
 
     // Verificar rango de edad
-    if (minAge != null && userAge! < minAge!) {
+    if (userAge < minAge) {
       return false;
     }
 
-    if (maxAge != null && userAge! > maxAge!) {
+    if (userAge > maxAge) {
       return false;
     }
 
@@ -542,17 +529,8 @@ class SessionModel extends Equatable {
   }
 
   // Obtener descripción del rango de edad
-  String? get ageRangeDescription {
-    if (minAge == null && maxAge == null) {
-      return null;
-    }
-    if (minAge != null && maxAge != null) {
-      return '$minAge-$maxAge años';
-    }
-    if (minAge != null) {
-      return '$minAge+ años';
-    }
-    return 'Hasta $maxAge años';
+  String get ageRangeDescription {
+    return '$minAge-$maxAge años';
   }
 }
 ```
@@ -616,7 +594,7 @@ context.read<SessionBloc>().add(
     groupIds: groupIds,
     userSports: user?.sports ?? [],
     userGender: user?.gender,
-    userAge: user?.age,  // 🎂 Edad calculada automáticamente
+    userAge: user?.age,  // 🎂 Edad del usuario
   ),
 );
 ```
@@ -1205,9 +1183,9 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
 
 1. **Grupos del Usuario** → Sesiones de grupos siempre visibles
 2. **Deporte** → Filtrar por deportes preferidos
-3. **Género** → Filtrar por preferencia de género de la sesión
-4. **Edad** → Filtrar por rango de edad de la sesión
-5. **Ubicación** → Filtrar por distancia máxima
+3. **Género** → Filtrar por `desiredGender` de la sesión
+4. **Edad** → Filtrar por `minAge/maxAge` de la sesión
+5. **Ubicación** (próximamente) → Filtrar por distancia máxima
 
 ### Priorización de Resultados
 
@@ -1215,8 +1193,8 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
 Ordenamiento de Sesiones:
 1. Sesiones de grupos del usuario (sin orden específico)
 2. Sesiones públicas ordenadas por:
-   - Distancia (si ubicación disponible)
-   - Fecha del evento (si sin ubicación)
+   - Distancia (cuando se implemente ubicación)
+   - Fecha del evento
 ```
 
 ### Estructura de Firestore
@@ -1226,32 +1204,16 @@ users/
   {userId}/
     ├── sports: ['fútbol', 'baloncesto']
     ├── gender: 'male'
-    ├── dateOfBirth: Timestamp
-    ├── location: {
-    │     latitude: 40.4168,
-    │     longitude: -3.7038,
-    │     city: 'Madrid',
-    │     country: 'España'
-    │   }
-    └── preferences: {
-          maxDistanceKm: 10.0,
-          minAge: 18,
-          maxAge: 35
-        }
+    ├── age: 34
+    └── location: { ... }  // (próximamente)
 
 liveSessions/
   {sessionId}/
     ├── sport: 'fútbol'
-    ├── genderPreference: 'mixed'
+    ├── desiredGender: 'any'
     ├── minAge: 18
     ├── maxAge: 45
-    ├── location: {
-    │     latitude: 40.4200,
-    │     longitude: -3.7000,
-    │     address: 'Calle Ejemplo 123',
-    │     venueName: 'Polideportivo Municipal',
-    │     city: 'Madrid'
-    │   }
+    ├── location: { ... }  // (próximamente)
     ├── eventDate: Timestamp
     └── ... otros campos
 ```
@@ -1267,16 +1229,7 @@ final user = UserModel(
   lastName: 'Pérez',
   sports: ['fútbol', 'baloncesto'],
   gender: 'male',
-  dateOfBirth: DateTime(1990, 5, 15),  // 34 años
-  location: UserLocation(
-    latitude: 40.4168,
-    longitude: -3.7038,
-    city: 'Madrid',
-  ),
-  preferences: UserPreferences(
-    sports: ['fútbol', 'baloncesto'],
-    maxDistanceKm: 5.0,
-  ),
+  age: 34,
 );
 
 // 2. Cargar sesiones emparejadas
@@ -1286,18 +1239,16 @@ context.read<SessionBloc>().add(
     userSports: user.sports,
     userGender: user.gender,
     userAge: user.age,  // 34
-    userLocation: user.location,
-    maxDistanceKm: user.preferences.maxDistanceKm,  // 5 km
   ),
 );
 
 // 3. Sistema filtra automáticamente:
 //    ✅ Sesiones de fútbol o baloncesto
-//    ✅ Sin restricción de género o género 'male'/'mixed'
+//    ✅ desiredGender = 'any' o igual al género del usuario
 //    ✅ Edad 34 dentro del rango permitido
-//    ✅ A menos de 5 km de distancia
+//    🚧 (Próximamente) A menos de X km de distancia
 
-// 4. Resultado: Sesiones ordenadas por distancia
+// 4. Resultado: Sesiones ordenadas por fecha
 ```
 
 ---
@@ -1315,4 +1266,4 @@ context.read<SessionBloc>().add(
 
 **Última Actualización**: Sistema de matchmaking con filtros múltiples
 **Versión**: 1.0
-**Estado**: Deporte ✅ | Género 🚧 | Edad 🚧 | Ubicación 🚧
+**Estado**: Deporte ✅ | Género ✅ | Edad ✅ | Ubicación 🚧
