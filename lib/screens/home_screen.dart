@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/utils/location_utils.dart';
 import 'package:proplay/widgets/app_drawer.dart';
 import 'package:proplay/widgets/wallet_indicator.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
@@ -621,6 +622,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
                       return _SessionCarouselCard(
                         session: displaySessions[index],
+                        userLat: _userLat,
+                        userLng: _userLng,
                       );
                     },
                   ),
@@ -639,16 +642,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _SessionCarouselCard extends StatelessWidget {
   final SessionModel session;
+  final double? userLat;
+  final double? userLng;
 
-  const _SessionCarouselCard({required this.session});
+  const _SessionCarouselCard({
+    required this.session,
+    this.userLat,
+    this.userLng,
+  });
+
+  String? _getDistanceText() {
+    if (userLat == null ||
+        userLng == null ||
+        session.locationLat == null ||
+        session.locationLng == null) {
+      return null;
+    }
+    final distance = LocationUtils.calculateDistance(
+      userLat!,
+      userLng!,
+      session.locationLat!,
+      session.locationLng!,
+    );
+    return LocationUtils.formatDistance(distance);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final String genderText = switch (session.desiredGender) {
-      'male' => 'Masculino',
-      'female' => 'Femenino',
-      _ => 'Cualquiera',
-    };
+    final distanceText = _getDistanceText();
 
     return GestureDetector(
       onTap: () {
@@ -762,46 +783,26 @@ class _SessionCarouselCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.badge,
-                            size: 16,
+                  if (distanceText != null) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          distanceText,
+                          style: TextStyle(
+                            fontSize: 13,
                             color: Theme.of(context).colorScheme.secondary,
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            genderText,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.cake,
-                            size: 16,
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${session.minAge}-${session.maxAge}',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
