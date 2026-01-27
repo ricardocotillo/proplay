@@ -297,8 +297,6 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
             ? LatLng(_locationLat!, _locationLng!)
             : const LatLng(-12.0464, -77.0428), // Lima default
         onNext: (result) {
-          print(result);
-          print('------------------------');
           if (result != null && result.geometry != null) {
             setState(() {
               _locationLat = result.geometry!.location.lat;
