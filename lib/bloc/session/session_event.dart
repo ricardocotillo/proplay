@@ -21,16 +21,30 @@ class LoadAllUserSessions extends SessionEvent {
   final List<String> userSports;
   final String? userGender;
   final int? userAge;
+  final double? userLat;
+  final double? userLng;
+  final double? maxDistanceKm;
 
   const LoadAllUserSessions(
     this.groupIds, {
     this.userSports = const [],
     this.userGender,
     this.userAge,
+    this.userLat,
+    this.userLng,
+    this.maxDistanceKm,
   });
 
   @override
-  List<Object?> get props => [groupIds, userSports, userGender, userAge];
+  List<Object?> get props => [
+        groupIds,
+        userSports,
+        userGender,
+        userAge,
+        userLat,
+        userLng,
+        maxDistanceKm,
+      ];
 }
 
 class DeleteSession extends SessionEvent {

@@ -57,6 +57,9 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
         userSports: event.userSports,
         userGender: event.userGender,
         userAge: event.userAge,
+        userLat: event.userLat,
+        userLng: event.userLng,
+        maxDistanceKm: event.maxDistanceKm,
       );
       emit(SessionLoaded(sessions));
     } catch (e) {

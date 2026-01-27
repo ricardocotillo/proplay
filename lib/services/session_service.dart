@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/session_template_model.dart';
 import 'package:proplay/models/user_model.dart';
+import 'package:proplay/utils/location_utils.dart';
 
 class SessionService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -229,12 +230,45 @@ class SessionService {
     }
   }
 
+  bool _matchesLocationRequirement({
+    required double? sessionLat,
+    required double? sessionLng,
+    required double? userLat,
+    required double? userLng,
+    required double? maxDistanceKm,
+  }) {
+    // If user location is not available, skip location filter
+    if (userLat == null || userLng == null) {
+      return true;
+    }
+    // If session has no location, skip location filter for that session
+    if (sessionLat == null || sessionLng == null) {
+      return true;
+    }
+    // If no max distance specified, skip location filter
+    if (maxDistanceKm == null) {
+      return true;
+    }
+
+    final distance = LocationUtils.calculateDistance(
+      userLat,
+      userLng,
+      sessionLat,
+      sessionLng,
+    );
+
+    return distance <= maxDistanceKm;
+  }
+
   /// Get all upcoming sessions: user's group sessions + public sessions matching user's sports
   Future<List<SessionModel>> getAllUpcomingSessions(
     List<String> userGroupIds, {
     List<String> userSports = const [],
     String? userGender,
     int? userAge,
+    double? userLat,
+    double? userLng,
+    double? maxDistanceKm,
   }) async {
     try {
       // Get sessions from user's groups (both private and public)
@@ -267,16 +301,53 @@ class SessionService {
             sessionMaxAge: session.maxAge,
             userAge: userAge,
           );
+          final locationMatch = _matchesLocationRequirement(
+            sessionLat: session.locationLat,
+            sessionLng: session.locationLng,
+            userLat: userLat,
+            userLng: userLng,
+            maxDistanceKm: maxDistanceKm,
+          );
 
-          if (sportMatch && genderMatch && ageMatch) {
+          if (sportMatch && genderMatch && ageMatch && locationMatch) {
             sessionMap[session.id] = session;
           }
         }
       }
 
-      // Convert to list and sort by event date
+      // Convert to list and sort
       final allSessions = sessionMap.values.toList();
-      allSessions.sort((a, b) => a.eventDate.compareTo(b.eventDate));
+
+      // Sort by distance if user location is available, otherwise by date
+      if (userLat != null && userLng != null) {
+        allSessions.sort((a, b) {
+          // Sessions without location go to the end
+          if (a.locationLat == null && b.locationLat == null) {
+            return a.eventDate.compareTo(b.eventDate);
+          }
+          if (a.locationLat == null) return 1;
+          if (b.locationLat == null) return -1;
+
+          final distanceA = LocationUtils.calculateDistance(
+            userLat,
+            userLng,
+            a.locationLat!,
+            a.locationLng!,
+          );
+          final distanceB = LocationUtils.calculateDistance(
+            userLat,
+            userLng,
+            b.locationLat!,
+            b.locationLng!,
+          );
+
+          final distanceComparison = distanceA.compareTo(distanceB);
+          if (distanceComparison != 0) return distanceComparison;
+          return a.eventDate.compareTo(b.eventDate);
+        });
+      } else {
+        allSessions.sort((a, b) => a.eventDate.compareTo(b.eventDate));
+      }
 
       return allSessions;
     } catch (e) {

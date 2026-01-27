@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/app_drawer.dart';
 import 'package:proplay/widgets/wallet_indicator.dart';
@@ -34,25 +35,56 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  double? _userLat;
+  double? _userLng;
 
   @override
   void initState() {
     super.initState();
     _loadGroups();
     _checkProfileSetup();
-    _requestLocationPermission();
+    _initLocationAndPermission();
   }
 
-  Future<void> _requestLocationPermission() async {
+  Future<void> _initLocationAndPermission() async {
     final status = await Permission.location.status;
     final status2 = await Permission.locationWhenInUse.status;
-    if (status.isGranted ||
-        status.isPermanentlyDenied ||
-        status2.isGranted ||
-        status2.isPermanentlyDenied) {
+
+    // If permission is already granted, get location
+    if (status.isGranted || status2.isGranted) {
+      await _getCurrentLocation();
       return;
     }
-    await Permission.location.request();
+
+    // If permission is permanently denied, don't ask again
+    if (status.isPermanentlyDenied || status2.isPermanentlyDenied) {
+      return;
+    }
+
+    // Request permission if not set yet
+    final result = await Permission.location.request();
+    if (result.isGranted) {
+      await _getCurrentLocation();
+    }
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      if (mounted) {
+        setState(() {
+          _userLat = position.latitude;
+          _userLng = position.longitude;
+        });
+      }
+    } catch (e) {
+      // Location unavailable, continue without it
+    }
   }
 
   void _checkProfileSetup() {
@@ -523,6 +555,9 @@ class _HomeScreenState extends State<HomeScreen> {
             userSports: userSports,
             userGender: user?.gender,
             userAge: user?.age,
+            userLat: _userLat,
+            userLng: _userLng,
+            maxDistanceKm: 50.0,
           ),
         ),
       child: BlocBuilder<SessionBloc, SessionState>(
