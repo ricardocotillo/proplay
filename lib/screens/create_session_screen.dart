@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:map_location_picker/map_location_picker.dart';
 
 import 'package:proplay/bloc/create_session/create_session_bloc.dart';
+import 'package:proplay/firebase_options.dart';
 import 'package:proplay/models/group_model.dart';
 import 'package:proplay/models/session_template_model.dart';
 import 'package:proplay/services/group_service.dart';
@@ -87,9 +88,9 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         setState(() {
           _isLoadingGroup = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar el grupo: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al cargar el grupo: $e')));
       }
     }
   }
@@ -292,7 +293,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   Widget _buildLocationStep() {
     return MapLocationPicker(
       config: MapLocationPickerConfig(
-        apiKey: AppConstants.googleMapsApiKey,
+        apiKey: DefaultFirebaseOptions.currentPlatform.apiKey,
         initialPosition: _locationLat != null && _locationLng != null
             ? LatLng(_locationLat!, _locationLng!)
             : const LatLng(-34.6037, -58.3816), // Buenos Aires default
@@ -390,7 +391,8 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                   onTap: () async {
                     final picked = await showDatePicker(
                       context: context,
-                      initialDate: _eventEndDate ?? _eventDate ?? DateTime.now(),
+                      initialDate:
+                          _eventEndDate ?? _eventDate ?? DateTime.now(),
                       firstDate: _eventDate ?? DateTime.now(),
                       lastDate: DateTime(2101),
                     );
@@ -407,7 +409,8 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                   onTap: () async {
                     final picked = await showTimePicker(
                       context: context,
-                      initialTime: _eventEndTime ?? _eventTime ?? TimeOfDay.now(),
+                      initialTime:
+                          _eventEndTime ?? _eventTime ?? TimeOfDay.now(),
                     );
                     if (picked != null) {
                       setState(() => _eventEndTime = picked);
@@ -445,7 +448,13 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
 
     String formatDateTime(DateTime? date, TimeOfDay? time) {
       if (date == null || time == null) return 'No seleccionado';
-      final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      final dt = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
       return dateFormat.format(dt);
     }
 
@@ -588,11 +597,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
       child: ListTile(
         leading: Icon(icon),
         title: Text(title),
-        subtitle: Text(
-          subtitle,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
+        subtitle: Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),
         trailing: const Icon(Icons.edit, size: 20),
         onTap: onTap,
       ),
