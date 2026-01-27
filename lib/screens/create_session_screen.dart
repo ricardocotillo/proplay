@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:map_location_picker/map_location_picker.dart';
 
 import 'package:proplay/bloc/create_session/create_session_bloc.dart';
-import 'package:proplay/firebase_options.dart';
 import 'package:proplay/models/group_model.dart';
 import 'package:proplay/models/session_template_model.dart';
 import 'package:proplay/services/group_service.dart';
@@ -293,7 +292,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   Widget _buildLocationStep() {
     return MapLocationPicker(
       config: MapLocationPickerConfig(
-        apiKey: DefaultFirebaseOptions.currentPlatform.apiKey,
+        apiKey: AppConstants.googleMapsApiKey,
         initialPosition: _locationLat != null && _locationLng != null
             ? LatLng(_locationLat!, _locationLng!)
             : const LatLng(-34.6037, -58.3816), // Buenos Aires default
