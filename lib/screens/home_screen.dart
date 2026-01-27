@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/app_drawer.dart';
 import 'package:proplay/widgets/wallet_indicator.dart';
@@ -39,6 +40,15 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadGroups();
     _checkProfileSetup();
+    _requestLocationPermission();
+  }
+
+  Future<void> _requestLocationPermission() async {
+    final status = await Permission.location.status;
+    if (status.isGranted || status.isPermanentlyDenied) {
+      return;
+    }
+    await Permission.location.request();
   }
 
   void _checkProfileSetup() {
