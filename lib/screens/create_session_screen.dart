@@ -295,8 +295,10 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         apiKey: AppConstants.googleMapsApiKey,
         initialPosition: _locationLat != null && _locationLng != null
             ? LatLng(_locationLat!, _locationLng!)
-            : const LatLng(-34.6037, -58.3816), // Buenos Aires default
+            : const LatLng(-12.0464, -77.0428), // Lima default
         onNext: (result) {
+          print(result);
+          print('------------------------');
           if (result != null && result.geometry != null) {
             setState(() {
               _locationLat = result.geometry!.location.lat;
