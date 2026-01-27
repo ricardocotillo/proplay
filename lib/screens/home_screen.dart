@@ -45,7 +45,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _requestLocationPermission() async {
     final status = await Permission.location.status;
-    if (status.isGranted || status.isPermanentlyDenied) {
+    final status2 = await Permission.locationWhenInUse.status;
+    if (status.isGranted ||
+        status.isPermanentlyDenied ||
+        status2.isGranted ||
+        status2.isPermanentlyDenied) {
       return;
     }
     await Permission.location.request();
