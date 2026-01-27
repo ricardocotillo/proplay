@@ -59,6 +59,9 @@ class SessionService {
       minAge: template.minAge,
       maxAge: template.maxAge,
       desiredGender: template.desiredGender,
+      locationLat: template.locationLat,
+      locationLng: template.locationLng,
+      locationAddress: template.locationAddress,
     );
 
     await _firestore.collection('liveSessions').add(liveSession.toMap());
@@ -94,6 +97,9 @@ class SessionService {
           'minAge': data['minAge'],
           'maxAge': data['maxAge'],
           'desiredGender': data['desiredGender'],
+          'locationLat': data['locationLat'],
+          'locationLng': data['locationLng'],
+          'locationAddress': data['locationAddress'],
           // Explicitly exclude players
         };
         return SessionModel.fromMap(doc.id, filteredData);
@@ -142,6 +148,9 @@ class SessionService {
             'minAge': data['minAge'],
             'maxAge': data['maxAge'],
             'desiredGender': data['desiredGender'],
+            'locationLat': data['locationLat'],
+            'locationLng': data['locationLng'],
+            'locationAddress': data['locationAddress'],
           };
           return SessionModel.fromMap(doc.id, filteredData);
         }).toList();
@@ -209,6 +218,9 @@ class SessionService {
           'minAge': data['minAge'],
           'maxAge': data['maxAge'],
           'desiredGender': data['desiredGender'],
+          'locationLat': data['locationLat'],
+          'locationLng': data['locationLng'],
+          'locationAddress': data['locationAddress'],
         };
         return SessionModel.fromMap(doc.id, filteredData);
       }).toList();

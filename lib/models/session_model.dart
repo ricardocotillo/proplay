@@ -19,6 +19,9 @@ class SessionModel extends Equatable {
   final int minAge;
   final int maxAge;
   final String desiredGender;
+  final double? locationLat;
+  final double? locationLng;
+  final String? locationAddress;
 
   const SessionModel({
     required this.id,
@@ -37,6 +40,9 @@ class SessionModel extends Equatable {
     required this.minAge,
     required this.maxAge,
     required this.desiredGender,
+    this.locationLat,
+    this.locationLng,
+    this.locationAddress,
   });
 
   @override
@@ -57,6 +63,9 @@ class SessionModel extends Equatable {
     minAge,
     maxAge,
     desiredGender,
+    locationLat,
+    locationLng,
+    locationAddress,
   ];
 
   SessionModel copyWith({
@@ -76,6 +85,9 @@ class SessionModel extends Equatable {
     int? minAge,
     int? maxAge,
     String? desiredGender,
+    double? locationLat,
+    double? locationLng,
+    String? locationAddress,
   }) {
     return SessionModel(
       id: id ?? this.id,
@@ -94,6 +106,9 @@ class SessionModel extends Equatable {
       minAge: minAge ?? this.minAge,
       maxAge: maxAge ?? this.maxAge,
       desiredGender: desiredGender ?? this.desiredGender,
+      locationLat: locationLat ?? this.locationLat,
+      locationLng: locationLng ?? this.locationLng,
+      locationAddress: locationAddress ?? this.locationAddress,
     );
   }
 
@@ -114,6 +129,9 @@ class SessionModel extends Equatable {
       'minAge': minAge,
       'maxAge': maxAge,
       'desiredGender': desiredGender,
+      'locationLat': locationLat,
+      'locationLng': locationLng,
+      'locationAddress': locationAddress,
     };
   }
 
@@ -140,6 +158,9 @@ class SessionModel extends Equatable {
       minAge: map['minAge'] as int,
       maxAge: map['maxAge'] as int,
       desiredGender: map['desiredGender'] as String,
+      locationLat: (map['locationLat'] as num?)?.toDouble(),
+      locationLng: (map['locationLng'] as num?)?.toDouble(),
+      locationAddress: map['locationAddress'] as String?,
     );
   }
 }
