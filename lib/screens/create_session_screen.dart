@@ -310,6 +310,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
       searchConfig: SearchConfig(
         apiKey: AppConstants.googleMapsApiKey,
         searchHintText: 'Buscar ubicación...',
+        hideOnEmpty: true,
       ),
     );
   }
