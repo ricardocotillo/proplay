@@ -51,6 +51,10 @@
 	<string>This app needs access to your camera to take profile pictures.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app needs access to your microphone to record videos.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to your location to help you find nearby places and set locations.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs access to your location to help you find nearby places and set locations.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
