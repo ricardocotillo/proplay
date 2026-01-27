@@ -51,6 +51,9 @@ dependencies:
   flutter_launcher_icons: ^0.14.4
   map_location_picker: ^3.1.0
 
+dependency_overrides:
+  retrofit: 4.4.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
