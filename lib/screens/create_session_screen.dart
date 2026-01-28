@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:map_location_picker/map_location_picker.dart';
 
 import 'package:proplay/bloc/create_session/create_session_bloc.dart';
 import 'package:proplay/models/group_model.dart';
@@ -11,7 +10,7 @@ import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/utils/auth_helper.dart';
-import 'package:proplay/utils/constants.dart';
+import 'package:proplay/widgets/location_picker.dart';
 import 'package:proplay/widgets/step_indicator.dart';
 
 class CreateSessionScreen extends StatelessWidget {
@@ -64,39 +63,12 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   GroupModel? _group;
   bool _isLoadingGroup = true;
 
-  // Initial map position
-  LatLng _initialPosition = const LatLng(-12.0464, -77.0428); // Lima default
-
   static const List<String> _stepLabels = ['Ubicación', 'Fecha', 'Detalles'];
 
   @override
   void initState() {
     super.initState();
     _loadGroup();
-    _loadInitialPosition();
-  }
-
-  Future<void> _loadInitialPosition() async {
-    try {
-      // Try last known position first (faster)
-      Position? position = await Geolocator.getLastKnownPosition();
-
-      // If no last known position, try getting current position
-      position ??= await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 10),
-        ),
-      );
-      if (mounted && position != null) {
-        setState(() {
-          _initialPosition = LatLng(position!.latitude, position.longitude);
-        });
-      }
-    } catch (e) {
-      // Keep Lima default if location fetch fails
-      debugPrint('Error getting initial position: $e');
-    }
   }
 
   Future<void> _loadGroup() async {
@@ -317,28 +289,17 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   }
 
   Widget _buildLocationStep() {
-    return MapLocationPicker(
-      config: MapLocationPickerConfig(
-        apiKey: AppConstants.googleMapsApiKey,
-        initialPosition: _locationLat != null && _locationLng != null
-            ? LatLng(_locationLat!, _locationLng!)
-            : _initialPosition,
-        onNext: (result) {
-          if (result != null && result.geometry != null) {
-            setState(() {
-              _locationLat = result.geometry!.location.lat;
-              _locationLng = result.geometry!.location.lng;
-              _locationAddress = result.formattedAddress;
-            });
-            _goToNextStep();
-          }
-        },
-      ),
-      searchConfig: SearchConfig(
-        apiKey: AppConstants.googleMapsApiKey,
-        searchHintText: 'Buscar ubicación...',
-        hideOnEmpty: true,
-      ),
+    return LocationPicker(
+      initialLat: _locationLat,
+      initialLng: _locationLng,
+      onLocationSelected: (result) {
+        setState(() {
+          _locationLat = result.lat;
+          _locationLng = result.lng;
+          _locationAddress = result.address;
+        });
+        _goToNextStep();
+      },
     );
   }
 
