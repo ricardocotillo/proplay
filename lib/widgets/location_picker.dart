@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:map_location_picker/map_location_picker.dart';
 
 import 'package:proplay/utils/constants.dart';
@@ -38,79 +39,80 @@ class LocationPicker extends StatefulWidget {
 class _LocationPickerState extends State<LocationPicker> {
   static const LatLng _limaDefault = LatLng(-12.0464, -77.0428);
 
-  LatLng _initialPosition = _limaDefault;
-  bool _isLoadingPosition = true;
+  late final Future<LatLng> _initialPositionFuture;
 
   @override
   void initState() {
     super.initState();
-    _loadInitialPosition();
+    _initialPositionFuture = _getInitialPosition();
   }
 
-  Future<void> _loadInitialPosition() async {
+  Future<LatLng> _getInitialPosition() async {
     // If user already selected a location, use that
     if (widget.initialLat != null && widget.initialLng != null) {
-      setState(() {
-        _initialPosition = LatLng(widget.initialLat!, widget.initialLng!);
-        _isLoadingPosition = false;
-      });
-      return;
+      return LatLng(widget.initialLat!, widget.initialLng!);
     }
 
     try {
-      // Try last known position first (faster)
-      Position? position = await Geolocator.getLastKnownPosition();
-
-      // If no last known position, try getting current position
-      position ??= await Geolocator.getCurrentPosition(
+      // Try current position first
+      final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.medium,
           timeLimit: Duration(seconds: 10),
         ),
       );
+      return LatLng(position.latitude, position.longitude);
+    } catch (e) {
+      debugPrint('Error getting current position: $e');
+    }
 
-      if (mounted && position != null) {
-        setState(() {
-          _initialPosition = LatLng(position!.latitude, position.longitude);
-        });
+    // If current position fails, try last known position
+    try {
+      final position = await Geolocator.getLastKnownPosition();
+      if (position != null) {
+        return LatLng(position.latitude, position.longitude);
       }
     } catch (e) {
-      // Keep Lima default if location fetch fails
-      debugPrint('Error getting initial position: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _isLoadingPosition = false);
-      }
+      debugPrint('Error getting last known position: $e');
     }
+
+    return _limaDefault;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoadingPosition) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    return FutureBuilder<LatLng>(
+      future: _initialPositionFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    return MapLocationPicker(
-      config: MapLocationPickerConfig(
-        apiKey: AppConstants.googleMapsApiKey,
-        initialPosition: _initialPosition,
-        onNext: (result) {
-          if (result != null && result.geometry != null) {
-            widget.onLocationSelected(
-              LocationResult(
-                lat: result.geometry!.location.lat,
-                lng: result.geometry!.location.lng,
-                address: result.formattedAddress,
-              ),
-            );
-          }
-        },
-      ),
-      searchConfig: SearchConfig(
-        apiKey: AppConstants.googleMapsApiKey,
-        searchHintText: 'Buscar ubicación...',
-        hideOnEmpty: true,
-      ),
+        final initialPosition = snapshot.data ?? _limaDefault;
+
+        return MapLocationPicker(
+          config: MapLocationPickerConfig(
+            apiKey: AppConstants.googleMapsApiKey,
+            initialPosition: initialPosition,
+            onNext: (result) {
+              if (result != null && result.geometry != null) {
+                widget.onLocationSelected(
+                  LocationResult(
+                    lat: result.geometry!.location.lat,
+                    lng: result.geometry!.location.lng,
+                    address: result.formattedAddress,
+                  ),
+                );
+              }
+            },
+          ),
+          searchConfig: SearchConfig(
+            apiKey: AppConstants.googleMapsApiKey,
+            searchHintText: 'Buscar ubicación...',
+            hideOnEmpty: true,
+          ),
+        );
+      },
     );
   }
 }
