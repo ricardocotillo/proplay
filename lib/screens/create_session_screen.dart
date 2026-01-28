@@ -64,12 +64,39 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   GroupModel? _group;
   bool _isLoadingGroup = true;
 
+  // Initial map position
+  LatLng _initialPosition = const LatLng(-12.0464, -77.0428); // Lima default
+
   static const List<String> _stepLabels = ['Ubicación', 'Fecha', 'Detalles'];
 
   @override
   void initState() {
     super.initState();
     _loadGroup();
+    _loadInitialPosition();
+  }
+
+  Future<void> _loadInitialPosition() async {
+    try {
+      // Try last known position first (faster)
+      Position? position = await Geolocator.getLastKnownPosition();
+
+      // If no last known position, try getting current position
+      position ??= await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      if (mounted && position != null) {
+        setState(() {
+          _initialPosition = LatLng(position!.latitude, position.longitude);
+        });
+      }
+    } catch (e) {
+      // Keep Lima default if location fetch fails
+      debugPrint('Error getting initial position: $e');
+    }
   }
 
   Future<void> _loadGroup() async {
@@ -295,7 +322,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         apiKey: AppConstants.googleMapsApiKey,
         initialPosition: _locationLat != null && _locationLng != null
             ? LatLng(_locationLat!, _locationLng!)
-            : const LatLng(-12.0464, -77.0428), // Lima default
+            : _initialPosition,
         onNext: (result) {
           if (result != null && result.geometry != null) {
             setState(() {
