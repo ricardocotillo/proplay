@@ -35,15 +35,20 @@ class _SessionsScreenState extends State<SessionsScreen> {
 
     if (status.isGranted || status2.isGranted) {
       try {
-        final position = await Geolocator.getCurrentPosition(
+        // Try last known position first (works better on emulators)
+        Position? position = await Geolocator.getLastKnownPosition();
+
+        // If no last known position, try getting current position
+        position ??= await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.medium,
+            accuracy: LocationAccuracy.low,
             timeLimit: Duration(seconds: 10),
           ),
         );
+
         if (mounted) {
           setState(() {
-            _userLat = position.latitude;
+            _userLat = position!.latitude;
             _userLng = position.longitude;
             _locationLoaded = true;
           });

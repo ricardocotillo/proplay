@@ -45,9 +45,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _initLocationAndPermission() async {
     final status = await Permission.location.status;
     final status2 = await Permission.locationWhenInUse.status;
+    print(status);
+    print(status2);
 
     // If permission is already granted, get location
     if (status.isGranted || status2.isGranted) {
+      print('Location permission granted');
       await _getCurrentLocation();
       return;
     }
@@ -76,15 +79,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _getCurrentLocation() async {
     try {
-      final position = await Geolocator.getCurrentPosition(
+      // Try last known position first (works better on emulators)
+      Position? position = await Geolocator.getLastKnownPosition();
+
+      // If no last known position, try getting current position
+      position ??= await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.medium,
           timeLimit: Duration(seconds: 10),
         ),
       );
+
       if (mounted) {
         setState(() {
-          _userLat = position.latitude;
+          _userLat = position!.latitude;
           _userLng = position.longitude;
         });
       }
