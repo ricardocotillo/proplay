@@ -36,7 +36,7 @@ class UpcomingEventsCarousel extends StatelessWidget {
             userAge: user?.age,
             userLat: userLat,
             userLng: userLng,
-            maxDistanceKm: 50.0,
+            maxDistanceKm: 5.0,
           ),
         ),
       child: BlocBuilder<SessionBloc, SessionState>(

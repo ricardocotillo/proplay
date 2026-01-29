@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 import 'package:proplay/models/user_model.dart';
+import 'package:proplay/utils/geohash_utils.dart';
 
 class SessionModel extends Equatable {
   final String id;
@@ -132,6 +133,11 @@ class SessionModel extends Equatable {
       'locationLat': locationLat,
       'locationLng': locationLng,
       'locationAddress': locationAddress,
+      // GeoFirestore fields for efficient location queries
+      if (locationLat != null && locationLng != null) ...{
+        'g': GeohashUtils.encode(locationLat!, locationLng!),
+        'l': [locationLat, locationLng],
+      },
     };
   }
 

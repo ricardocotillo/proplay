@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/session_template_model.dart';
 import 'package:proplay/models/user_model.dart';
+import 'package:proplay/utils/geohash_utils.dart';
 import 'package:proplay/utils/location_utils.dart';
 
 class SessionService {
@@ -230,34 +231,65 @@ class SessionService {
     }
   }
 
-  bool _matchesLocationRequirement({
-    required double? sessionLat,
-    required double? sessionLng,
-    required double? userLat,
-    required double? userLng,
-    required double? maxDistanceKm,
-  }) {
-    // If user location is not available, skip location filter
-    if (userLat == null || userLng == null) {
-      return true;
-    }
-    // If session has no location, skip location filter for that session
-    if (sessionLat == null || sessionLng == null) {
-      return true;
-    }
-    // If no max distance specified, skip location filter
-    if (maxDistanceKm == null) {
-      return true;
-    }
+  /// Get public sessions near a location using geohash-based queries.
+  /// This is much more efficient than fetching all sessions and filtering client-side.
+  Future<List<SessionModel>> getPublicSessionsNearLocation({
+    required double lat,
+    required double lng,
+    required double radiusKm,
+  }) async {
+    try {
+      final queryBounds = GeohashUtils.getQueryBounds(lat, lng, radiusKm);
+      final List<SessionModel> allSessions = [];
 
-    final distance = LocationUtils.calculateDistance(
-      userLat,
-      userLng,
-      sessionLat,
-      sessionLng,
-    );
+      // Execute queries for each geohash range in parallel
+      final futures = queryBounds.map((range) async {
+        final snapshot = await _firestore
+            .collection('liveSessions')
+            .where('isPrivate', isEqualTo: false)
+            .where('g', isGreaterThanOrEqualTo: range.start)
+            .where('g', isLessThanOrEqualTo: range.end)
+            .get();
 
-    return distance <= maxDistanceKm;
+        return snapshot.docs
+            .map((doc) => SessionModel.fromMap(doc.id, doc.data()))
+            .toList();
+      });
+
+      final results = await Future.wait(futures);
+      for (final sessions in results) {
+        allSessions.addAll(sessions);
+      }
+
+      // Post-filter for exact distance and future events
+      final now = DateTime.now();
+      final filteredSessions = allSessions.where((session) {
+        // Filter past events
+        if (session.eventDate.isBefore(now)) return false;
+
+        // Filter by exact distance
+        if (session.locationLat == null || session.locationLng == null) {
+          return false;
+        }
+        final distance = LocationUtils.calculateDistance(
+          lat,
+          lng,
+          session.locationLat!,
+          session.locationLng!,
+        );
+        return distance <= radiusKm;
+      }).toList();
+
+      // Remove duplicates (in case of overlapping geohash ranges)
+      final uniqueSessions = <String, SessionModel>{};
+      for (final session in filteredSessions) {
+        uniqueSessions[session.id] = session;
+      }
+
+      return uniqueSessions.values.toList();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /// Get all upcoming sessions: user's group sessions + public sessions matching user's sports
@@ -274,8 +306,19 @@ class SessionService {
       // Get sessions from user's groups (both private and public)
       final groupSessions = await getUpcomingSessionsForGroups(userGroupIds);
 
-      // Get all public sessions
-      final publicSessions = await getAllPublicSessions();
+      // Get public sessions - use geohash query if location is available
+      List<SessionModel> publicSessions;
+      if (userLat != null && userLng != null && maxDistanceKm != null) {
+        // Use efficient geohash-based query for nearby sessions
+        publicSessions = await getPublicSessionsNearLocation(
+          lat: userLat,
+          lng: userLng,
+          radiusKm: maxDistanceKm,
+        );
+      } else {
+        // Fallback to fetching all public sessions
+        publicSessions = await getAllPublicSessions();
+      }
 
       // Create a map to avoid duplicates (sessions from user's groups)
       final sessionMap = <String, SessionModel>{};
@@ -301,15 +344,8 @@ class SessionService {
             sessionMaxAge: session.maxAge,
             userAge: userAge,
           );
-          final locationMatch = _matchesLocationRequirement(
-            sessionLat: session.locationLat,
-            sessionLng: session.locationLng,
-            userLat: userLat,
-            userLng: userLng,
-            maxDistanceKm: maxDistanceKm,
-          );
 
-          if (sportMatch && genderMatch && ageMatch && locationMatch) {
+          if (sportMatch && genderMatch && ageMatch) {
             sessionMap[session.id] = session;
           }
         }
