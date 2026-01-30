@@ -255,24 +255,46 @@ class SessionService {
     required double lat,
     required double lng,
     required double radiusKm,
+    List<String>? sports,
+    String? userGender,
   }) async {
     try {
       final queryBounds = GeohashUtils.getQueryBounds(lat, lng, radiusKm);
       final List<SessionModel> allSessions = [];
 
-      // Execute queries for each geohash range in parallel
-      final futures = queryBounds.map((range) async {
-        final snapshot = await _firestore
-            .collection('liveSessions')
-            .where('isPrivate', isEqualTo: false)
-            .where('g', isGreaterThanOrEqualTo: range.start)
-            .where('g', isLessThanOrEqualTo: range.end)
-            .get();
+      final effectiveSports = (sports ?? [])
+          .where((s) => s.isNotEmpty)
+          .toList();
+      final genderValues = userGender == null
+          ? <String>['any']
+          : <String>['any', userGender];
 
-        return snapshot.docs
-            .map((doc) => SessionModel.fromMap(doc.id, doc.data()))
-            .toList();
-      });
+      // Execute queries for each geohash range in parallel
+      final futures = queryBounds.expand((range) {
+        return genderValues.map((gender) async {
+          Query<Map<String, dynamic>> query = _firestore
+              .collection('liveSessions')
+              .where('isPrivate', isEqualTo: false)
+              .where('g', isGreaterThanOrEqualTo: range.start)
+              .where('g', isLessThanOrEqualTo: range.end)
+              .where('desiredGender', isEqualTo: gender);
+
+          if (effectiveSports.length == 1) {
+            query = query.where('sport', isEqualTo: effectiveSports.first);
+          } else if (effectiveSports.length > 1) {
+            // Firestore supports up to 10 values for whereIn
+            query = query.where(
+              'sport',
+              whereIn: effectiveSports.take(10).toList(),
+            );
+          }
+
+          final snapshot = await query.get();
+          return snapshot.docs
+              .map((doc) => SessionModel.fromMap(doc.id, doc.data()))
+              .toList();
+        });
+      }).toList();
 
       final results = await Future.wait(futures);
       for (final sessions in results) {
@@ -311,6 +333,104 @@ class SessionService {
     }
   }
 
+  Future<List<SessionModel>> getGroupSessionsNearLocation({
+    required List<String> groupIds,
+    required double lat,
+    required double lng,
+    required double radiusKm,
+    List<String>? sports,
+    String? userGender,
+  }) async {
+    try {
+      if (groupIds.isEmpty) {
+        return [];
+      }
+
+      final queryBounds = GeohashUtils.getQueryBounds(lat, lng, radiusKm);
+      final List<SessionModel> allSessions = [];
+
+      final effectiveSports = (sports ?? [])
+          .where((s) => s.isNotEmpty)
+          .toList();
+      final genderValues = userGender == null
+          ? <String>['any']
+          : <String>['any', userGender];
+
+      final List<Future<List<SessionModel>>> futures = [];
+      for (int i = 0; i < groupIds.length; i += 10) {
+        final batchIds = groupIds.skip(i).take(10).toList();
+
+        for (final range in queryBounds) {
+          for (final gender in genderValues) {
+            if (effectiveSports.isEmpty) {
+              futures.add(() async {
+                Query<Map<String, dynamic>> query = _firestore
+                    .collection('liveSessions')
+                    .where('groupId', whereIn: batchIds)
+                    .where('g', isGreaterThanOrEqualTo: range.start)
+                    .where('g', isLessThanOrEqualTo: range.end)
+                    .where('desiredGender', isEqualTo: gender);
+
+                final snapshot = await query.get();
+                return snapshot.docs
+                    .map((doc) => SessionModel.fromMap(doc.id, doc.data()))
+                    .toList();
+              }());
+            } else {
+              // Can't use whereIn twice (groupId already uses whereIn), so query each sport.
+              for (final sport in effectiveSports.take(10)) {
+                futures.add(() async {
+                  Query<Map<String, dynamic>> query = _firestore
+                      .collection('liveSessions')
+                      .where('groupId', whereIn: batchIds)
+                      .where('g', isGreaterThanOrEqualTo: range.start)
+                      .where('g', isLessThanOrEqualTo: range.end)
+                      .where('desiredGender', isEqualTo: gender)
+                      .where('sport', isEqualTo: sport);
+
+                  final snapshot = await query.get();
+                  return snapshot.docs
+                      .map((doc) => SessionModel.fromMap(doc.id, doc.data()))
+                      .toList();
+                }());
+              }
+            }
+          }
+        }
+      }
+
+      final results = await Future.wait(futures);
+      for (final sessions in results) {
+        allSessions.addAll(sessions);
+      }
+
+      final now = DateTime.now();
+      final filteredSessions = allSessions.where((session) {
+        if (session.eventDate.isBefore(now)) return false;
+
+        if (session.locationLat == null || session.locationLng == null) {
+          return false;
+        }
+        final distance = LocationUtils.calculateDistance(
+          lat,
+          lng,
+          session.locationLat!,
+          session.locationLng!,
+        );
+        return distance <= radiusKm;
+      }).toList();
+
+      final uniqueSessions = <String, SessionModel>{};
+      for (final session in filteredSessions) {
+        uniqueSessions[session.id] = session;
+      }
+
+      return uniqueSessions.values.toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// Get all upcoming sessions: user's group sessions + public sessions matching user's sports
   Future<List<SessionModel>> getAllUpcomingSessions(
     List<String> userGroupIds, {
@@ -322,8 +442,19 @@ class SessionService {
     double? maxDistanceKm,
   }) async {
     try {
-      // Get sessions from user's groups (both private and public)
-      final groupSessions = await getUpcomingSessionsForGroups(userGroupIds);
+      List<SessionModel> groupSessions;
+      if (userLat != null && userLng != null && maxDistanceKm != null) {
+        groupSessions = await getGroupSessionsNearLocation(
+          groupIds: userGroupIds,
+          lat: userLat,
+          lng: userLng,
+          radiusKm: maxDistanceKm,
+          sports: userSports,
+          userGender: userGender,
+        );
+      } else {
+        groupSessions = await getUpcomingSessionsForGroups(userGroupIds);
+      }
 
       // Get public sessions - use geohash query if location is available
       List<SessionModel> publicSessions;
@@ -333,6 +464,8 @@ class SessionService {
           lat: userLat,
           lng: userLng,
           radiusKm: maxDistanceKm,
+          sports: userSports,
+          userGender: userGender,
         );
       } else {
         // Fallback to fetching all public sessions
