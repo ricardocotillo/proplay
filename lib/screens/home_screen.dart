@@ -43,36 +43,38 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _initLocationAndPermission() async {
-    final status = await Permission.location.status;
-    final status2 = await Permission.locationWhenInUse.status;
-    print(status);
-    print(status2);
+    final permissionToCheck = Platform.isIOS
+        ? Permission.locationWhenInUse
+        : Permission.location;
+
+    final status = await permissionToCheck.status;
+    await _getCurrentLocation();
 
     // If permission is already granted, get location
-    if (status.isGranted || status2.isGranted) {
+    if (status.isGranted || status.isLimited) {
       print('Location permission granted');
       await _getCurrentLocation();
       return;
     }
 
-    if (status.isDenied || status2.isDenied) {
+    if (status.isDenied) {
       print('Requesting location permission');
       // Request permission if not set yet
-      final result = await Permission.location.request();
-      if (result.isGranted) {
+      final result = await permissionToCheck.request();
+      if (result.isGranted || result.isLimited) {
         await _getCurrentLocation();
       }
       return;
     }
 
     // If permission is permanently denied, don't ask again
-    if (status.isPermanentlyDenied || status2.isPermanentlyDenied) {
+    if (status.isPermanentlyDenied) {
       return;
     }
 
     // Request permission if not set yet
-    final result = await Permission.location.request();
-    if (result.isGranted) {
+    final result = await permissionToCheck.request();
+    if (result.isGranted || result.isLimited) {
       await _getCurrentLocation();
     }
   }
@@ -81,7 +83,6 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       // Try last known position first (works better on emulators)
       Position? position = await Geolocator.getLastKnownPosition();
-
       // If no last known position, try getting current position
       position ??= await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
@@ -336,18 +337,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final user = context.currentUser;
     final userSports = user?.sports ?? [];
     final groupIds = groups.map((g) => g.id as String).toList();
-
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: UpcomingEventsCarousel(
-            groupIds: groupIds,
-            userSports: userSports,
-            userLat: _userLat,
-            userLng: _userLng,
+        if (_userLat != null && _userLng != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: UpcomingEventsCarousel(
+              groupIds: groupIds,
+              userSports: userSports,
+              userLat: _userLat,
+              userLng: _userLng,
+            ),
           ),
-        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Row(

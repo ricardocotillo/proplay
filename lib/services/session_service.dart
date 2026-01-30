@@ -8,6 +8,24 @@ import 'package:proplay/utils/location_utils.dart';
 class SessionService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  bool _isWithinDistance({
+    required SessionModel session,
+    required double userLat,
+    required double userLng,
+    required double maxDistanceKm,
+  }) {
+    if (session.locationLat == null || session.locationLng == null) {
+      return false;
+    }
+    final distance = LocationUtils.calculateDistance(
+      userLat,
+      userLng,
+      session.locationLat!,
+      session.locationLng!,
+    );
+    return distance <= maxDistanceKm;
+  }
+
   Future<void> createSessionTemplate(SessionTemplateModel template) async {
     try {
       final durationInMinutes = template.eventEndDate
@@ -288,6 +306,7 @@ class SessionService {
 
       return uniqueSessions.values.toList();
     } catch (e) {
+      print(e);
       rethrow;
     }
   }
@@ -325,16 +344,37 @@ class SessionService {
 
       // Add group sessions first (they take priority)
       for (final session in groupSessions) {
-        sessionMap[session.id] = session;
+        final sportMatch = userSports.contains(session.sport);
+        final genderMatch = _matchesGenderRequirement(
+          sessionDesiredGender: session.desiredGender,
+          userGender: userGender,
+        );
+        final ageMatch = _matchesAgeRequirement(
+          sessionMinAge: session.minAge,
+          sessionMaxAge: session.maxAge,
+          userAge: userAge,
+        );
+
+        final distanceMatch =
+            userLat != null && userLng != null && maxDistanceKm != null
+            ? _isWithinDistance(
+                session: session,
+                userLat: userLat,
+                userLng: userLng,
+                maxDistanceKm: maxDistanceKm,
+              )
+            : true;
+
+        if (sportMatch && genderMatch && ageMatch && distanceMatch) {
+          sessionMap[session.id] = session;
+        }
       }
 
       // Add public sessions if they're not already in the map
       // and if their sport matches user's sports interests
       for (final session in publicSessions) {
         if (!sessionMap.containsKey(session.id)) {
-          // Only add if user has no sports specified, or if session sport matches user's sports
-          final sportMatch =
-              userSports.isEmpty || userSports.contains(session.sport);
+          final sportMatch = userSports.contains(session.sport);
           final genderMatch = _matchesGenderRequirement(
             sessionDesiredGender: session.desiredGender,
             userGender: userGender,
@@ -345,7 +385,17 @@ class SessionService {
             userAge: userAge,
           );
 
-          if (sportMatch && genderMatch && ageMatch) {
+          final distanceMatch =
+              userLat != null && userLng != null && maxDistanceKm != null
+              ? _isWithinDistance(
+                  session: session,
+                  userLat: userLat,
+                  userLng: userLng,
+                  maxDistanceKm: maxDistanceKm,
+                )
+              : true;
+
+          if (sportMatch && genderMatch && ageMatch && distanceMatch) {
             sessionMap[session.id] = session;
           }
         }

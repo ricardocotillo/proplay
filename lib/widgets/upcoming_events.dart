@@ -26,6 +26,38 @@ class UpcomingEventsCarousel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.currentUser;
+
+    final hasRequiredInfo =
+        (user?.gender != null) && (user?.age != null) && userSports.isNotEmpty;
+
+    if (!hasRequiredInfo) {
+      return SizedBox(
+        height: 240,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Necesitamos más información para recomendarte eventos cerca a ti',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton(
+                  onPressed: () {
+                    context.push('/edit-profile');
+                  },
+                  child: const Text('Completar perfil'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return BlocProvider(
       create: (context) => SessionBloc(sessionService: SessionService())
         ..add(
