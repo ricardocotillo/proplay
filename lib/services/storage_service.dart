@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class StorageService {
@@ -71,30 +70,4 @@ class StorageService {
     }
   }
 
-  /// Upload payment receipt to Firebase Storage
-  /// Returns the download URL of the uploaded receipt
-  Future<String> uploadPaymentReceipt(String uid, Uint8List imageBytes) async {
-    try {
-      // Create a unique file name with timestamp
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = 'receipt_${uid}_$timestamp.jpg';
-      final ref = _storage.ref().child('payment_receipts/$fileName');
-
-      // Upload the file bytes (more reliable than putFile for temp files)
-      final uploadTask = ref.putData(
-        imageBytes,
-        SettableMetadata(contentType: 'image/jpeg'),
-      );
-
-      // Wait for upload to complete
-      final snapshot = await uploadTask;
-
-      // Get the download URL
-      final downloadUrl = await snapshot.ref.getDownloadURL();
-
-      return downloadUrl;
-    } catch (e) {
-      throw Exception('Failed to upload payment receipt: $e');
-    }
-  }
 }

@@ -144,9 +144,13 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
       case 'pending':
         return Colors.orange;
       case 'approved':
+      case 'completed':
         return Colors.green;
       case 'rejected':
+      case 'failed':
         return Colors.red;
+      case 'refunded':
+        return Colors.blue;
       default:
         return Colors.grey;
     }
@@ -158,8 +162,14 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
         return 'Pendiente';
       case 'approved':
         return 'Aprobado';
+      case 'completed':
+        return 'Completado';
       case 'rejected':
         return 'Rechazado';
+      case 'failed':
+        return 'Fallido';
+      case 'refunded':
+        return 'Reembolsado';
       default:
         return status;
     }

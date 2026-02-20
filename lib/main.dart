@@ -8,10 +8,13 @@ import 'firebase_options.dart';
 import 'package:proplay/services/auth_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/services/group_service.dart';
+import 'package:proplay/services/credit_history_service.dart';
+import 'package:proplay/services/payment_service.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_state.dart';
 import 'package:proplay/bloc/user/user_bloc.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
+import 'package:proplay/bloc/credit/credit_bloc.dart';
 import 'package:proplay/screens/login_screen.dart';
 import 'package:proplay/screens/home_screen.dart';
 import 'package:proplay/screens/registration_screen.dart';
@@ -21,6 +24,7 @@ import 'package:proplay/screens/group_detail_screen_loader.dart';
 import 'package:proplay/screens/group_edit_screen_loader.dart';
 import 'package:proplay/screens/group_info_screen_loader.dart';
 import 'package:proplay/screens/sessions_screen.dart';
+import 'package:proplay/screens/purchase_credits_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,6 +46,12 @@ class MyApp extends StatelessWidget {
           create: (context) =>
               GroupService(userService: context.read<UserService>()),
         ),
+        RepositoryProvider<CreditHistoryService>(
+          create: (context) => CreditHistoryService(),
+        ),
+        RepositoryProvider<PaymentService>(
+          create: (context) => StubPaymentService(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -61,6 +71,11 @@ class MyApp extends StatelessWidget {
               groupService: GroupService(
                 userService: context.read<UserService>(),
               ),
+            ),
+          ),
+          BlocProvider<CreditBloc>(
+            create: (context) => CreditBloc(
+              creditHistoryService: context.read<CreditHistoryService>(),
             ),
           ),
         ],
@@ -89,6 +104,12 @@ class MyApp extends StatelessWidget {
                       path: 'edit-profile',
                       name: 'edit-profile',
                       builder: (context, state) => const EditProfileScreen(),
+                    ),
+                    GoRoute(
+                      path: 'purchase-credits',
+                      name: 'purchase-credits',
+                      builder: (context, state) =>
+                          const PurchaseCreditsScreen(),
                     ),
                     GoRoute(
                       path: 'group/:id',

@@ -1,31 +1,55 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:proplay/models/credit_history_model.dart';
+import 'package:proplay/models/payment_result_model.dart';
+import 'package:proplay/models/user_model.dart';
 
 class CreditHistoryService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Create a new credit history entry
-  Future<String> createCreditHistory({
+  /// Complete a credit purchase: atomically create history record and add credits to user.
+  /// Returns the new credit balance as a formatted string.
+  Future<String> completeCreditPurchase({
     required String userId,
-    required int creditAmount,
-    required String phoneNumber,
-    required double amountPaid,
-    String? receiptUrl,
+    required CreditPackage package,
+    required PaymentResult paymentResult,
   }) async {
     try {
-      final docRef = await _firestore.collection('creditHistory').add({
-        'userId': userId,
-        'creditAmount': creditAmount,
-        'phoneNumber': phoneNumber,
-        'amountPaid': amountPaid,
-        'createdAt': FieldValue.serverTimestamp(),
-        'status': 'pending',
-        'receiptUrl': receiptUrl,
+      final userRef = _firestore.collection('users').doc(userId);
+      final creditHistoryRef = _firestore.collection('creditHistory').doc();
+
+      final newBalance = await _firestore.runTransaction((transaction) async {
+        // Read current user credits
+        final userDoc = await transaction.get(userRef);
+        if (!userDoc.exists) {
+          throw Exception('Usuario no encontrado');
+        }
+
+        final currentUser = UserModel.fromDocument(userDoc);
+        final newCreditValue = currentUser.creditsValue + package.credits;
+        final newCreditAmount = UserModel.formatCredits(newCreditValue);
+
+        // Create credit history record
+        transaction.set(creditHistoryRef, {
+          'userId': userId,
+          'creditAmount': package.credits,
+          'amountPaid': package.price,
+          'currency': package.currency,
+          'createdAt': FieldValue.serverTimestamp(),
+          'status': 'completed',
+          'transactionId': paymentResult.transactionId,
+          'paymentMethod': paymentResult.paymentMethod,
+          'paymentGateway': paymentResult.paymentGateway,
+        });
+
+        // Update user credits
+        transaction.update(userRef, {'credits': newCreditAmount});
+
+        return newCreditAmount;
       });
 
-      return docRef.id;
+      return newBalance;
     } catch (e) {
-      throw Exception('Failed to create credit history: $e');
+      throw Exception('Error al procesar la compra: $e');
     }
   }
 
@@ -58,17 +82,6 @@ class CreditHistoryService {
       return CreditHistoryModel.fromDocument(doc);
     } catch (e) {
       throw Exception('Failed to get credit history: $e');
-    }
-  }
-
-  /// Update credit history status
-  Future<void> updateCreditHistoryStatus(String id, String status) async {
-    try {
-      await _firestore.collection('creditHistory').doc(id).update({
-        'status': status,
-      });
-    } catch (e) {
-      throw Exception('Failed to update credit history status: $e');
     }
   }
 

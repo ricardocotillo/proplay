@@ -13,10 +13,10 @@ packages:
     dependency: transitive
     description:
       name: archive
-      sha256: "2fde1607386ab523f7a36bb3e7edb43bd58e6edaf2ffb29d8a6d578b297fdbbd"
+      sha256: a96e8b390886ee8abb49b7bd3ac8df6f451c621619f52a26e815fdcf568959ff
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.7"
+    version: "4.0.9"
   args:
     dependency: transitive
     description:
@@ -77,10 +77,10 @@ packages:
     dependency: transitive
     description:
       name: characters
-      sha256: f71061c654a3380576a52b451dd5532377954cf9dbd272a78fc8479606670803
+      sha256: faf38497bda5ead2a8c7615f4f7939df04333478bf32e4173fcb06d428b5716b
       url: "https://pub.dev"
     source: hosted
-    version: "1.4.0"
+    version: "1.4.1"
   checked_yaml:
     dependency: transitive
     description:
@@ -237,10 +237,10 @@ packages:
     dependency: transitive
     description:
       name: ffi
-      sha256: d07d37192dbf97461359c1518788f203b0c9102cfd2c35a716b823741219542c
+      sha256: "6d7fd89431262d8f3125e81b50d3847a091d846eafcd4fdb88dd06f36d705a45"
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.5"
+    version: "2.2.0"
   file:
     dependency: transitive
     description:
@@ -596,26 +596,26 @@ packages:
     dependency: transitive
     description:
       name: google_maps_flutter
-      sha256: "819985697596a42e1054b5feb2f407ba1ac92262e02844a40168e742b9f36dca"
+      sha256: "9b0d6dab3de6955837575dc371dd772fcb5d0a90f6a4954e8c066472f9938550"
       url: "https://pub.dev"
     source: hosted
-    version: "2.14.0"
+    version: "2.14.2"
   google_maps_flutter_android:
     dependency: transitive
     description:
       name: google_maps_flutter_android
-      sha256: "98d7f5354f770f3e993db09fc798d40aeb6a254f04c1c468a94818ec2086e83e"
+      sha256: "8b569c7abc52bc62d4502bf93847d487c0843f3e6a2a8e122b72e98843b2ab4c"
       url: "https://pub.dev"
     source: hosted
-    version: "2.18.12"
+    version: "2.19.1"
   google_maps_flutter_ios:
     dependency: transitive
     description:
       name: google_maps_flutter_ios
-      sha256: "0504508a024410979936bd22bc2dc10a0df5cb1d15a21618d6cfbd973832464f"
+      sha256: "174d730bc3f253e1c06a342d7a5efb216f15003a6e26693c2d70d60973625af4"
       url: "https://pub.dev"
     source: hosted
-    version: "2.17.1"
+    version: "2.17.5"
   google_maps_flutter_platform_interface:
     dependency: transitive
     description:
@@ -644,18 +644,18 @@ packages:
     dependency: transitive
     description:
       name: google_sign_in_android
-      sha256: "5ec98ab35387c68c0050495bb211bd88375873723a80fae7c2e9266ea0bdd8bb"
+      sha256: f353140580797e01c1f35748810326f326664c52040b6f62d88e7d6d1cd30917
       url: "https://pub.dev"
     source: hosted
-    version: "7.2.7"
+    version: "7.2.9"
   google_sign_in_ios:
     dependency: transitive
     description:
       name: google_sign_in_ios
-      sha256: "234fc2830b55d1bbeb7e05662967691f5994143ff43dc70d3f139d1bbb3b8fb2"
+      sha256: ac1e4c1205267cb7999d1d81333fccffdfda29e853f434bbaf71525498bb6950
       url: "https://pub.dev"
     source: hosted
-    version: "6.2.5"
+    version: "6.3.0"
   google_sign_in_platform_interface:
     dependency: transitive
     description:
@@ -668,10 +668,10 @@ packages:
     dependency: transitive
     description:
       name: google_sign_in_web
-      sha256: "2fc1f941e6443b2d6984f4056a727a3eaeab15d8ee99ba7125d79029be75a1da"
+      sha256: e2658572e07811e687d6ffd5d30122377d6df69c21e7828711ce48c3aa38dcb0
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.1.1"
   gsettings:
     dependency: transitive
     description:
@@ -716,10 +716,10 @@ packages:
     dependency: transitive
     description:
       name: image
-      sha256: "492bd52f6c4fbb6ee41f781ff27765ce5f627910e1e0cbecfa3d9add5562604c"
+      sha256: f9881ff4998044947ec38d098bc7c8316ae1186fa786eddffdb867b9bc94dfce
       url: "https://pub.dev"
     source: hosted
-    version: "4.7.2"
+    version: "4.8.0"
   image_picker:
     dependency: "direct main"
     description:
@@ -796,10 +796,10 @@ packages:
     dependency: transitive
     description:
       name: json_annotation
-      sha256: "805fa86df56383000f640384b282ce0cb8431f1a7a2396de92fb66186d8c57df"
+      sha256: cb09e7dac6210041fad964ed7fbee004f14258b4eca4040f72d1234062ace4c8
       url: "https://pub.dev"
     source: hosted
-    version: "4.10.0"
+    version: "4.11.0"
   leak_tracker:
     dependency: transitive
     description:
@@ -852,18 +852,18 @@ packages:
     dependency: transitive
     description:
       name: matcher
-      sha256: dc58c723c3c24bf8d3e2d3ad3f2f9d7bd9cf43ec6feaa64181775e60190153f2
+      sha256: "12956d0ad8390bbcc63ca2e1469c0619946ccb52809807067a7020d57e647aa6"
       url: "https://pub.dev"
     source: hosted
-    version: "0.12.17"
+    version: "0.12.18"
   material_color_utilities:
     dependency: transitive
     description:
       name: material_color_utilities
-      sha256: f7142bb1154231d7ea5f96bc7bde4bda2a0945d2806bb11670e30b850d56bdec
+      sha256: "9c337007e82b1889149c82ed242ed1cb24a66044e30979c44912381e9be4c48b"
       url: "https://pub.dev"
     source: hosted
-    version: "0.11.1"
+    version: "0.13.0"
   meta:
     dependency: transitive
     description:
@@ -1036,10 +1036,10 @@ packages:
     dependency: transitive
     description:
       name: petitparser
-      sha256: "1a97266a94f7350d30ae522c0af07890c70b8e62c71e8e3920d1db4d23c057d1"
+      sha256: "91bd59303e9f769f108f8df05e371341b15d59e995e6806aefab827b58336675"
       url: "https://pub.dev"
     source: hosted
-    version: "7.0.1"
+    version: "7.0.2"
   platform:
     dependency: transitive
     description:
@@ -1241,10 +1241,10 @@ packages:
     dependency: transitive
     description:
       name: test_api
-      sha256: ab2726c1a94d3176a45960b6234466ec367179b87dd74f1611adb1f3b5fb9d55
+      sha256: "93167629bfc610f71560ab9312acdda4959de4df6fac7492c89ff0d3886f6636"
       url: "https://pub.dev"
     source: hosted
-    version: "0.7.7"
+    version: "0.7.9"
   typed_data:
     dependency: transitive
     description:
@@ -1273,10 +1273,10 @@ packages:
     dependency: transitive
     description:
       name: url_launcher_ios
-      sha256: b1aca26728b7cc7a3af971bb6f601554a8ae9df2e0a006de8450ba06a17ad36a
+      sha256: "580fe5dfb51671ae38191d316e027f6b76272b026370708c2d898799750a02b0"
       url: "https://pub.dev"
     source: hosted
-    version: "6.4.0"
+    version: "6.4.1"
   url_launcher_linux:
     dependency: transitive
     description:
