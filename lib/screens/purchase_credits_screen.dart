@@ -24,12 +24,11 @@ class PurchaseCreditsScreen extends StatefulWidget {
 class _PurchaseCreditsScreenState extends State<PurchaseCreditsScreen> {
   CreditPackage? _selectedPackage;
   bool _isProcessing = false;
-  List<MpPreference> _preferences = [];
+  final List<MpPreference> _preferences = mp.preferences
+      .map((pref) => MpPreference.fromMap(pref))
+      .toList();
 
   void _selectPackage(CreditPackage package) {
-    _preferences = mp.preferences
-        .map((pref) => MpPreference.fromMap(pref))
-        .toList();
     print(_preferences);
     // setState(() {
     //   _selectedPackage = package;
