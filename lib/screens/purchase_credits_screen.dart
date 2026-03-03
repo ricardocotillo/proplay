@@ -12,6 +12,7 @@ import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/models/mp_preference_model.dart';
 import 'package:proplay/mp.dart' as mp;
+import 'package:proplay/utils/launch.dart';
 
 class PurchaseCreditsScreen extends StatefulWidget {
   const PurchaseCreditsScreen({super.key});
@@ -28,7 +29,10 @@ class _PurchaseCreditsScreenState extends State<PurchaseCreditsScreen> {
       .toList();
 
   void _selectPackage(CreditPackage package) {
-    print(_preferences);
+    String? url = _preferences.first.initPoint;
+    if (url != null) {
+      launchURL(context, url);
+    }
     // setState(() {
     //   _selectedPackage = package;
     // });

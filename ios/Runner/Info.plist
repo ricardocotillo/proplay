@@ -86,6 +86,14 @@
 				<string>com.googleusercontent.apps.979151294493-e0seef5l1b22ij3qt1pujqn50us4tht8</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>proplay</string>
+			</array>
+		</dict>
 	</array>
 	<key>GIDClientID</key>
 	<string>979151294493-e0seef5l1b22ij3qt1pujqn50us4tht8.apps.googleusercontent.com</string>

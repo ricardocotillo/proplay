@@ -25,6 +25,9 @@ import 'package:proplay/screens/group_edit_screen_loader.dart';
 import 'package:proplay/screens/group_info_screen_loader.dart';
 import 'package:proplay/screens/sessions_screen.dart';
 import 'package:proplay/screens/purchase_credits_screen.dart';
+import 'package:proplay/screens/payment_success_screen.dart';
+import 'package:proplay/screens/payment_pending_screen.dart';
+import 'package:proplay/screens/payment_failure_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -112,6 +115,21 @@ class MyApp extends StatelessWidget {
                           const PurchaseCreditsScreen(),
                     ),
                     GoRoute(
+                      path: 'payment/success',
+                      name: 'payment-success',
+                      builder: (context, state) => const PaymentSuccessScreen(),
+                    ),
+                    GoRoute(
+                      path: 'payment/pending',
+                      name: 'payment-pending',
+                      builder: (context, state) => const PaymentPendingScreen(),
+                    ),
+                    GoRoute(
+                      path: 'payment/failure',
+                      name: 'payment-failure',
+                      builder: (context, state) => const PaymentFailureScreen(),
+                    ),
+                    GoRoute(
                       path: 'group/:id',
                       name: 'group-detail',
                       builder: (context, state) {
@@ -151,6 +169,18 @@ class MyApp extends StatelessWidget {
                 ),
               ],
               redirect: (context, state) {
+                final uri = state.uri;
+                if (uri.scheme == 'proplay') {
+                  switch (uri.host) {
+                    case 'success':
+                      return '/payment/success';
+                    case 'pending':
+                      return '/payment/pending';
+                    case 'failure':
+                      return '/payment/failure';
+                  }
+                }
+
                 final loggedIn = authState is AuthAuthenticated;
                 final loggingIn = state.matchedLocation == '/login';
                 final registering = state.matchedLocation == '/registration';
