@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:proplay/models/payment_result_model.dart';
+import 'package:proplay/mp.dart';
 import 'package:proplay/services/payment_service.dart';
 import 'package:proplay/bloc/credit/credit_bloc.dart';
 import 'package:proplay/bloc/credit/credit_event.dart';
@@ -10,6 +11,8 @@ import 'package:proplay/bloc/credit/credit_state.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/models/mp_preference_model.dart';
+import 'package:proplay/mp.dart' as mp;
 
 class PurchaseCreditsScreen extends StatefulWidget {
   const PurchaseCreditsScreen({super.key});
@@ -21,11 +24,16 @@ class PurchaseCreditsScreen extends StatefulWidget {
 class _PurchaseCreditsScreenState extends State<PurchaseCreditsScreen> {
   CreditPackage? _selectedPackage;
   bool _isProcessing = false;
+  List<MpPreference> _preferences = [];
 
   void _selectPackage(CreditPackage package) {
-    setState(() {
-      _selectedPackage = package;
-    });
+    _preferences = mp.preferences
+        .map((pref) => MpPreference.fromMap(pref))
+        .toList();
+    print(_preferences);
+    // setState(() {
+    //   _selectedPackage = package;
+    // });
   }
 
   void _goBackToPackages() {
@@ -54,10 +62,7 @@ class _PurchaseCreditsScreenState extends State<PurchaseCreditsScreen> {
             _isProcessing = false;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
           );
         }
       },
@@ -89,15 +94,15 @@ class _PurchaseCreditsScreenState extends State<PurchaseCreditsScreen> {
                 ),
               )
             : _selectedPackage == null
-                ? _PackageSelectionView(onSelect: _selectPackage)
-                : _PaymentFormView(
-                    package: _selectedPackage!,
-                    onProcessing: (processing) {
-                      setState(() {
-                        _isProcessing = processing;
-                      });
-                    },
-                  ),
+            ? _PackageSelectionView(onSelect: _selectPackage)
+            : _PaymentFormView(
+                package: _selectedPackage!,
+                onProcessing: (processing) {
+                  setState(() {
+                    _isProcessing = processing;
+                  });
+                },
+              ),
       ),
     );
   }
@@ -117,23 +122,21 @@ class _PackageSelectionView extends StatelessWidget {
       children: [
         Text(
           'Selecciona un paquete',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
           'Elige la cantidad de créditos que deseas comprar.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.grey[600],
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
         ),
         const SizedBox(height: 24),
         ...CreditPackage.packages.map(
-          (package) => _PackageCard(
-            package: package,
-            onTap: () => onSelect(package),
-          ),
+          (package) =>
+              _PackageCard(package: package, onTap: () => onSelect(package)),
         ),
       ],
     );
@@ -212,10 +215,7 @@ class _PaymentFormView extends StatefulWidget {
   final CreditPackage package;
   final void Function(bool) onProcessing;
 
-  const _PaymentFormView({
-    required this.package,
-    required this.onProcessing,
-  });
+  const _PaymentFormView({required this.package, required this.onProcessing});
 
   @override
   State<_PaymentFormView> createState() => _PaymentFormViewState();
@@ -294,11 +294,13 @@ class _PaymentFormViewState extends State<_PaymentFormView> {
       if (!mounted) return;
 
       if (result.success) {
-        context.read<CreditBloc>().add(CreditPurchaseRequested(
-          userId: user.uid,
-          package: widget.package,
-          paymentResult: result,
-        ));
+        context.read<CreditBloc>().add(
+          CreditPurchaseRequested(
+            userId: user.uid,
+            package: widget.package,
+            paymentResult: result,
+          ),
+        );
       } else {
         widget.onProcessing(false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -399,9 +401,9 @@ class _PaymentFormViewState extends State<_PaymentFormView> {
           // Card information section
           Text(
             'Información de la tarjeta',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -479,9 +481,9 @@ class _PaymentFormViewState extends State<_PaymentFormView> {
           // Billing address section
           Text(
             'Dirección de facturación',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -583,10 +585,7 @@ class _PaymentFormViewState extends State<_PaymentFormView> {
               const SizedBox(width: 4),
               Text(
                 'Pago seguro y encriptado',
-                style: TextStyle(
-                  color: Colors.grey[500],
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.grey[500], fontSize: 12),
               ),
             ],
           ),
