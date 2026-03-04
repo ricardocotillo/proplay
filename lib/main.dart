@@ -214,7 +214,27 @@ class MyApp extends StatelessWidget {
               routerConfig: router,
               title: 'ProPlay',
               theme: ThemeData(
-                colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+                colorScheme: const ColorScheme.light(
+                  primary: Color(0xFFBA1B1D),
+                  onPrimary: Color(0xFFFFFFFF),
+                  secondary: Color(0xFFBA1B1D),
+                  onSecondary: Color(0xFFFFFFFF),
+                  surface: Color(0xFFFFFFFF),
+                  onSurface: Color(0xFF010101),
+                  error: Color(0xFFBA1B1D),
+                  onError: Color(0xFFFFFFFF),
+                ),
+                scaffoldBackgroundColor: const Color(0xFFFFFFFF),
+                appBarTheme: const AppBarTheme(
+                  backgroundColor: Color(0xFFBA1B1D),
+                  foregroundColor: Color(0xFFFFFFFF),
+                ),
+                elevatedButtonTheme: ElevatedButtonThemeData(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFBA1B1D),
+                    foregroundColor: const Color(0xFFFFFFFF),
+                  ),
+                ),
               ),
             );
           },
