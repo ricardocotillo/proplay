@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class PaymentSuccessScreen extends StatelessWidget {
-  const PaymentSuccessScreen({super.key});
+  final String? amount;
+  final String? quantity;
+
+  const PaymentSuccessScreen({super.key, this.amount, this.quantity});
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('PaymentSuccessScreen amount=$amount quantity=$quantity');
+
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
