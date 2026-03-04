@@ -15,9 +15,9 @@ class CreditPackage extends Equatable {
   List<Object?> get props => [credits, price, currency];
 
   static const List<CreditPackage> packages = [
-    CreditPackage(credits: 15, price: 16),
-    CreditPackage(credits: 25, price: 27),
-    CreditPackage(credits: 50, price: 52),
+    CreditPackage(credits: 15, price: 17),
+    CreditPackage(credits: 25, price: 28),
+    CreditPackage(credits: 50, price: 55),
   ];
 }
 
