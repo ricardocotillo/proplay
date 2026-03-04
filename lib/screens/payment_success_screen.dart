@@ -141,28 +141,28 @@ class _PaymentSuccessScreenState extends State<PaymentSuccessScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Puedes volver a la app. Si no ves los créditos aún, espera unos segundos y revisa nuevamente.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () => context.go('/'),
-                    child: const Text('Ir al inicio'),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () => context.go('/purchase-credits'),
-                    child: const Text('Volver a comprar créditos'),
-                  ),
-                ),
+                // const SizedBox(height: 8),
+                // Text(
+                //   'Puedes volver a la app. Si no ves los créditos aún, espera unos segundos y revisa nuevamente.',
+                //   textAlign: TextAlign.center,
+                //   style: TextStyle(color: Colors.grey),
+                // ),
+                // const SizedBox(height: 24),
+                // SizedBox(
+                //   width: double.infinity,
+                //   child: FilledButton(
+                //     onPressed: () => context.go('/'),
+                //     child: const Text('Ir al inicio'),
+                //   ),
+                // ),
+                // const SizedBox(height: 12),
+                // SizedBox(
+                //   width: double.infinity,
+                //   child: OutlinedButton(
+                //     onPressed: () => context.go('/purchase-credits'),
+                //     child: const Text('Volver a comprar créditos'),
+                //   ),
+                // ),
               ],
             ),
           ),
