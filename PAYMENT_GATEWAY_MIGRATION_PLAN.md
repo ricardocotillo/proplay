@@ -43,9 +43,9 @@ class PaymentResult {
 ```
 
 Define the credit packages here (moved from `_AddCreditsDialog`'s hardcoded list):
-- 15 credits / S/ 16
-- 25 credits / S/ 27
-- 50 credits / S/ 52
+- 15 credits / S/ 17
+- 25 credits / S/ 28
+- 50 credits / S/ 55
 
 ---
 
