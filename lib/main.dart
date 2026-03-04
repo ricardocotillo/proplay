@@ -118,8 +118,8 @@ class MyApp extends StatelessWidget {
                       path: 'payment/success',
                       name: 'payment-success',
                       builder: (context, state) => PaymentSuccessScreen(
-                        amount: state.uri.queryParameters['amount'],
-                        quantity: state.uri.queryParameters['quantity'],
+                        preferenceId:
+                            state.uri.queryParameters['preference_id'],
                       ),
                     ),
                     GoRoute(
@@ -177,15 +177,13 @@ class MyApp extends StatelessWidget {
                   switch (uri.host) {
                     case 'success':
                       final qp = uri.queryParameters;
-                      final amount = qp['amount'];
-                      final quantity = qp['quantity'];
+                      final preferenceId = qp['preference_id'];
                       final query = <String, String>{
-                        'amount': ?amount,
-                        'quantity': ?quantity,
+                        'preference_id': preferenceId ?? '',
                       };
                       return Uri(
                         path: '/payment/success',
-                        queryParameters: query.isEmpty ? null : query,
+                        queryParameters: query,
                       ).toString();
                     case 'pending':
                       return '/payment/pending';
