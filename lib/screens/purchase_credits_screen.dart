@@ -29,7 +29,17 @@ class _PurchaseCreditsScreenState extends State<PurchaseCreditsScreen> {
       .toList();
 
   void _selectPackage(CreditPackage package) {
-    String? url = _preferences.first.initPoint;
+    MpPreference? pref;
+    for (final p in _preferences) {
+      final title = p.items.isNotEmpty ? (p.items.first.title ?? '') : '';
+      final normalized = title.trim().toLowerCase();
+      if (normalized.startsWith('${package.credits} ')) {
+        pref = p;
+        break;
+      }
+    }
+
+    String? url = pref?.initPoint;
     if (url != null) {
       launchURL(context, url);
     }
@@ -180,7 +190,7 @@ class _PackageCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${package.credits} Créditos',
+                      '${package.credits} pro coins',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
