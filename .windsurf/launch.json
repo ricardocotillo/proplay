@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "iOS Simulator",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "64CDE291-DD19-4BCB-92EC-3A90DC80EBD4" // Use the ID from `flutter devices`
+        },
+        {
+            "name": "iOS Simulator 2",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "3003D3FE-E45C-419F-9293-C54DB124E510" // Use the ID from `flutter devices`
+        }
+    ],
+    "compounds": [
+        {
+            "name": "All Devices",
+            "configurations": ["iOS Simulator", "iOS Simulator 2"]
+        }
+    ]
+}
