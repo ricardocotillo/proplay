@@ -242,10 +242,30 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
 
                 if (state is GroupLoaded) {
-                  if (state.groups.isEmpty) {
-                    return _buildEmptyState(context);
-                  }
-                  return _buildGroupsList(state.groups);
+                  final user = context.currentUser;
+                  final userSports = user?.sports ?? [];
+                  final groupIds = state.groups.map((g) => g.id).toList();
+                  _userLat = -12.1330031;
+                  _userLng = -77.0248361;
+                  return Column(
+                    children: [
+                      if (_userLat != null && _userLng != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: UpcomingEventsCarousel(
+                            groupIds: groupIds,
+                            userSports: userSports,
+                            userLat: _userLat,
+                            userLng: _userLng,
+                          ),
+                        ),
+                      Expanded(
+                        child: state.groups.isEmpty
+                            ? _buildEmptyState(context)
+                            : _buildGroupsList(state.groups),
+                      ),
+                    ],
+                  );
                 }
 
                 if (state is GroupError) {
@@ -330,21 +350,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildGroupsList(List groups) {
-    final user = context.currentUser;
-    final userSports = user?.sports ?? [];
-    final groupIds = groups.map((g) => g.id as String).toList();
     return Column(
       children: [
-        if (_userLat != null && _userLng != null)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: UpcomingEventsCarousel(
-              groupIds: groupIds,
-              userSports: userSports,
-              userLat: _userLat,
-              userLng: _userLng,
-            ),
-          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Row(

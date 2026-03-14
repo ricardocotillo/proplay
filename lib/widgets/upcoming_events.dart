@@ -89,7 +89,6 @@ class UpcomingEventsCarousel extends StatelessWidget {
 
             final displaySessions = sessions.take(5).toList();
             final hasMoreSessions = sessions.length > 5;
-
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
