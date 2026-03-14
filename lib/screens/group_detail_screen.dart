@@ -99,7 +99,12 @@ class GroupDetailScreen extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              child: const Text('Pichangas'),
+              child: Text(
+                'Pichangas',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -121,7 +126,12 @@ class GroupDetailScreen extends StatelessWidget {
                   );
                 }
               },
-              child: Text(group.code),
+              child: Text(
+                group.code,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
+              ),
             ),
           ],
         ),
