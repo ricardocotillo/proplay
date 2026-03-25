@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/bloc/auth/auth_state.dart';
+import 'package:proplay/widgets/google_sign_in_button_platform.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -38,9 +39,20 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _signInWithGoogle() {
-    // TODO: Implement Google sign-in
-    context.read<AuthBloc>().add(const AuthGoogleSignInRequested());
+  void _onGoogleSignInComplete(String? errorMessage) {
+    if (errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Google sign-in failed: $errorMessage'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    // On web, the button handles the OAuth flow directly.
+    // We need to check if the user is now signed in via auth state changes.
+    // The AuthBloc listens to auth state changes automatically.
   }
 
   void _sendPasswordReset() {
@@ -180,17 +192,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    OutlinedButton.icon(
-                      onPressed: isLoading ? null : _signInWithGoogle,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      icon: Image.asset(
-                        'assets/google.png',
-                        height: 24,
-                        width: 24,
-                      ),
-                      label: const Text('Inicia sesión con Google'),
+                    PlatformGoogleSignInButton(
+                      googleSignIn: context.read<AuthBloc>().authService.googleSignInInstance,
+                      onSignInComplete: _onGoogleSignInComplete,
+                      enabled: !isLoading,
                     ),
                     const SizedBox(height: 16),
                     TextButton(

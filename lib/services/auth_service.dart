@@ -14,6 +14,13 @@ class AuthService {
   // Auth state changes stream
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
+  // Initialize Google Sign-In (call once at app startup)
+  Future<void> initialize() async {
+    if (_googleInitialized) return;
+    await _googleSignIn.initialize();
+    _googleInitialized = true;
+  }
+
   // Sign in with email and password
   Future<UserCredential> signInWithEmailAndPassword(
     String email,
@@ -44,27 +51,15 @@ class AuthService {
     }
   }
 
-  Future<void> _ensureGoogleInitialized() async {
-    if (_googleInitialized) return;
-
-    // Initialize exactly once before calling authenticate().
-    // On Android, the client id is read from google-services.json; providing it here can break the flow.
-    await _googleSignIn.initialize();
-
-    _googleInitialized = true;
-  }
-
   // Sign in with Google
+  // Note: On web, use the renderButton widget instead of calling this method
   Future<UserCredential> signInWithGoogle() async {
     try {
-      await _ensureGoogleInitialized();
-
-      // Trigger the authentication flow
+      // Trigger the authentication flow (mobile only)
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
 
       // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      final googleAuth = await googleUser.authentication;
       if (googleAuth.idToken == null) {
         throw Exception('Google sign-in did not return an idToken.');
       }
@@ -93,6 +88,9 @@ class AuthService {
       throw Exception('Failed to sign in with Google: ${e.toString()}');
     }
   }
+
+  // Get the Google Sign-In instance (for web button rendering)
+  GoogleSignIn get googleSignInInstance => _googleSignIn;
 
   Future<void> sendPasswordResetEmail(String email) async {
     try {

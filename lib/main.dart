@@ -33,6 +33,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDateFormatting('es');
+  
+  // Initialize Google Sign-In (required for v7.x)
+  final authService = AuthService();
+  await authService.initialize();
+  
   runApp(const MyApp());
 }
 

@@ -37,6 +37,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
   }
 
+  // Expose auth service for accessing Google Sign-In instance
+  AuthService get authService => _authService;
+
   Future<void> _onAuthCheckRequested(
     AuthCheckRequested event,
     Emitter<AuthState> emit,
