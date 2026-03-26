@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:map_location_picker/map_location_picker.dart';
 
 import 'package:proplay/utils/constants.dart';
@@ -52,8 +54,8 @@ class _LocationPickerState extends State<LocationPicker> {
       return LatLng(widget.initialLat!, widget.initialLng!);
     }
 
+    // Try current position first (with broad catch for web JS errors)
     try {
-      // Try current position first
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.medium,
@@ -65,14 +67,16 @@ class _LocationPickerState extends State<LocationPicker> {
       debugPrint('Error getting current position: $e');
     }
 
-    // If current position fails, try last known position
-    try {
-      final position = await Geolocator.getLastKnownPosition();
-      if (position != null) {
-        return LatLng(position.latitude, position.longitude);
+    // getLastKnownPosition is not supported on web - skip on web platform
+    if (!kIsWeb) {
+      try {
+        final position = await Geolocator.getLastKnownPosition();
+        if (position != null) {
+          return LatLng(position.latitude, position.longitude);
+        }
+      } catch (e) {
+        debugPrint('Error getting last known position: $e');
       }
-    } catch (e) {
-      debugPrint('Error getting last known position: $e');
     }
 
     return _limaDefault;
