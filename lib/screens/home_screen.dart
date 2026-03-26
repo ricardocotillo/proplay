@@ -48,13 +48,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // If permission is already granted, get location
     if (status.isGranted || status.isLimited) {
-      print('Location permission granted');
       await _getCurrentLocation();
       return;
     }
 
     if (status.isDenied) {
-      print('Requesting location permission');
       // Request permission if not set yet
       final result = await permissionToCheck.request();
       if (result.isGranted || result.isLimited) {
