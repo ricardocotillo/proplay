@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_sign_in_web/google_sign_in_web.dart';
-import 'package:google_sign_in_web/web_only.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/bloc/auth/auth_state.dart';
-
-final plugin = GoogleSignInPlugin();
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -183,8 +179,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         Expanded(child: Divider()),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    renderButton(),
                     const SizedBox(height: 16),
                     OutlinedButton.icon(
                       onPressed: isLoading ? null : _signInWithGoogle,
