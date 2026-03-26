@@ -1,9 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/app_drawer.dart';
@@ -39,37 +37,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _initLocationAndPermission() async {
-    final permissionToCheck = Platform.isIOS
-        ? Permission.locationWhenInUse
-        : Permission.location;
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
 
-    final status = await permissionToCheck.status;
-    await _getCurrentLocation();
-
-    // If permission is already granted, get location
-    if (status.isGranted || status.isLimited) {
-      await _getCurrentLocation();
-      return;
-    }
-
-    if (status.isDenied) {
-      // Request permission if not set yet
-      final result = await permissionToCheck.request();
-      if (result.isGranted || result.isLimited) {
-        await _getCurrentLocation();
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
       }
-      return;
-    }
 
-    // If permission is permanently denied, don't ask again
-    if (status.isPermanentlyDenied) {
-      return;
-    }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
 
-    // Request permission if not set yet
-    final result = await permissionToCheck.request();
-    if (result.isGranted || result.isLimited) {
       await _getCurrentLocation();
+    } catch (_) {
+      // Silent fallback - home loads without location
     }
   }
 
