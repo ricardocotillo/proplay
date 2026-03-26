@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:map_location_picker/map_location_picker.dart';
 
 import 'package:proplay/utils/constants.dart';

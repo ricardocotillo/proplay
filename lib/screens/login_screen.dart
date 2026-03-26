@@ -39,7 +39,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _signInWithGoogle() {
-    // TODO: Implement Google sign-in
     context.read<AuthBloc>().add(const AuthGoogleSignInRequested());
   }
 
