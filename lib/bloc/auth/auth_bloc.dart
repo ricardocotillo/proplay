@@ -77,18 +77,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthUserChanged event,
     Emitter<AuthState> emit,
   ) async {
-    if (event.user != null) {
-      final userModel = await _userService.getUser(event.user!.uid);
-      if (userModel != null) {
-        emit(
-          AuthAuthenticated(firebaseUser: event.user!, userModel: userModel),
-        );
-      } else {
-        emit(AuthUnauthenticated());
-      }
-    } else {
+    if (event.user == null) {
       emit(AuthUnauthenticated());
+      return;
     }
+
+    final userModel = await _userService.getUser(event.user!.uid);
+    if (userModel != null) {
+      emit(AuthAuthenticated(firebaseUser: event.user!, userModel: userModel));
+      return;
+    }
+
+    // User exists in Firebase Auth but Firestore doc not ready yet.
+    // This happens during Google sign-in before user doc is created.
+    // Keep current state to avoid auth thrashing; _onAuthGoogleSignInRequested
+    // will emit AuthAuthenticated once Firestore user is created.
   }
 
   Future<void> _onAuthLoginRequested(

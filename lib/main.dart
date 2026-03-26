@@ -212,7 +212,7 @@ class MyApp extends StatelessWidget {
               ),
             );
 
-            if (authState is AuthInitial || authState is AuthLoading) {
+            if (authState is AuthInitial) {
               return const MaterialApp(
                 home: Scaffold(
                   body: Center(child: CircularProgressIndicator()),
