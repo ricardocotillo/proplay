@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:responsive_framework/responsive_framework.dart';
+import 'package:proplay/utils/breakpoints.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -218,14 +220,70 @@ class MyApp extends StatelessWidget {
             );
 
             if (authState is AuthInitial || authState is AuthLoading) {
-              return const MaterialApp(
-                home: Scaffold(
+              return MaterialApp(
+                builder: (context, child) => ResponsiveBreakpoints.builder(
+                  child: child!,
+                  breakpoints: [
+                    const Breakpoint(start: 0, end: 639, name: MOBILE),
+                    const Breakpoint(
+                      start: 640,
+                      end: 767,
+                      name: AppBreakpoints.sm,
+                    ),
+                    const Breakpoint(start: 768, end: 1023, name: TABLET),
+                    const Breakpoint(start: 1024, end: 1279, name: DESKTOP),
+                    const Breakpoint(
+                      start: 1280,
+                      end: 1535,
+                      name: AppBreakpoints.xl,
+                    ),
+                    const Breakpoint(
+                      start: 1536,
+                      end: 1920,
+                      name: AppBreakpoints.twoXl,
+                    ),
+                    const Breakpoint(
+                      start: 1921,
+                      end: double.infinity,
+                      name: AppBreakpoints.fourK,
+                    ),
+                  ],
+                ),
+                home: const Scaffold(
                   body: Center(child: CircularProgressIndicator()),
                 ),
               );
             }
 
             return MaterialApp.router(
+              builder: (context, child) => ResponsiveBreakpoints.builder(
+                child: child!,
+                breakpoints: [
+                  const Breakpoint(start: 0, end: 639, name: MOBILE),
+                  const Breakpoint(
+                    start: 640,
+                    end: 767,
+                    name: AppBreakpoints.sm,
+                  ),
+                  const Breakpoint(start: 768, end: 1023, name: TABLET),
+                  const Breakpoint(start: 1024, end: 1279, name: DESKTOP),
+                  const Breakpoint(
+                    start: 1280,
+                    end: 1535,
+                    name: AppBreakpoints.xl,
+                  ),
+                  const Breakpoint(
+                    start: 1536,
+                    end: 1920,
+                    name: AppBreakpoints.twoXl,
+                  ),
+                  const Breakpoint(
+                    start: 1921,
+                    end: double.infinity,
+                    name: AppBreakpoints.fourK,
+                  ),
+                ],
+              ),
               routerConfig: router,
               title: 'ProPlay',
               theme: ThemeData(

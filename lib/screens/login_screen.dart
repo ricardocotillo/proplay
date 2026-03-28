@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in_web/google_sign_in_web.dart';
+import 'package:google_sign_in_web/web_only.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/bloc/auth/auth_state.dart';
 import 'package:proplay/widgets/google_sign_in_button_platform.dart';
+import 'package:proplay/widgets/responsive_layout.dart';
+
+final plugin = GoogleSignInPlugin();
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -93,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
         builder: (context, state) {
           final isLoading = state is AuthLoading;
 
-          return Center(
+          return ResponsiveConstrainedBox(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
               child: Form(
@@ -193,7 +198,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
                     PlatformGoogleSignInButton(
-                      googleSignIn: context.read<AuthBloc>().authService.googleSignInInstance,
+                      googleSignIn: context
+                          .read<AuthBloc>()
+                          .authService
+                          .googleSignInInstance,
                       onSignInComplete: _onGoogleSignInComplete,
                       enabled: !isLoading,
                     ),
