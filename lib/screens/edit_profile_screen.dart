@@ -11,6 +11,7 @@ import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/services/storage_service.dart';
+import 'package:proplay/widgets/responsive_layout.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -192,43 +193,65 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         builder: (context, state) {
           final isLoading = state is UserLoading;
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Profile Image
-                  Center(
-                    child: Stack(
-                      children: [
-                        _isUploadingImage
-                            ? const CircleAvatar(
-                                radius: 60,
-                                child: CircularProgressIndicator(),
-                              )
-                            : user?.profileImageUrl != null
-                            ? CachedNetworkImage(
-                                imageUrl: user!.profileImageUrl!,
-                                imageBuilder: (context, imageProvider) =>
-                                    CircleAvatar(
-                                      radius: 60,
-                                      backgroundImage: imageProvider,
-                                    ),
-                                placeholder: (context, url) =>
-                                    const CircleAvatar(
-                                      radius: 60,
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                errorWidget: (context, url, error) => CircleAvatar(
+          return ResponsiveConstrainedBox(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Profile Image
+                    Center(
+                      child: Stack(
+                        children: [
+                          _isUploadingImage
+                              ? const CircleAvatar(
+                                  radius: 60,
+                                  child: CircularProgressIndicator(),
+                                )
+                              : user?.profileImageUrl != null
+                              ? CachedNetworkImage(
+                                  imageUrl: user!.profileImageUrl!,
+                                  imageBuilder: (context, imageProvider) =>
+                                      CircleAvatar(
+                                        radius: 60,
+                                        backgroundImage: imageProvider,
+                                      ),
+                                  placeholder: (context, url) =>
+                                      const CircleAvatar(
+                                        radius: 60,
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                  errorWidget: (context, url, error) =>
+                                      CircleAvatar(
+                                        radius: 60,
+                                        backgroundColor: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                        child: Text(
+                                          user.firstName.isNotEmpty &&
+                                                  user.lastName.isNotEmpty
+                                              ? '${user.firstName[0]}${user.lastName[0]}'
+                                                    .toUpperCase()
+                                              : 'U',
+                                          style: TextStyle(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimary,
+                                            fontSize: 48,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                )
+                              : CircleAvatar(
                                   radius: 60,
                                   backgroundColor: Theme.of(
                                     context,
                                   ).colorScheme.primary,
                                   child: Text(
-                                    user.firstName.isNotEmpty &&
-                                            user.lastName.isNotEmpty
+                                    user != null
                                         ? '${user.firstName[0]}${user.lastName[0]}'
                                               .toUpperCase()
                                         : 'U',
@@ -241,160 +264,144 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     ),
                                   ),
                                 ),
-                              )
-                            : CircleAvatar(
-                                radius: 60,
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.primary,
-                                child: Text(
-                                  user != null
-                                      ? '${user.firstName[0]}${user.lastName[0]}'
-                                            .toUpperCase()
-                                      : 'U',
-                                  style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary,
-                                    fontSize: 48,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.secondary,
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.camera_alt,
+                                  size: 20,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSecondary,
                                 ),
+                                onPressed: isLoading || _isUploadingImage
+                                    ? null
+                                    : _pickImage,
                               ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: CircleAvatar(
-                            radius: 20,
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.secondary,
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.camera_alt,
-                                size: 20,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSecondary,
-                              ),
-                              onPressed: isLoading || _isUploadingImage
-                                  ? null
-                                  : _pickImage,
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
+                    const SizedBox(height: 32),
 
-                  // Email (read-only)
-                  TextFormField(
-                    initialValue: user?.email ?? '',
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.email),
+                    // Email (read-only)
+                    TextFormField(
+                      initialValue: user?.email ?? '',
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.email),
+                      ),
+                      enabled: false,
                     ),
-                    enabled: false,
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-                  // First Name
-                  TextFormField(
-                    controller: _firstNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'First Name',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person),
-                    ),
-                    enabled: !isLoading,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your first name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Last Name
-                  TextFormField(
-                    controller: _lastNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Last Name',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
-                    enabled: !isLoading,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Please enter your last name';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 32),
-
-                  DropdownButtonFormField<String>(
-                    initialValue: _gender,
-                    decoration: const InputDecoration(
-                      labelText: 'Gender (optional)',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'male', child: Text('Male')),
-                      DropdownMenuItem(value: 'female', child: Text('Female')),
-                      DropdownMenuItem(value: 'other', child: Text('Other')),
-                    ],
-                    onChanged: isLoading
-                        ? null
-                        : (value) {
-                            setState(() {
-                              _gender = value;
-                            });
-                          },
-                  ),
-                  const SizedBox(height: 16),
-
-                  TextFormField(
-                    controller: _ageController,
-                    decoration: const InputDecoration(
-                      labelText: 'Age (optional)',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.numbers),
-                    ),
-                    enabled: !isLoading,
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
+                    // First Name
+                    TextFormField(
+                      controller: _firstNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'First Name',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                      enabled: !isLoading,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your first name';
+                        }
                         return null;
-                      }
-
-                      final parsed = int.tryParse(value.trim());
-                      if (parsed == null) {
-                        return 'Please enter a valid age';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Save Button
-                  ElevatedButton(
-                    onPressed: isLoading ? null : _saveProfile,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      },
                     ),
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Save Changes'),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+
+                    // Last Name
+                    TextFormField(
+                      controller: _lastNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Last Name',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                      enabled: !isLoading,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your last name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 32),
+
+                    DropdownButtonFormField<String>(
+                      initialValue: _gender,
+                      decoration: const InputDecoration(
+                        labelText: 'Gender (optional)',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'male', child: Text('Male')),
+                        DropdownMenuItem(
+                          value: 'female',
+                          child: Text('Female'),
+                        ),
+                        DropdownMenuItem(value: 'other', child: Text('Other')),
+                      ],
+                      onChanged: isLoading
+                          ? null
+                          : (value) {
+                              setState(() {
+                                _gender = value;
+                              });
+                            },
+                    ),
+                    const SizedBox(height: 16),
+
+                    TextFormField(
+                      controller: _ageController,
+                      decoration: const InputDecoration(
+                        labelText: 'Age (optional)',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.numbers),
+                      ),
+                      enabled: !isLoading,
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return null;
+                        }
+
+                        final parsed = int.tryParse(value.trim());
+                        if (parsed == null) {
+                          return 'Please enter a valid age';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Save Button
+                    ElevatedButton(
+                      onPressed: isLoading ? null : _saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Save Changes'),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
