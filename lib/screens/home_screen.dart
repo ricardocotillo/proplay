@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:proplay/widgets/cached_image.dart';
@@ -62,7 +63,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _getCurrentLocation() async {
     try {
       // Try last known position first (works better on emulators)
-      Position? position = await Geolocator.getLastKnownPosition();
+      Position? position;
+      if (!kIsWeb) {
+        position = await Geolocator.getLastKnownPosition();
+      }
       // If no last known position, try getting current position
       position ??= await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
