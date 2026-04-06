@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/app_drawer.dart';
+import 'package:proplay/widgets/app_sidebar.dart';
 import 'package:proplay/widgets/wallet_indicator.dart';
 import 'package:proplay/widgets/upcoming_events.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
@@ -113,6 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final user = context.currentUser;
+    final isDesktop = ResponsiveBreakpoints.of(context).largerThan(TABLET);
 
     return Scaffold(
       key: _scaffoldKey,
@@ -175,105 +178,115 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      endDrawer: const AppDrawer(),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      endDrawer: isDesktop ? null : const AppDrawer(),
+      body: Row(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          // Persistent sidebar on desktop
+          if (isDesktop) const AppSidebar(),
+          // Main content
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Bienvenido, ${user?.firstName ?? ''}',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.secondary,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Bienvenido, ${user?.firstName ?? ''}',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Juega como un pro',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Juega como un pro',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: BlocConsumer<GroupBloc, GroupState>(
+                    listener: (context, state) {
+                      if (state is GroupJoinSuccess) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(state.message),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        _loadGroups();
+                      } else if (state is GroupDeleteSuccess) {
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text(state.message)));
+                        _loadGroups();
+                      }
+                    },
+                    builder: (context, state) {
+                      if (state is GroupLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (state is GroupLoaded) {
+                        final user = context.currentUser;
+                        final userSports = user?.sports ?? [];
+                        final groupIds = state.groups.map((g) => g.id).toList();
+                        _userLat = -12.1330031;
+                        _userLng = -77.0248361;
+                        return Column(
+                          children: [
+                            if (_userLat != null && _userLng != null)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                child: UpcomingEventsCarousel(
+                                  groupIds: groupIds,
+                                  userSports: userSports,
+                                  userLat: _userLat,
+                                  userLng: _userLng,
+                                ),
+                              ),
+                            Expanded(
+                              child: state.groups.isEmpty
+                                  ? _buildEmptyState(context)
+                                  : _buildGroupsList(state.groups),
+                            ),
+                          ],
+                        );
+                      }
+
+                      if (state is GroupError) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                size: 48,
+                                color: Colors.red,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(state.message),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: _loadGroups,
+                                child: const Text('Reintentar'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return _buildEmptyState(context);
+                    },
                   ),
                 ),
               ],
-            ),
-          ),
-          Expanded(
-            child: BlocConsumer<GroupBloc, GroupState>(
-              listener: (context, state) {
-                if (state is GroupJoinSuccess) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(state.message),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                  _loadGroups();
-                } else if (state is GroupDeleteSuccess) {
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(state.message)));
-                  _loadGroups();
-                }
-              },
-              builder: (context, state) {
-                if (state is GroupLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (state is GroupLoaded) {
-                  final user = context.currentUser;
-                  final userSports = user?.sports ?? [];
-                  final groupIds = state.groups.map((g) => g.id).toList();
-                  _userLat = -12.1330031;
-                  _userLng = -77.0248361;
-                  return Column(
-                    children: [
-                      if (_userLat != null && _userLng != null)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          child: UpcomingEventsCarousel(
-                            groupIds: groupIds,
-                            userSports: userSports,
-                            userLat: _userLat,
-                            userLng: _userLng,
-                          ),
-                        ),
-                      Expanded(
-                        child: state.groups.isEmpty
-                            ? _buildEmptyState(context)
-                            : _buildGroupsList(state.groups),
-                      ),
-                    ],
-                  );
-                }
-
-                if (state is GroupError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 48,
-                          color: Colors.red,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(state.message),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadGroups,
-                          child: const Text('Reintentar'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return _buildEmptyState(context);
-              },
             ),
           ),
         ],
@@ -332,10 +345,29 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildGroupsList(List groups) {
+    final isDesktop = ResponsiveBreakpoints.of(context).largerThan(DESKTOP);
+    final isTablet = ResponsiveBreakpoints.of(context).largerThan(TABLET);
+
+    // Determine grid columns based on screen size
+    int crossAxisCount = 1;
+    if (isDesktop) {
+      crossAxisCount = 3;
+    } else if (isTablet) {
+      crossAxisCount = 2;
+    }
+
+    // Determine padding based on screen size
+    final horizontalPadding = isDesktop ? 32.0 : (isTablet ? 24.0 : 16.0);
+
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            0,
+            horizontalPadding,
+            16,
+          ),
           child: Row(
             children: [
               Expanded(
@@ -369,65 +401,80 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: groups.length,
-            itemBuilder: (context, index) {
-              final group = groups[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  visualDensity: VisualDensity.compact,
-                  dense: true,
-                  leading: CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    child: Text(
-                      group.name.isNotEmpty ? group.name[0].toUpperCase() : 'G',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+          child: isTablet
+              ? GridView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: crossAxisCount,
+                    childAspectRatio: 2.5,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
                   ),
-                  title: Text(
-                    group.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    group.sport.isNotEmpty
-                        ? group.sport[0].toUpperCase() +
-                              group.sport.substring(1)
-                        : '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      group.code,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ),
-                  onTap: () {
-                    context.push('/group/${group.id}');
+                  itemCount: groups.length,
+                  itemBuilder: (context, index) {
+                    final group = groups[index];
+                    return _buildGroupCard(group);
+                  },
+                )
+              : ListView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  itemCount: groups.length,
+                  itemBuilder: (context, index) {
+                    final group = groups[index];
+                    return _buildGroupCard(group);
                   },
                 ),
-              );
-            },
-          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildGroupCard(dynamic group) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        visualDensity: VisualDensity.compact,
+        dense: true,
+        leading: CircleAvatar(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          child: Text(
+            group.name.isNotEmpty ? group.name[0].toUpperCase() : 'G',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onPrimary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        title: Text(
+          group.name,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          group.sport.isNotEmpty
+              ? group.sport[0].toUpperCase() + group.sport.substring(1)
+              : '',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            group.code,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ),
+        onTap: () {
+          context.push('/group/${group.id}');
+        },
+      ),
     );
   }
 

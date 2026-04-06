@@ -13,6 +13,7 @@ import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/models/mp_preference_model.dart';
 import 'package:proplay/mp.dart' as mp;
 import 'package:proplay/utils/launch.dart';
+import 'package:proplay/widgets/responsive_layout.dart';
 
 class PurchaseCreditsScreen extends StatefulWidget {
   const PurchaseCreditsScreen({super.key});
@@ -129,28 +130,31 @@ class _PackageSelectionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          'Selecciona un paquete',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Elige la cantidad de créditos que deseas comprar.',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-        ),
-        const SizedBox(height: 24),
-        ...CreditPackage.packages.map(
-          (package) =>
-              _PackageCard(package: package, onTap: () => onSelect(package)),
-        ),
-      ],
+    return ResponsiveConstrainedBox(
+      maxWidth: 600,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Text(
+            'Selecciona un paquete',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Elige la cantidad de créditos que deseas comprar.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 24),
+          ...CreditPackage.packages.map(
+            (package) =>
+                _PackageCard(package: package, onTap: () => onSelect(package)),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -376,233 +380,236 @@ class _PaymentFormViewState extends State<_PaymentFormView> {
 
   @override
   Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Package summary
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(8),
+    return ResponsiveConstrainedBox(
+      maxWidth: 600,
+      child: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            // Package summary
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.account_balance_wallet,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${widget.package.credits} Créditos — S/ ${widget.package.price.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            const SizedBox(height: 24),
+
+            // Card information section
+            Text(
+              'Información de la tarjeta',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _cardNumberController,
+              decoration: const InputDecoration(
+                labelText: 'Número de tarjeta',
+                hintText: '0000 0000 0000 0000',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.credit_card),
+              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(19),
+                _CardNumberFormatter(),
+              ],
+              validator: _validateCardNumber,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _cardHolderController,
+              decoration: const InputDecoration(
+                labelText: 'Nombre del titular',
+                hintText: 'Como aparece en la tarjeta',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.person),
+              ),
+              textCapitalization: TextCapitalization.words,
+              validator: _validateRequired,
+            ),
+            const SizedBox(height: 12),
+            Row(
               children: [
-                Icon(
-                  Icons.account_balance_wallet,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 20,
+                Expanded(
+                  child: TextFormField(
+                    controller: _expiryController,
+                    decoration: const InputDecoration(
+                      labelText: 'Expiración',
+                      hintText: 'MM/AA',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.calendar_today),
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(4),
+                      _ExpiryDateFormatter(),
+                    ],
+                    validator: _validateExpiry,
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  '${widget.package.credits} Créditos — S/ ${widget.package.price.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _cvvController,
+                    decoration: const InputDecoration(
+                      labelText: 'CVV',
+                      hintText: '***',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.lock),
+                    ),
+                    keyboardType: TextInputType.number,
+                    obscureText: true,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(4),
+                    ],
+                    validator: _validateCvv,
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Card information section
-          Text(
-            'Información de la tarjeta',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _cardNumberController,
-            decoration: const InputDecoration(
-              labelText: 'Número de tarjeta',
-              hintText: '0000 0000 0000 0000',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.credit_card),
+            // Billing address section
+            Text(
+              'Dirección de facturación',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(19),
-              _CardNumberFormatter(),
-            ],
-            validator: _validateCardNumber,
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _cardHolderController,
-            decoration: const InputDecoration(
-              labelText: 'Nombre del titular',
-              hintText: 'Como aparece en la tarjeta',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.person),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _addressController,
+              decoration: const InputDecoration(
+                labelText: 'Dirección',
+                hintText: 'Calle, número, departamento',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.home),
+              ),
+              validator: _validateRequired,
             ),
-            textCapitalization: TextCapitalization.words,
-            validator: _validateRequired,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _expiryController,
-                  decoration: const InputDecoration(
-                    labelText: 'Expiración',
-                    hintText: 'MM/AA',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.calendar_today),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _cityController,
+                    decoration: const InputDecoration(
+                      labelText: 'Ciudad',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: _validateRequired,
                   ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(4),
-                    _ExpiryDateFormatter(),
-                  ],
-                  validator: _validateExpiry,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _cvvController,
-                  decoration: const InputDecoration(
-                    labelText: 'CVV',
-                    hintText: '***',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _stateController,
+                    decoration: const InputDecoration(
+                      labelText: 'Región / Estado',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: _validateRequired,
                   ),
-                  keyboardType: TextInputType.number,
-                  obscureText: true,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(4),
-                  ],
-                  validator: _validateCvv,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _postalCodeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Código postal',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: _validateRequired,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _country,
+                    decoration: const InputDecoration(
+                      labelText: 'País',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _countries
+                        .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          _country = value;
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
 
-          // Billing address section
-          Text(
-            'Dirección de facturación',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _addressController,
-            decoration: const InputDecoration(
-              labelText: 'Dirección',
-              hintText: 'Calle, número, departamento',
-              border: OutlineInputBorder(),
-              prefixIcon: Icon(Icons.home),
-            ),
-            validator: _validateRequired,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _cityController,
-                  decoration: const InputDecoration(
-                    labelText: 'Ciudad',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: _validateRequired,
+            // Pay button
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _submitPayment,
+                icon: const Icon(Icons.lock),
+                label: Text(
+                  'Pagar S/ ${widget.package.price.toStringAsFixed(2)}',
+                  style: const TextStyle(fontSize: 16),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextFormField(
-                  controller: _stateController,
-                  decoration: const InputDecoration(
-                    labelText: 'Región / Estado',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: _validateRequired,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _postalCodeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Código postal',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: _validateRequired,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: _country,
-                  decoration: const InputDecoration(
-                    labelText: 'País',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: _countries
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _country = value;
-                      });
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Pay button
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton.icon(
-              onPressed: _submitPayment,
-              icon: const Icon(Icons.lock),
-              label: Text(
-                'Pagar S/ ${widget.package.price.toStringAsFixed(2)}',
-                style: const TextStyle(fontSize: 16),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.shield, size: 16, color: Colors.grey[500]),
-              const SizedBox(width: 4),
-              Text(
-                'Pago seguro y encriptado',
-                style: TextStyle(color: Colors.grey[500], fontSize: 12),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-        ],
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.shield, size: 16, color: Colors.grey[500]),
+                const SizedBox(width: 4),
+                Text(
+                  'Pago seguro y encriptado',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/group/group_event.dart';
 import 'package:proplay/bloc/group/group_state.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/widgets/responsive_layout.dart';
 
 class CreateGroupScreen extends StatefulWidget {
   const CreateGroupScreen({super.key});
@@ -58,12 +59,12 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
     if (user == null) return;
 
     context.read<GroupBloc>().add(
-          GroupCreateRequested(
-            name: _groupNameController.text.trim(),
-            sport: _selectedSport!,
-            createdBy: user.uid,
-          ),
-        );
+      GroupCreateRequested(
+        name: _groupNameController.text.trim(),
+        sport: _selectedSport!,
+        createdBy: user.uid,
+      ),
+    );
   }
 
   @override
@@ -95,122 +96,130 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
         builder: (context, state) {
           final isLoading = state is GroupLoading;
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Group Name
-                  TextFormField(
-                    controller: _groupNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nombre del Grupo',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.group),
-                    ),
-                    enabled: !isLoading,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Por favor ingresa el nombre del grupo';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Sports Selection
-                  Text(
-                    'Selecciona Deporte',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _availableSports.map((sport) {
-                      final sportDisplay = sport['display']!;
-                      final sportValue = sport['value']!;
-                      final isSelected = _selectedSport == sportValue;
-                      return ChoiceChip(
-                        label: Text(sportDisplay),
-                        selected: isSelected,
-                        onSelected: isLoading
-                            ? null
-                            : (selected) {
-                                setState(() {
-                                  _selectedSport = selected ? sportValue : null;
-                                });
-                              },
-                        selectedColor: Theme.of(
-                          context,
-                        ).colorScheme.primaryContainer,
-                      );
-                    }).toList(),
-                  ),
-                  if (_selectedSport == null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        'Por favor selecciona un deporte',
-                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+          return ResponsiveConstrainedBox(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Group Name
+                    TextFormField(
+                      controller: _groupNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nombre del Grupo',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.group),
                       ),
+                      enabled: !isLoading,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Por favor ingresa el nombre del grupo';
+                        }
+                        return null;
+                      },
                     ),
-                  const SizedBox(height: 32),
+                    const SizedBox(height: 24),
 
-                  // Info Text
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
+                    // Sports Selection
+                    Text(
+                      'Selecciona Deporte',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.info_outline,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Información',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _availableSports.map((sport) {
+                        final sportDisplay = sport['display']!;
+                        final sportValue = sport['value']!;
+                        final isSelected = _selectedSport == sportValue;
+                        return ChoiceChip(
+                          label: Text(sportDisplay),
+                          selected: isSelected,
+                          onSelected: isLoading
+                              ? null
+                              : (selected) {
+                                  setState(() {
+                                    _selectedSport = selected
+                                        ? sportValue
+                                        : null;
+                                  });
+                                },
+                          selectedColor: Theme.of(
+                            context,
+                          ).colorScheme.primaryContainer,
+                        );
+                      }).toList(),
+                    ),
+                    if (_selectedSport == null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          'Por favor selecciona un deporte',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 32),
+
+                    // Info Text
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
                                 color: Theme.of(context).colorScheme.primary,
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Se generará automáticamente un código único para tu grupo. Podrás compartir este código con otros para que se unan.',
-                        ),
-                      ],
+                              const SizedBox(width: 8),
+                              Text(
+                                'Información',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Se generará automáticamente un código único para tu grupo. Podrás compartir este código con otros para que se unan.',
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
+                    const SizedBox(height: 32),
 
-                  // Create Button
-                  ElevatedButton(
-                    onPressed: isLoading || _selectedSport == null ? null : _createGroup,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    // Create Button
+                    ElevatedButton(
+                      onPressed: isLoading || _selectedSport == null
+                          ? null
+                          : _createGroup,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Crear Grupo'),
                     ),
-                    child: isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Crear Grupo'),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
