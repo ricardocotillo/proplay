@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:proplay/widgets/cached_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -138,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: GestureDetector(
               onTap: _openDrawer,
               child: user?.profileImageUrl != null
-                  ? CachedNetworkImage(
+                  ? PlatformCachedImage(
                       imageUrl: user!.profileImageUrl!,
                       imageBuilder: (context, imageProvider) => Container(
                         width: 40,

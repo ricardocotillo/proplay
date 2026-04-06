@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:proplay/widgets/cached_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
@@ -23,7 +23,7 @@ class AppDrawer extends StatelessWidget {
               color: Theme.of(context).colorScheme.primary,
             ),
             currentAccountPicture: user?.profileImageUrl != null
-                ? CachedNetworkImage(
+                ? PlatformCachedImage(
                     imageUrl: user!.profileImageUrl!,
                     imageBuilder: (context, imageProvider) =>
                         CircleAvatar(backgroundImage: imageProvider),
