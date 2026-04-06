@@ -429,7 +429,7 @@ class GroupDetailScreen extends StatelessWidget {
               return ListTile(
                 leading: CircleAvatar(
                   backgroundImage: member.user.profileImageUrl != null
-                      ? NetworkImage(member.user.profileImageUrl!)
+                      ? CachedNetworkImageProvider(member.user.profileImageUrl!)
                       : null,
                   child: member.user.profileImageUrl == null
                       ? const Icon(Icons.person)
