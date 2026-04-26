@@ -12,8 +12,7 @@
       "name": "Flutter: Android",
       "type": "dart",
       "request": "launch",
-      "program": "lib/main.dart",
-      "args": ["-d", "android"]
+      "program": "lib/main.dart"
     },
     {
       "name": "Flutter: iOS",
