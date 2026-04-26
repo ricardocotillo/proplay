@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:proplay/widgets/cached_image.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:proplay/models/group_model.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
@@ -36,7 +36,7 @@ class GroupInfoScreen extends StatelessWidget {
             child: CircleAvatar(
               radius: 60,
               backgroundImage: group.profileImageUrl != null
-                  ? CachedNetworkImageProvider(group.profileImageUrl!)
+                  ? platformCachedImageProvider(group.profileImageUrl!)
                   : null,
               child: group.profileImageUrl == null
                   ? Text(

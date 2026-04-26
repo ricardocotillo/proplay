@@ -3,24 +3,24 @@ List<Map<String, dynamic>> preferences = [
     "additional_info": "",
     "auto_return": "approved",
     "back_urls": {
-      "failure": "proplay://failure",
-      "pending": "proplay://pending",
-      "success": "proplay://success?amount=15&quantity=1",
+      "failure": "https://proplayapp.com/payment/failure",
+      "pending": "https://proplayapp.com/payment/pending",
+      "success": "https://proplayapp.com/payment/success",
     },
     "binary_mode": false,
     "client_id": "7513148469170824",
     "collector_id": 127411672,
     "coupon_code": null,
     "coupon_labels": null,
-    "date_created": "2026-03-03T21:03:35.659-04:00",
+    "date_created": "2026-04-06T17:03:20.143-04:00",
     "date_of_expiration": null,
     "expiration_date_from": null,
     "expiration_date_to": null,
     "expires": false,
     "external_reference": "",
-    "id": "127411672-e6414c64-38f3-489c-8d9a-34a5fd66e565",
+    "id": "127411672-7eba68ac-0027-41ec-9633-fa0bf2d04472",
     "init_point":
-        "https://www.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-e6414c64-38f3-489c-8d9a-34a5fd66e565",
+        "https://www.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-7eba68ac-0027-41ec-9633-fa0bf2d04472",
     "internal_metadata": null,
     "items": [
       {
@@ -65,7 +65,7 @@ List<Map<String, dynamic>> preferences = [
     "preference_expired": false,
     "redirect_urls": {"failure": "", "pending": "", "success": ""},
     "sandbox_init_point":
-        "https://sandbox.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-e6414c64-38f3-489c-8d9a-34a5fd66e565",
+        "https://sandbox.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-7eba68ac-0027-41ec-9633-fa0bf2d04472",
     "site_id": "MPE",
     "shipments": {
       "default_shipping_method": null,
@@ -89,24 +89,24 @@ List<Map<String, dynamic>> preferences = [
     "additional_info": "",
     "auto_return": "approved",
     "back_urls": {
-      "failure": "proplay://failure",
-      "pending": "proplay://pending",
-      "success": "proplay://success?amount=25&quantity=1",
+      "failure": "https://proplayapp.com/payment/failure",
+      "pending": "https://proplayapp.com/payment/pending",
+      "success": "https://proplayapp.com/payment/success",
     },
     "binary_mode": false,
     "client_id": "7513148469170824",
     "collector_id": 127411672,
     "coupon_code": null,
     "coupon_labels": null,
-    "date_created": "2026-03-03T21:03:36.039-04:00",
+    "date_created": "2026-04-06T17:03:20.518-04:00",
     "date_of_expiration": null,
     "expiration_date_from": null,
     "expiration_date_to": null,
     "expires": false,
     "external_reference": "",
-    "id": "127411672-c67dc4b2-42a1-465c-a956-3f923ad000f7",
+    "id": "127411672-2c999aef-2af4-446b-bebb-1c330377d08f",
     "init_point":
-        "https://www.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-c67dc4b2-42a1-465c-a956-3f923ad000f7",
+        "https://www.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-2c999aef-2af4-446b-bebb-1c330377d08f",
     "internal_metadata": null,
     "items": [
       {
@@ -151,7 +151,7 @@ List<Map<String, dynamic>> preferences = [
     "preference_expired": false,
     "redirect_urls": {"failure": "", "pending": "", "success": ""},
     "sandbox_init_point":
-        "https://sandbox.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-c67dc4b2-42a1-465c-a956-3f923ad000f7",
+        "https://sandbox.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-2c999aef-2af4-446b-bebb-1c330377d08f",
     "site_id": "MPE",
     "shipments": {
       "default_shipping_method": null,
@@ -175,24 +175,24 @@ List<Map<String, dynamic>> preferences = [
     "additional_info": "",
     "auto_return": "approved",
     "back_urls": {
-      "failure": "proplay://failure",
-      "pending": "proplay://pending",
-      "success": "proplay://success?amount=50&quantity=1",
+      "failure": "https://proplayapp.com/payment/failure",
+      "pending": "https://proplayapp.com/payment/pending",
+      "success": "https://proplayapp.com/payment/success",
     },
     "binary_mode": false,
     "client_id": "7513148469170824",
     "collector_id": 127411672,
     "coupon_code": null,
     "coupon_labels": null,
-    "date_created": "2026-03-03T21:03:36.479-04:00",
+    "date_created": "2026-04-06T17:03:20.897-04:00",
     "date_of_expiration": null,
     "expiration_date_from": null,
     "expiration_date_to": null,
     "expires": false,
     "external_reference": "",
-    "id": "127411672-de8881db-f3ec-4a0d-ade8-e7965c487b91",
+    "id": "127411672-7ea3441b-edf9-4db6-b00e-af3e77e611aa",
     "init_point":
-        "https://www.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-de8881db-f3ec-4a0d-ade8-e7965c487b91",
+        "https://www.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-7ea3441b-edf9-4db6-b00e-af3e77e611aa",
     "internal_metadata": null,
     "items": [
       {
@@ -237,7 +237,7 @@ List<Map<String, dynamic>> preferences = [
     "preference_expired": false,
     "redirect_urls": {"failure": "", "pending": "", "success": ""},
     "sandbox_init_point":
-        "https://sandbox.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-de8881db-f3ec-4a0d-ade8-e7965c487b91",
+        "https://sandbox.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-7ea3441b-edf9-4db6-b00e-af3e77e611aa",
     "site_id": "MPE",
     "shipments": {
       "default_shipping_method": null,

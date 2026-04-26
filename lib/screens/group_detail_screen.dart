@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+import 'package:proplay/widgets/cached_image.dart';
 import 'package:proplay/bloc/group_detail/group_detail_bloc.dart';
 import 'package:proplay/bloc/group_detail/group_detail_event.dart';
 import 'package:proplay/bloc/group_detail/group_detail_state.dart';
@@ -205,7 +206,7 @@ class GroupDetailScreen extends StatelessWidget {
         return ListTile(
           leading: CircleAvatar(
             backgroundImage: member.user.profileImageUrl != null
-                ? NetworkImage(member.user.profileImageUrl!)
+                ? platformCachedImageProvider(member.user.profileImageUrl!)
                 : null,
             child: member.user.profileImageUrl == null
                 ? const Icon(Icons.person)
@@ -428,7 +429,9 @@ class GroupDetailScreen extends StatelessWidget {
               return ListTile(
                 leading: CircleAvatar(
                   backgroundImage: member.user.profileImageUrl != null
-                      ? NetworkImage(member.user.profileImageUrl!)
+                      ? platformCachedImageProvider(
+                          member.user.profileImageUrl!,
+                        )
                       : null,
                   child: member.user.profileImageUrl == null
                       ? const Icon(Icons.person)

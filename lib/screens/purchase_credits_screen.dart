@@ -184,7 +184,7 @@ class _PackageCard extends StatelessWidget {
                 ),
                 child: Icon(
                   Icons.account_balance_wallet,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
                   size: 28,
                 ),
               ),
