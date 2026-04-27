@@ -460,9 +460,9 @@ class _YapeConfirmStep extends StatelessWidget {
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 48,
+                    fontSize: 42,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 16,
+                    letterSpacing: 8,
                   ),
                   maxLength: 3,
                   decoration: const InputDecoration(
