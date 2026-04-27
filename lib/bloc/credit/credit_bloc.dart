@@ -10,6 +10,7 @@ class CreditBloc extends Bloc<CreditEvent, CreditState> {
     : _creditHistoryService = creditHistoryService,
       super(CreditInitial()) {
     on<CreditPurchaseRequested>(_onCreditPurchaseRequested);
+    on<CreditYapePurchaseRequested>(_onCreditYapePurchaseRequested);
   }
 
   Future<void> _onCreditPurchaseRequested(
@@ -23,10 +24,30 @@ class CreditBloc extends Bloc<CreditEvent, CreditState> {
         package: event.package,
         paymentResult: event.paymentResult,
       );
-      emit(CreditPurchaseSuccess(
-        creditsAdded: event.package.credits,
-        newBalance: newBalance,
-      ));
+      emit(
+        CreditPurchaseSuccess(
+          creditsAdded: event.package.credits,
+          newBalance: newBalance,
+        ),
+      );
+    } catch (e) {
+      emit(CreditPurchaseFailure(e.toString()));
+    }
+  }
+
+  Future<void> _onCreditYapePurchaseRequested(
+    CreditYapePurchaseRequested event,
+    Emitter<CreditState> emit,
+  ) async {
+    emit(CreditPurchaseLoading());
+    try {
+      await _creditHistoryService.createPendingCreditPurchase(
+        userId: event.userId,
+        package: event.package,
+        confirmationCode: event.confirmationCode,
+        paymentResult: event.paymentResult,
+      );
+      emit(CreditPurchasePending(creditsPending: event.package.credits));
     } catch (e) {
       emit(CreditPurchaseFailure(e.toString()));
     }

@@ -22,3 +22,20 @@ class CreditPurchaseRequested extends CreditEvent {
   @override
   List<Object?> get props => [userId, package, paymentResult];
 }
+
+class CreditYapePurchaseRequested extends CreditEvent {
+  final String userId;
+  final CreditPackage package;
+  final String confirmationCode;
+  final PaymentResult paymentResult;
+
+  const CreditYapePurchaseRequested({
+    required this.userId,
+    required this.package,
+    required this.confirmationCode,
+    required this.paymentResult,
+  });
+
+  @override
+  List<Object?> get props => [userId, package, confirmationCode, paymentResult];
+}

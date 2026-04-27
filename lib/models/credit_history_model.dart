@@ -11,6 +11,7 @@ class CreditHistoryModel {
   final String? transactionId;
   final String? paymentMethod;
   final String? paymentGateway;
+  final String? confirmationCode;
   // Legacy fields (kept for backward compatibility with old records)
   final String? phoneNumber;
   final String? receiptUrl;
@@ -26,6 +27,7 @@ class CreditHistoryModel {
     this.transactionId,
     this.paymentMethod,
     this.paymentGateway,
+    this.confirmationCode,
     this.phoneNumber,
     this.receiptUrl,
   });
@@ -42,6 +44,7 @@ class CreditHistoryModel {
       'transactionId': transactionId,
       'paymentMethod': paymentMethod,
       'paymentGateway': paymentGateway,
+      'confirmationCode': confirmationCode,
       'phoneNumber': phoneNumber,
       'receiptUrl': receiptUrl,
     };
@@ -59,6 +62,7 @@ class CreditHistoryModel {
       transactionId: map['transactionId'],
       paymentMethod: map['paymentMethod'],
       paymentGateway: map['paymentGateway'],
+      confirmationCode: map['confirmationCode'],
       phoneNumber: map['phoneNumber'],
       receiptUrl: map['receiptUrl'],
     );
@@ -80,6 +84,7 @@ class CreditHistoryModel {
     String? transactionId,
     String? paymentMethod,
     String? paymentGateway,
+    String? confirmationCode,
     String? phoneNumber,
     String? receiptUrl,
   }) {
@@ -94,6 +99,7 @@ class CreditHistoryModel {
       transactionId: transactionId ?? this.transactionId,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       paymentGateway: paymentGateway ?? this.paymentGateway,
+      confirmationCode: confirmationCode ?? this.confirmationCode,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       receiptUrl: receiptUrl ?? this.receiptUrl,
     );

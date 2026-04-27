@@ -6,6 +6,7 @@ import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/screens/credit_history_screen.dart';
+import 'package:proplay/screens/credit_approval_screen.dart';
 
 /// A persistent sidebar for desktop layouts.
 /// This replaces the drawer on wider screens.
@@ -124,6 +125,21 @@ class AppSidebar extends StatelessWidget {
                     );
                   },
                 ),
+                if (user?.superUser == true) ...[
+                  const Divider(),
+                  _SidebarMenuItem(
+                    icon: Icons.admin_panel_settings,
+                    label: 'Aprobar Créditos',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreditApprovalScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 const Divider(),
                 _SidebarMenuItem(
                   icon: Icons.logout,

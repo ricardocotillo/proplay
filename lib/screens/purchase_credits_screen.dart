@@ -51,6 +51,16 @@ class _PurchaseCreditsScreenState extends State<PurchaseCreditsScreen> {
             ),
           );
           context.pop();
+        } else if (state is CreditPurchasePending) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Solicitud de ${state.creditsPending} créditos enviada. Pendiente de aprobación.',
+              ),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          context.pop();
         } else if (state is CreditPurchaseFailure) {
           setState(() {
             _isProcessing = false;
@@ -152,9 +162,10 @@ class _YapePaymentFlowState extends State<_YapePaymentFlow> {
     final user = context.currentUser;
     if (user != null) {
       context.read<CreditBloc>().add(
-        CreditPurchaseRequested(
+        CreditYapePurchaseRequested(
           userId: user.uid,
           package: widget.package,
+          confirmationCode: code,
           paymentResult: PaymentResult(
             success: true,
             transactionId: 'yape_$code',
