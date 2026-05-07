@@ -29,8 +29,9 @@ class GroupsSessionsScreen extends StatelessWidget {
           actions: [
             BlocBuilder<SessionBloc, SessionState>(
               builder: (context, state) {
-                // Only show add button if user is owner or admin
+                // Only show add button if user is superUser AND owner or admin
                 if (state is SessionLoaded &&
+                    currentUser?.superUser == true &&
                     (state.currentUserRole == 'owner' ||
                         state.currentUserRole == 'admin')) {
                   return Builder(
