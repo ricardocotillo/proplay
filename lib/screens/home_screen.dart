@@ -239,8 +239,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         final user = context.currentUser;
                         final userSports = user?.sports ?? [];
                         final groupIds = state.groups.map((g) => g.id).toList();
-                        _userLat = -12.1330031;
-                        _userLng = -77.0248361;
                         return Column(
                           children: [
                             if (_userLat != null && _userLng != null)

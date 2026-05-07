@@ -443,6 +443,8 @@ class SessionService {
   }) async {
     try {
       List<SessionModel> groupSessions;
+      // Fetch user's group sessions. If a distance radius is provided, we filter by it.
+      // Otherwise, we get all upcoming group sessions and sort them later.
       if (userLat != null && userLng != null && maxDistanceKm != null) {
         groupSessions = await getGroupSessionsNearLocation(
           groupIds: userGroupIds,
@@ -456,10 +458,10 @@ class SessionService {
         groupSessions = await getUpcomingSessionsForGroups(userGroupIds);
       }
 
-      // Get public sessions - use geohash query if location is available
+      // Get public sessions matching user's sports and criteria
       List<SessionModel> publicSessions;
       if (userLat != null && userLng != null && maxDistanceKm != null) {
-        // Use efficient geohash-based query for nearby sessions
+        // Use efficient geohash-based query for nearby sessions if a limit is specified
         publicSessions = await getPublicSessionsNearLocation(
           lat: userLat,
           lng: userLng,
@@ -468,14 +470,14 @@ class SessionService {
           userGender: userGender,
         );
       } else {
-        // Fallback to fetching all public sessions
+        // Fetch all public sessions to later sort by distance from the user (if coordinates available)
         publicSessions = await getAllPublicSessions();
       }
 
-      // Create a map to avoid duplicates (sessions from user's groups)
+      // Create a map to avoid duplicates (sessions that might appear in both lists)
       final sessionMap = <String, SessionModel>{};
 
-      // Add group sessions first (they take priority)
+      // Add group sessions first (priority)
       for (final session in groupSessions) {
         final sportMatch = userSports.contains(session.sport);
         final genderMatch = _matchesGenderRequirement(
@@ -488,6 +490,7 @@ class SessionService {
           userAge: userAge,
         );
 
+        // Filter by distance ONLY if maxDistanceKm is explicitly provided
         final distanceMatch =
             userLat != null && userLng != null && maxDistanceKm != null
             ? _isWithinDistance(
@@ -503,8 +506,7 @@ class SessionService {
         }
       }
 
-      // Add public sessions if they're not already in the map
-      // and if their sport matches user's sports interests
+      // Add public sessions if they meet criteria and aren't already included
       for (final session in publicSessions) {
         if (!sessionMap.containsKey(session.id)) {
           final sportMatch = userSports.contains(session.sport);
@@ -518,6 +520,7 @@ class SessionService {
             userAge: userAge,
           );
 
+          // Filter by distance ONLY if maxDistanceKm is explicitly provided
           final distanceMatch =
               userLat != null && userLng != null && maxDistanceKm != null
               ? _isWithinDistance(
