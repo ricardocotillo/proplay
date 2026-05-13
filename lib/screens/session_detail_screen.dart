@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:proplay/widgets/cached_image.dart';
 import 'package:proplay/bloc/session_detail/session_detail_bloc.dart';
 import 'package:proplay/bloc/session_detail/session_detail_event.dart';
 import 'package:proplay/bloc/session_detail/session_detail_state.dart';
@@ -266,7 +266,11 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.check_circle, color: Colors.green, size: 24),
+                              Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 24,
+                              ),
                               SizedBox(width: 8),
                               Text(
                                 'Ya estás inscrito en esta pichanga',
@@ -360,7 +364,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
           player.profileImageUrl != null && player.profileImageUrl!.isNotEmpty
               ? CircleAvatar(
                   radius: 20,
-                  backgroundImage: CachedNetworkImageProvider(
+                  backgroundImage: platformCachedImageProvider(
                     player.profileImageUrl!,
                   ),
                 )

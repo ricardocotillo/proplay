@@ -53,6 +53,32 @@ class CreditHistoryService {
     }
   }
 
+  /// Create a pending credit purchase: create history record with 'pending' status.
+  /// User credits are NOT updated until admin approval.
+  Future<void> createPendingCreditPurchase({
+    required String userId,
+    required CreditPackage package,
+    required String confirmationCode,
+    required PaymentResult paymentResult,
+  }) async {
+    try {
+      await _firestore.collection('creditHistory').add({
+        'userId': userId,
+        'creditAmount': package.credits,
+        'amountPaid': package.price,
+        'currency': package.currency,
+        'createdAt': FieldValue.serverTimestamp(),
+        'status': 'pending',
+        'transactionId': paymentResult.transactionId,
+        'paymentMethod': paymentResult.paymentMethod,
+        'paymentGateway': paymentResult.paymentGateway,
+        'confirmationCode': confirmationCode,
+      });
+    } catch (e) {
+      throw Exception('Error al crear solicitud de crédito: $e');
+    }
+  }
+
   /// Get all credit history for a user
   Future<List<CreditHistoryModel>> getUserCreditHistory(String userId) async {
     try {
@@ -92,8 +118,10 @@ class CreditHistoryService {
         .where('userId', isEqualTo: userId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => CreditHistoryModel.fromDocument(doc))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => CreditHistoryModel.fromDocument(doc))
+              .toList(),
+        );
   }
 }

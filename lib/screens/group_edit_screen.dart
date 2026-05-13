@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:proplay/widgets/cached_image.dart';
 import 'package:proplay/bloc/group_edit/group_edit_bloc.dart';
 import 'package:proplay/models/group_model.dart';
 import 'package:proplay/services/group_service.dart';
@@ -148,12 +148,11 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                                 radius: 60,
                                 backgroundImage: _selectedImage != null
                                     ? FileImage(_selectedImage!)
-                                    : (widget.group.profileImageUrl != null
-                                              ? CachedNetworkImageProvider(
-                                                  widget.group.profileImageUrl!,
-                                                )
-                                              : null)
-                                          as ImageProvider?,
+                                    : widget.group.profileImageUrl != null
+                                    ? platformCachedImageProvider(
+                                        widget.group.profileImageUrl!,
+                                      )
+                                    : null,
                                 child:
                                     (_selectedImage == null &&
                                         widget.group.profileImageUrl == null)
@@ -221,7 +220,9 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                                 ? null
                                 : (selected) {
                                     setState(() {
-                                      _selectedSport = selected ? sportValue : null;
+                                      _selectedSport = selected
+                                          ? sportValue
+                                          : null;
                                     });
                                   },
                             selectedColor: Theme.of(

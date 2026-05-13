@@ -35,8 +35,8 @@ El sistema de matchmaking utiliza los siguientes criterios para emparejar usuari
 
 ### Próximo 🚧
 
-- [ ] **Ubicación**: persistir ubicación del usuario y de la sesión (modelo + UI + Firestore).
-- [ ] **Matchmaking por distancia**: filtrar/ordenar por distancia y/o radio máximo.
+- [x] **Ubicación**: persistir ubicación del usuario y de la sesión (modelo + UI + Firestore).
+- [x] **Matchmaking por distancia**: filtrar/ordenar por distancia y/o radio máximo.
 
 ---
 

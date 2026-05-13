@@ -24,6 +24,15 @@ class CreditPurchaseSuccess extends CreditState {
   List<Object?> get props => [creditsAdded, newBalance];
 }
 
+class CreditPurchasePending extends CreditState {
+  final int creditsPending;
+
+  const CreditPurchasePending({required this.creditsPending});
+
+  @override
+  List<Object?> get props => [creditsPending];
+}
+
 class CreditPurchaseFailure extends CreditState {
   final String message;
 

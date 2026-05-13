@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:proplay/widgets/cached_image.dart';
 import 'package:proplay/bloc/user/user_bloc.dart';
 import 'package:proplay/bloc/user/user_event.dart';
 import 'package:proplay/bloc/user/user_state.dart';
@@ -211,7 +211,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   child: CircularProgressIndicator(),
                                 )
                               : user?.profileImageUrl != null
-                              ? CachedNetworkImage(
+                              ? PlatformCachedImage(
                                   imageUrl: user!.profileImageUrl!,
                                   imageBuilder: (context, imageProvider) =>
                                       CircleAvatar(

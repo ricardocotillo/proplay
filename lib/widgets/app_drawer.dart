@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:proplay/widgets/cached_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/screens/credit_history_screen.dart';
+import 'package:proplay/screens/credit_approval_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -23,7 +24,7 @@ class AppDrawer extends StatelessWidget {
               color: Theme.of(context).colorScheme.primary,
             ),
             currentAccountPicture: user?.profileImageUrl != null
-                ? CachedNetworkImage(
+                ? PlatformCachedImage(
                     imageUrl: user!.profileImageUrl!,
                     imageBuilder: (context, imageProvider) =>
                         CircleAvatar(backgroundImage: imageProvider),
@@ -96,6 +97,31 @@ class AppDrawer extends StatelessWidget {
                     );
                   },
                 ),
+                if (user?.superUser == true) ...[
+                  const Divider(),
+                  ListTile(
+                    leading: Icon(
+                      Icons.admin_panel_settings,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    title: Text(
+                      'Aprobar Créditos',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    onTap: () {
+                      context.pop(); // Close drawer
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreditApprovalScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 const Divider(),
                 ListTile(
                   leading: const Icon(Icons.logout, color: Colors.red),

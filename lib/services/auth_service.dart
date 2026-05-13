@@ -1,10 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
-  bool _googleInitialized = false;
 
   AuthService();
 
@@ -44,53 +42,18 @@ class AuthService {
     }
   }
 
-  Future<void> _ensureGoogleInitialized() async {
-    if (_googleInitialized) return;
-
-    // Initialize exactly once before calling authenticate().
-    // On Android, the client id is read from google-services.json; providing it here can break the flow.
-    await _googleSignIn.initialize();
-
-    _googleInitialized = true;
-  }
-
-  // Sign in with Google
+  // Sign in with Google using FirebaseAuth only
   Future<UserCredential> signInWithGoogle() async {
     try {
-      await _ensureGoogleInitialized();
+      final provider = GoogleAuthProvider();
 
-      // Trigger the authentication flow
-      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
-
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      if (googleAuth.idToken == null) {
-        throw Exception('Google sign-in did not return an idToken.');
+      if (kIsWeb) {
+        return await _auth.signInWithPopup(provider);
       }
 
-      // Create a new credential using the ID token
-      final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-      );
-
-      // Sign in to Firebase with the Google credential
-      return await _auth.signInWithCredential(credential);
+      return await _auth.signInWithProvider(provider);
     } on FirebaseAuthException catch (e) {
-      print(
-        'FirebaseAuthException during Google sign-in: ${e.code} ${e.message}',
-      );
       throw _handleAuthException(e);
-    } on GoogleSignInException catch (e) {
-      print(
-        'GoogleSignInException during Google sign-in: ${e.code} ${e.description}',
-      );
-      throw Exception(
-        'Failed to sign in with Google (GoogleSignInException: ${e.code}).',
-      );
-    } catch (e) {
-      print('Unknown exception during Google sign-in: $e');
-      throw Exception('Failed to sign in with Google: ${e.toString()}');
     }
   }
 
@@ -104,7 +67,7 @@ class AuthService {
 
   // Sign out
   Future<void> signOut() async {
-    await Future.wait([_auth.signOut(), _googleSignIn.signOut()]);
+    await _auth.signOut();
   }
 
   // Handle Firebase Auth exceptions

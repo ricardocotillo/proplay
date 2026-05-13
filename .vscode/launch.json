@@ -9,18 +9,10 @@
       "args": ["-d", "chrome", "--web-port", "53213"]
     },
     {
-      "name": "Flutter: Android",
+      "name": "Flutter: Emulator",
       "type": "dart",
       "request": "launch",
-      "program": "lib/main.dart",
-      "args": ["-d", "android"]
-    },
-    {
-      "name": "Flutter: iOS",
-      "type": "dart",
-      "request": "launch",
-      "program": "lib/main.dart",
-      "args": ["-d", "ios"]
+      "program": "lib/main.dart"
     }
   ]
 }

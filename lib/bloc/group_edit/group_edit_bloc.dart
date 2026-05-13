@@ -15,9 +15,9 @@ class GroupEditBloc extends bloc.Bloc<GroupEditEvent, GroupEditState> {
   GroupEditBloc({
     required GroupService groupService,
     StorageService? storageService,
-  })  : _groupService = groupService,
-        _storageService = storageService ?? StorageService(),
-        super(GroupEditInitial()) {
+  }) : _groupService = groupService,
+       _storageService = storageService ?? StorageService(),
+       super(GroupEditInitial()) {
     on<GroupEditSubmitted>(_onGroupEditSubmitted);
     on<GroupDeleted>(_onGroupDeleted);
   }
@@ -41,7 +41,7 @@ class GroupEditBloc extends bloc.Bloc<GroupEditEvent, GroupEditState> {
       final updateData = {
         'name': event.name,
         'sport': event.sport,
-        if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
+        'profileImageUrl': ?profileImageUrl,
       };
 
       await _groupService.updateGroup(event.groupId, updateData);

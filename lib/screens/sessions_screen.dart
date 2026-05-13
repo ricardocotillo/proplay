@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
@@ -36,7 +37,10 @@ class _SessionsScreenState extends State<SessionsScreen> {
     if (status.isGranted || status2.isGranted) {
       try {
         // Try last known position first (works better on emulators)
-        Position? position = await Geolocator.getLastKnownPosition();
+        Position? position;
+        if (!kIsWeb) {
+          position = await Geolocator.getLastKnownPosition();
+        }
 
         // If no last known position, try getting current position
         position ??= await Geolocator.getCurrentPosition(
@@ -96,18 +100,18 @@ class _SessionsScreenState extends State<SessionsScreen> {
 
                   return BlocProvider(
                     create: (context) =>
-                        SessionBloc(sessionService: SessionService())
-                          ..add(
-                            LoadAllUserSessions(
-                              groupIds,
-                              userSports: userSports,
-                              userGender: user?.gender,
-                              userAge: user?.age,
-                              userLat: _userLat,
-                              userLng: _userLng,
-                              maxDistanceKm: 50.0,
-                            ),
+                        SessionBloc(sessionService: SessionService())..add(
+                          LoadAllUserSessions(
+                            groupIds,
+                            userSports: userSports,
+                            userGender: user?.gender,
+                            userAge: user?.age,
+                            userLat: _userLat,
+                            userLng: _userLng,
+                            // We no longer limit by distance radius, but rather order results by proximity.
+                            maxDistanceKm: null,
                           ),
+                        ),
                     child: BlocBuilder<SessionBloc, SessionState>(
                       builder: (context, sessionState) {
                         if (sessionState is SessionLoading) {
@@ -159,8 +163,9 @@ class _SessionsScreenState extends State<SessionsScreen> {
                         }
 
                         return const Center(
-                          child:
-                              Text('Las próximas pichangas se mostrarán aquí.'),
+                          child: Text(
+                            'Las próximas pichangas se mostrarán aquí.',
+                          ),
                         );
                       },
                     ),

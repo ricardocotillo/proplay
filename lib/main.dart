@@ -12,6 +12,7 @@ import 'package:proplay/services/user_service.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/credit_history_service.dart';
 import 'package:proplay/services/payment_service.dart';
+import 'package:proplay/services/yape_service.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_state.dart';
 import 'package:proplay/bloc/user/user_bloc.dart';
@@ -57,6 +58,7 @@ class MyApp extends StatelessWidget {
         RepositoryProvider<PaymentService>(
           create: (context) => StubPaymentService(),
         ),
+        RepositoryProvider<YapeService>(create: (context) => YapeService()),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -214,7 +216,7 @@ class MyApp extends StatelessWidget {
               ),
             );
 
-            if (authState is AuthInitial || authState is AuthLoading) {
+            if (authState is AuthInitial) {
               return MaterialApp(
                 builder: (context, child) => ResponsiveBreakpoints.builder(
                   child: child!,
@@ -244,7 +246,7 @@ class MyApp extends StatelessWidget {
                     ),
                   ],
                 ),
-                home: const Scaffold(
+                home: Scaffold(
                   body: Center(child: CircularProgressIndicator()),
                 ),
               );
