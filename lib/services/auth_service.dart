@@ -59,17 +59,14 @@ class AuthService {
 
   Future<void> sendPasswordResetEmail(String email) async {
     try {
-      final actionCodeSettings = ActionCodeSettings(
-        url: 'https://proplayapp.com/_/auth/action',
-        handleCodeInApp: true,
-        androidPackageName: 'com.proplayapp.proplay',
-        androidInstallApp: true,
-        iOSBundleId: 'com.proplayapp.proplay',
-      );
-      await _auth.sendPasswordResetEmail(
-        email: email,
-        actionCodeSettings: actionCodeSettings,
-      );
+      // final actionCodeSettings = ActionCodeSettings(
+      //   url: 'https://proplayapp.com/_/auth/action',
+      //   handleCodeInApp: true,
+      //   androidPackageName: 'com.proplayapp.proplay',
+      //   androidInstallApp: true,
+      //   iOSBundleId: 'com.proplayapp.proplay',
+      // );
+      await _auth.sendPasswordResetEmail(email: email);
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
     }
