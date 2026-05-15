@@ -31,6 +31,7 @@ import 'package:proplay/screens/purchase_credits_screen.dart';
 import 'package:proplay/screens/payment_success_screen.dart';
 import 'package:proplay/screens/payment_pending_screen.dart';
 import 'package:proplay/screens/payment_failure_screen.dart';
+import 'package:proplay/screens/forgot_password_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -176,6 +177,11 @@ class MyApp extends StatelessWidget {
                   name: 'registration',
                   builder: (context, state) => const RegistrationScreen(),
                 ),
+                GoRoute(
+                  path: '/forgot-password',
+                  name: 'forgot-password',
+                  builder: (context, state) => const ForgotPasswordScreen(),
+                ),
               ],
               redirect: (context, state) {
                 final uri = state.uri;
@@ -198,14 +204,16 @@ class MyApp extends StatelessWidget {
                 final loggedIn = authState is AuthAuthenticated;
                 final loggingIn = state.matchedLocation == '/login';
                 final registering = state.matchedLocation == '/registration';
+                final forgotPassword =
+                    state.matchedLocation == '/forgot-password';
 
-                // Allow access to login and registration when not logged in
-                if (!loggedIn && !loggingIn && !registering) {
+                // Allow access to login, registration, and forgot-password when not logged in
+                if (!loggedIn && !loggingIn && !registering && !forgotPassword) {
                   return '/login';
                 }
 
                 // Redirect to home if already logged in and trying to access auth screens
-                if (loggedIn && (loggingIn || registering)) {
+                if (loggedIn && (loggingIn || registering || forgotPassword)) {
                   return '/';
                 }
 
