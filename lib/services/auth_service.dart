@@ -65,6 +65,17 @@ class AuthService {
     }
   }
 
+  Future<void> confirmPasswordReset({
+    required String oobCode,
+    required String newPassword,
+  }) async {
+    try {
+      await _auth.confirmPasswordReset(code: oobCode, newPassword: newPassword);
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
+    }
+  }
+
   // Sign out
   Future<void> signOut() async {
     await _auth.signOut();
