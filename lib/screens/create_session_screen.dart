@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
@@ -215,14 +216,18 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
       _eventEndTime!.minute,
     );
 
+    final maxPlayers = int.tryParse(_maxPlayersController.text) ?? 0;
+    final costPerPerson = double.tryParse(_costPerPersonController.text) ?? 0.0;
+    final roundedCost = double.parse(costPerPerson.toStringAsFixed(2));
+
     final template = SessionTemplateModel(
       groupId: widget.groupId,
       creatorId: currentUser.uid,
       title: _titleController.text,
       eventDate: Timestamp.fromDate(eventDateTime),
       eventEndDate: Timestamp.fromDate(eventEndDateTime),
-      maxPlayers: int.parse(_maxPlayersController.text),
-      totalCost: double.parse(_costPerPersonController.text),
+      maxPlayers: maxPlayers,
+      totalCost: roundedCost,
       isPrivate: _isPrivate,
       sport: _group!.sport,
       minAge: _ageRange.start.round(),
@@ -494,6 +499,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               validator: (value) => value!.isEmpty
                   ? 'Por favor, ingresa el número de jugadores'
                   : null,
@@ -508,7 +514,12 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                 border: OutlineInputBorder(),
                 prefixText: '\$ ',
               ),
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+              ],
               validator: (value) => value!.isEmpty
                   ? 'Por favor, ingresa el costo por persona'
                   : null,
