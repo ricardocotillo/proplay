@@ -68,8 +68,6 @@ class UpcomingEventsCarousel extends StatelessWidget {
             userAge: user?.age,
             userLat: userLat,
             userLng: userLng,
-            // We no longer limit by distance radius, but rather order results by proximity.
-            maxDistanceKm: null,
           ),
         ),
       child: BlocBuilder<SessionBloc, SessionState>(

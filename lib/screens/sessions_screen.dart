@@ -108,8 +108,6 @@ class _SessionsScreenState extends State<SessionsScreen> {
                             userAge: user?.age,
                             userLat: _userLat,
                             userLng: _userLng,
-                            // We no longer limit by distance radius, but rather order results by proximity.
-                            maxDistanceKm: null,
                           ),
                         ),
                     child: BlocBuilder<SessionBloc, SessionState>(
