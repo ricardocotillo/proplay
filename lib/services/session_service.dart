@@ -14,9 +14,8 @@ class SessionService {
           .toDate()
           .difference(template.eventDate.toDate())
           .inMinutes;
-      final costPerPlayer = template.totalCost > 0 && template.maxPlayers > 0
-          ? template.totalCost / template.maxPlayers
-          : 0;
+      final costPerPlayer = template
+          .totalCost; // at soe point we might to change the field name in template to costPerPlayer
 
       // Create the template with calculated fields
       final templateWithCalculations = template.copyWith(

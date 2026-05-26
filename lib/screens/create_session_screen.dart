@@ -54,7 +54,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _maxPlayersController = TextEditingController();
-  final _totalCostController = TextEditingController();
+  final _costPerPersonController = TextEditingController();
   String? _desiredGender;
   RangeValues _ageRange = const RangeValues(18, 80);
   bool _isPrivate = false;
@@ -98,7 +98,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
     _pageController.dispose();
     _titleController.dispose();
     _maxPlayersController.dispose();
-    _totalCostController.dispose();
+    _costPerPersonController.dispose();
     super.dispose();
   }
 
@@ -222,7 +222,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
       eventDate: Timestamp.fromDate(eventDateTime),
       eventEndDate: Timestamp.fromDate(eventEndDateTime),
       maxPlayers: int.parse(_maxPlayersController.text),
-      totalCost: double.parse(_totalCostController.text),
+      totalCost: double.parse(_costPerPersonController.text),
       isPrivate: _isPrivate,
       sport: _group!.sport,
       minAge: _ageRange.start.round(),
@@ -500,17 +500,18 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
             ),
             const SizedBox(height: 16),
 
-            // Total cost
+            // Cost per person
             TextFormField(
-              controller: _totalCostController,
+              controller: _costPerPersonController,
               decoration: const InputDecoration(
-                labelText: 'Costo total',
+                labelText: 'Costo por persona',
                 border: OutlineInputBorder(),
                 prefixText: '\$ ',
               ),
               keyboardType: TextInputType.number,
-              validator: (value) =>
-                  value!.isEmpty ? 'Por favor, ingresa el costo total' : null,
+              validator: (value) => value!.isEmpty
+                  ? 'Por favor, ingresa el costo por persona'
+                  : null,
             ),
             const SizedBox(height: 16),
 
