@@ -634,13 +634,6 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
       'value': 'voleibol',
       'icon': Icons.sports_volleyball,
     },
-    {'display': 'Tenis', 'value': 'tenis', 'icon': Icons.sports_tennis},
-    {'display': 'Natación', 'value': 'natación', 'icon': Icons.pool},
-    {'display': 'Running', 'value': 'running', 'icon': Icons.directions_run},
-    {'display': 'Ciclismo', 'value': 'ciclismo', 'icon': Icons.directions_bike},
-    {'display': 'Gimnasio', 'value': 'gimnasio', 'icon': Icons.fitness_center},
-    {'display': 'Pádel', 'value': 'pádel', 'icon': Icons.sports_tennis},
-    {'display': 'Béisbol', 'value': 'béisbol', 'icon': Icons.sports_baseball},
   ];
 
   late final TextEditingController _ageController;

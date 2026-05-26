@@ -8,9 +8,9 @@ PODS:
     - Flutter
     - Google-Maps-iOS-Utils (< 7.0, >= 5.0)
     - GoogleMaps (< 11.0, >= 8.4)
-  - GoogleMaps (10.12.0):
-    - GoogleMaps/Maps (= 10.12.0)
-  - GoogleMaps/Maps (10.12.0)
+  - GoogleMaps (10.13.0):
+    - GoogleMaps/Maps (= 10.13.0)
+  - GoogleMaps/Maps (10.13.0)
   - permission_handler_apple (9.3.0):
     - Flutter
 
@@ -40,7 +40,7 @@ SPEC CHECKSUMS:
   flutter_keyboard_visibility: 4625131e43015dbbe759d9b20daaf77e0e3f6619
   Google-Maps-iOS-Utils: bed22fa703c919259b3901449434d60d994fae20
   google_maps_flutter_ios: 17552876e72723da1d41accc22f03b5f7afbde69
-  GoogleMaps: 52bbc0302f08e6d8bafb818c331b36f75875bc10
+  GoogleMaps: 6204a0dfa2914b85f6e408cedff5fa19c7243618
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
 
 PODFILE CHECKSUM: 925325d20e05a8bbfce919e0da669633c652835f
