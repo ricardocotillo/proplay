@@ -241,18 +241,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         final groupIds = state.groups.map((g) => g.id).toList();
                         return Column(
                           children: [
-                            if (_userLat != null && _userLng != null)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                child: UpcomingEventsCarousel(
-                                  groupIds: groupIds,
-                                  userSports: userSports,
-                                  userLat: _userLat,
-                                  userLng: _userLng,
-                                ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: UpcomingEventsCarousel(
+                                groupIds: groupIds,
+                                userSports: userSports,
+                                userLat: _userLat,
+                                userLng: _userLng,
                               ),
+                            ),
                             Expanded(
                               child: state.groups.isEmpty
                                   ? _buildEmptyState(context)
