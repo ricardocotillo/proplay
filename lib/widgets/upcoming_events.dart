@@ -8,6 +8,7 @@ import 'package:proplay/bloc/session/session_bloc.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/screens/session_detail_screen.dart';
+import 'package:proplay/screens/session_map_screen.dart';
 
 class UpcomingEventsCarousel extends StatelessWidget {
   final List<String> groupIds;
@@ -295,19 +296,57 @@ class _SessionCarouselCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.secondary,
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              size: 16,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              distanceText,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context).colorScheme.secondary,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          distanceText,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Theme.of(context).colorScheme.secondary,
+                        const Spacer(),
+                        if (session.locationLat != null &&
+                            session.locationLng != null)
+                          TextButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SessionMapScreen(
+                                    title: session.title,
+                                    latitude: session.locationLat!,
+                                    longitude: session.locationLng!,
+                                    address: session.locationAddress,
+                                  ),
+                                ),
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 0,
+                              ),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              'ver en mapa',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ],

@@ -293,12 +293,16 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
       initialLat: _locationLat,
       initialLng: _locationLng,
       onLocationSelected: (result) {
+        if (!mounted) return;
         setState(() {
           _locationLat = result.lat;
           _locationLng = result.lng;
           _locationAddress = result.address;
         });
-        _goToNextStep();
+        // Defer navigation to allow the picker to finish its internal state updates
+        Future.microtask(() {
+          if (mounted) _goToNextStep();
+        });
       },
     );
   }
