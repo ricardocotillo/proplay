@@ -699,6 +699,28 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
                 'Selecciona tus deportes y (opcional) completa tus datos. Esto nos ayuda a encontrarte mejores partidos y eventos.',
               ),
               const SizedBox(height: 16),
+              CheckboxListTile(
+                value: _selectedSports.length == _availableSports.length,
+                onChanged: (bool? value) {
+                  setState(() {
+                    if (value == true) {
+                      _selectedSports.addAll(
+                        _availableSports.map((s) => s['value'] as String),
+                      );
+                    } else {
+                      _selectedSports.clear();
+                    }
+                  });
+                },
+                title: const Text(
+                  'Seleccionar todos',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+              const Divider(),
               ..._availableSports.map((sport) {
                 final sportDisplay = sport['display'] as String;
                 final sportValue = sport['value'] as String;
@@ -729,6 +751,7 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
                   ),
                   dense: true,
                   contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
                 );
               }),
               const SizedBox(height: 16),
