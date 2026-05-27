@@ -98,6 +98,7 @@ class _LocationPickerState extends State<LocationPicker> {
             apiKey: AppConstants.googleMapsApiKey,
             initialPosition: initialPosition,
             onNext: (result) {
+              if (!mounted) return;
               if (result != null && result.geometry != null) {
                 widget.onLocationSelected(
                   LocationResult(

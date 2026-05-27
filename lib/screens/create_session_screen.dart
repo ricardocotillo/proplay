@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
@@ -54,7 +55,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _maxPlayersController = TextEditingController();
-  final _totalCostController = TextEditingController();
+  final _costPerPersonController = TextEditingController();
   String? _desiredGender;
   RangeValues _ageRange = const RangeValues(18, 80);
   bool _isPrivate = false;
@@ -98,7 +99,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
     _pageController.dispose();
     _titleController.dispose();
     _maxPlayersController.dispose();
-    _totalCostController.dispose();
+    _costPerPersonController.dispose();
     super.dispose();
   }
 
@@ -215,14 +216,18 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
       _eventEndTime!.minute,
     );
 
+    final maxPlayers = int.tryParse(_maxPlayersController.text) ?? 0;
+    final costPerPerson = double.tryParse(_costPerPersonController.text) ?? 0.0;
+    final roundedCost = double.parse(costPerPerson.toStringAsFixed(2));
+
     final template = SessionTemplateModel(
       groupId: widget.groupId,
       creatorId: currentUser.uid,
       title: _titleController.text,
       eventDate: Timestamp.fromDate(eventDateTime),
       eventEndDate: Timestamp.fromDate(eventEndDateTime),
-      maxPlayers: int.parse(_maxPlayersController.text),
-      totalCost: double.parse(_totalCostController.text),
+      maxPlayers: maxPlayers,
+      totalCost: roundedCost,
       isPrivate: _isPrivate,
       sport: _group!.sport,
       minAge: _ageRange.start.round(),
@@ -293,12 +298,16 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
       initialLat: _locationLat,
       initialLng: _locationLng,
       onLocationSelected: (result) {
+        if (!mounted) return;
         setState(() {
           _locationLat = result.lat;
           _locationLng = result.lng;
           _locationAddress = result.address;
         });
-        _goToNextStep();
+        // Defer navigation to allow the picker to finish its internal state updates
+        Future.microtask(() {
+          if (mounted) _goToNextStep();
+        });
       },
     );
   }
@@ -490,23 +499,30 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               validator: (value) => value!.isEmpty
                   ? 'Por favor, ingresa el número de jugadores'
                   : null,
             ),
             const SizedBox(height: 16),
 
-            // Total cost
+            // Cost per person
             TextFormField(
-              controller: _totalCostController,
+              controller: _costPerPersonController,
               decoration: const InputDecoration(
-                labelText: 'Costo total',
+                labelText: 'Costo por persona',
                 border: OutlineInputBorder(),
                 prefixText: '\$ ',
               ),
-              keyboardType: TextInputType.number,
-              validator: (value) =>
-                  value!.isEmpty ? 'Por favor, ingresa el costo total' : null,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+              ],
+              validator: (value) => value!.isEmpty
+                  ? 'Por favor, ingresa el costo por persona'
+                  : null,
             ),
             const SizedBox(height: 16),
 
