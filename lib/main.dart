@@ -31,6 +31,8 @@ import 'package:proplay/screens/purchase_credits_screen.dart';
 import 'package:proplay/screens/payment_success_screen.dart';
 import 'package:proplay/screens/payment_pending_screen.dart';
 import 'package:proplay/screens/payment_failure_screen.dart';
+import 'package:proplay/screens/forgot_password_screen.dart';
+import 'package:proplay/screens/reset_password_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -176,6 +178,24 @@ class MyApp extends StatelessWidget {
                   name: 'registration',
                   builder: (context, state) => const RegistrationScreen(),
                 ),
+                GoRoute(
+                  path: '/forgot-password',
+                  name: 'forgot-password',
+                  builder: (context, state) => const ForgotPasswordScreen(),
+                ),
+                GoRoute(
+                  path: '/_/auth/action',
+                  name: 'auth-action',
+                  builder: (context, state) {
+                    final mode = state.uri.queryParameters['mode'];
+                    final oobCode =
+                        state.uri.queryParameters['oobCode'] ?? '';
+                    if (mode == 'resetPassword') {
+                      return ResetPasswordScreen(oobCode: oobCode);
+                    }
+                    return const LoginScreen();
+                  },
+                ),
               ],
               redirect: (context, state) {
                 final uri = state.uri;
@@ -198,14 +218,23 @@ class MyApp extends StatelessWidget {
                 final loggedIn = authState is AuthAuthenticated;
                 final loggingIn = state.matchedLocation == '/login';
                 final registering = state.matchedLocation == '/registration';
+                final forgotPassword =
+                    state.matchedLocation == '/forgot-password';
+                final isAuthAction =
+                    state.matchedLocation == '/_/auth/action';
 
-                // Allow access to login and registration when not logged in
-                if (!loggedIn && !loggingIn && !registering) {
+                // Allow access to login, registration, forgot-password and auth-action when not logged in
+                if (!loggedIn &&
+                    !loggingIn &&
+                    !registering &&
+                    !forgotPassword &&
+                    !isAuthAction) {
                   return '/login';
                 }
 
                 // Redirect to home if already logged in and trying to access auth screens
-                if (loggedIn && (loggingIn || registering)) {
+                if (loggedIn &&
+                    (loggingIn || registering || forgotPassword || isAuthAction)) {
                   return '/';
                 }
 
