@@ -60,3 +60,10 @@ class AuthPasswordResetEmailSent extends AuthState {
   @override
   List<Object?> get props => [message];
 }
+
+class AuthPasswordResetSuccess extends AuthState {
+  const AuthPasswordResetSuccess();
+
+  @override
+  List<Object?> get props => [];
+}

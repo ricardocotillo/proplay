@@ -18,6 +18,7 @@ class SessionMapScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final LatLng position = LatLng(latitude, longitude);
+<<<<<<< HEAD
 
     return Scaffold(
       appBar: AppBar(title: Text(title), centerTitle: true),
@@ -25,11 +26,33 @@ class SessionMapScreen extends StatelessWidget {
         children: [
           GoogleMap(
             initialCameraPosition: CameraPosition(target: position, zoom: 15),
+=======
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        centerTitle: true,
+      ),
+      body: Stack(
+        children: [
+          GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: position,
+              zoom: 15,
+            ),
+>>>>>>> f90b32edf759e3763100e686d1a03dd096e8d967
             markers: {
               Marker(
                 markerId: const MarkerId('session_location'),
                 position: position,
+<<<<<<< HEAD
                 infoWindow: InfoWindow(title: title, snippet: address),
+=======
+                infoWindow: InfoWindow(
+                  title: title,
+                  snippet: address,
+                ),
+>>>>>>> f90b32edf759e3763100e686d1a03dd096e8d967
               ),
             },
             myLocationEnabled: true,

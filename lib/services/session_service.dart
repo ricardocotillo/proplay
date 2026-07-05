@@ -8,33 +8,14 @@ import 'package:proplay/utils/location_utils.dart';
 class SessionService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  bool _isWithinDistance({
-    required SessionModel session,
-    required double userLat,
-    required double userLng,
-    required double maxDistanceKm,
-  }) {
-    if (session.locationLat == null || session.locationLng == null) {
-      return false;
-    }
-    final distance = LocationUtils.calculateDistance(
-      userLat,
-      userLng,
-      session.locationLat!,
-      session.locationLng!,
-    );
-    return distance <= maxDistanceKm;
-  }
-
   Future<void> createSessionTemplate(SessionTemplateModel template) async {
     try {
       final durationInMinutes = template.eventEndDate
           .toDate()
           .difference(template.eventDate.toDate())
           .inMinutes;
-      final costPerPlayer = template.totalCost > 0 && template.maxPlayers > 0
-          ? template.totalCost / template.maxPlayers
-          : 0;
+      final costPerPlayer = template
+          .totalCost; // at soe point we might to change the field name in template to costPerPlayer
 
       // Create the template with calculated fields
       final templateWithCalculations = template.copyWith(
@@ -439,40 +420,13 @@ class SessionService {
     int? userAge,
     double? userLat,
     double? userLng,
-    double? maxDistanceKm,
   }) async {
     try {
-      List<SessionModel> groupSessions;
-      // Fetch user's group sessions. If a distance radius is provided, we filter by it.
-      // Otherwise, we get all upcoming group sessions and sort them later.
-      if (userLat != null && userLng != null && maxDistanceKm != null) {
-        groupSessions = await getGroupSessionsNearLocation(
-          groupIds: userGroupIds,
-          lat: userLat,
-          lng: userLng,
-          radiusKm: maxDistanceKm,
-          sports: userSports,
-          userGender: userGender,
-        );
-      } else {
-        groupSessions = await getUpcomingSessionsForGroups(userGroupIds);
-      }
+      // Fetch user's group sessions.
+      final groupSessions = await getUpcomingSessionsForGroups(userGroupIds);
 
-      // Get public sessions matching user's sports and criteria
-      List<SessionModel> publicSessions;
-      if (userLat != null && userLng != null && maxDistanceKm != null) {
-        // Use efficient geohash-based query for nearby sessions if a limit is specified
-        publicSessions = await getPublicSessionsNearLocation(
-          lat: userLat,
-          lng: userLng,
-          radiusKm: maxDistanceKm,
-          sports: userSports,
-          userGender: userGender,
-        );
-      } else {
-        // Fetch all public sessions to later sort by distance from the user (if coordinates available)
-        publicSessions = await getAllPublicSessions();
-      }
+      // Get all public sessions.
+      final publicSessions = await getAllPublicSessions();
 
       // Create a map to avoid duplicates (sessions that might appear in both lists)
       final sessionMap = <String, SessionModel>{};
@@ -490,18 +444,7 @@ class SessionService {
           userAge: userAge,
         );
 
-        // Filter by distance ONLY if maxDistanceKm is explicitly provided
-        final distanceMatch =
-            userLat != null && userLng != null && maxDistanceKm != null
-            ? _isWithinDistance(
-                session: session,
-                userLat: userLat,
-                userLng: userLng,
-                maxDistanceKm: maxDistanceKm,
-              )
-            : true;
-
-        if (sportMatch && genderMatch && ageMatch && distanceMatch) {
+        if (sportMatch && genderMatch && ageMatch) {
           sessionMap[session.id] = session;
         }
       }
@@ -520,18 +463,7 @@ class SessionService {
             userAge: userAge,
           );
 
-          // Filter by distance ONLY if maxDistanceKm is explicitly provided
-          final distanceMatch =
-              userLat != null && userLng != null && maxDistanceKm != null
-              ? _isWithinDistance(
-                  session: session,
-                  userLat: userLat,
-                  userLng: userLng,
-                  maxDistanceKm: maxDistanceKm,
-                )
-              : true;
-
-          if (sportMatch && genderMatch && ageMatch && distanceMatch) {
+          if (sportMatch && genderMatch && ageMatch) {
             sessionMap[session.id] = session;
           }
         }
@@ -565,9 +497,12 @@ class SessionService {
 
           final distanceComparison = distanceA.compareTo(distanceB);
           if (distanceComparison != 0) return distanceComparison;
+
+          // Tie-breaker: earliest date first
           return a.eventDate.compareTo(b.eventDate);
         });
       } else {
+        // Fallback: order by date closest to farthest in time
         allSessions.sort((a, b) => a.eventDate.compareTo(b.eventDate));
       }
 

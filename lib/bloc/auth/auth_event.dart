@@ -71,3 +71,16 @@ class AuthPasswordResetRequested extends AuthEvent {
   @override
   List<Object?> get props => [email];
 }
+
+class AuthPasswordResetConfirmed extends AuthEvent {
+  final String oobCode;
+  final String newPassword;
+
+  const AuthPasswordResetConfirmed({
+    required this.oobCode,
+    required this.newPassword,
+  });
+
+  @override
+  List<Object?> get props => [oobCode, newPassword];
+}

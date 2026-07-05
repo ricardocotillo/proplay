@@ -29,7 +29,7 @@
 .packages
 .pub-cache/
 .pub/
-/build/
+build/
 
 # Web related
 
@@ -44,3 +44,5 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
+
+.firebase/
