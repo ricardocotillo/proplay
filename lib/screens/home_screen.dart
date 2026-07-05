@@ -241,18 +241,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         final groupIds = state.groups.map((g) => g.id).toList();
                         return Column(
                           children: [
-                            if (_userLat != null && _userLng != null)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                child: UpcomingEventsCarousel(
-                                  groupIds: groupIds,
-                                  userSports: userSports,
-                                  userLat: _userLat,
-                                  userLng: _userLng,
-                                ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: UpcomingEventsCarousel(
+                                groupIds: groupIds,
+                                userSports: userSports,
+                                userLat: _userLat,
+                                userLng: _userLng,
                               ),
+                            ),
                             Expanded(
                               child: state.groups.isEmpty
                                   ? _buildEmptyState(context)
@@ -634,13 +631,6 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
       'value': 'voleibol',
       'icon': Icons.sports_volleyball,
     },
-    {'display': 'Tenis', 'value': 'tenis', 'icon': Icons.sports_tennis},
-    {'display': 'Natación', 'value': 'natación', 'icon': Icons.pool},
-    {'display': 'Running', 'value': 'running', 'icon': Icons.directions_run},
-    {'display': 'Ciclismo', 'value': 'ciclismo', 'icon': Icons.directions_bike},
-    {'display': 'Gimnasio', 'value': 'gimnasio', 'icon': Icons.fitness_center},
-    {'display': 'Pádel', 'value': 'pádel', 'icon': Icons.sports_tennis},
-    {'display': 'Béisbol', 'value': 'béisbol', 'icon': Icons.sports_baseball},
   ];
 
   late final TextEditingController _ageController;
@@ -709,6 +699,28 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
                 'Selecciona tus deportes y (opcional) completa tus datos. Esto nos ayuda a encontrarte mejores partidos y eventos.',
               ),
               const SizedBox(height: 16),
+              CheckboxListTile(
+                value: _selectedSports.length == _availableSports.length,
+                onChanged: (bool? value) {
+                  setState(() {
+                    if (value == true) {
+                      _selectedSports.addAll(
+                        _availableSports.map((s) => s['value'] as String),
+                      );
+                    } else {
+                      _selectedSports.clear();
+                    }
+                  });
+                },
+                title: const Text(
+                  'Seleccionar todos',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+              const Divider(),
               ..._availableSports.map((sport) {
                 final sportDisplay = sport['display'] as String;
                 final sportValue = sport['value'] as String;
@@ -739,6 +751,7 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
                   ),
                   dense: true,
                   contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
                 );
               }),
               const SizedBox(height: 16),
