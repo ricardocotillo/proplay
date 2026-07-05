@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:map_location_picker/map_location_picker.dart';
 import 'package:proplay/models/ticket_model.dart';
+import 'package:proplay/screens/session_map_screen.dart';
 import 'package:proplay/services/ticket_service.dart';
 import 'package:proplay/utils/ticket_url_builder.dart';
 
@@ -53,46 +53,47 @@ class TicketDetailScreen extends StatelessWidget {
                 ),
                 if (ticket.eventLocationAddress != null) ...[
                   const SizedBox(height: 4),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.location_on, size: 16),
-                      const SizedBox(width: 4),
-                      Flexible(child: Text(ticket.eventLocationAddress!)),
-                    ],
-                  ),
-                ],
-                if (ticket.eventLocationLat != null &&
-                    ticket.eventLocationLng != null) ...[
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: SizedBox(
-                      height: 180,
-                      width: double.infinity,
-                      child: GoogleMap(
-                        initialCameraPosition: CameraPosition(
-                          target: LatLng(
-                            ticket.eventLocationLat!,
-                            ticket.eventLocationLng!,
-                          ),
-                          zoom: 15,
+                  InkWell(
+                    onTap:
+                        ticket.eventLocationLat != null &&
+                            ticket.eventLocationLng != null
+                        ? () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SessionMapScreen(
+                                  title: ticket.eventTitle,
+                                  latitude: ticket.eventLocationLat!,
+                                  longitude: ticket.eventLocationLng!,
+                                  address: ticket.eventLocationAddress,
+                                ),
+                              ),
+                            );
+                          }
+                        : null,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: ticket.eventLocationLat != null
+                              ? Theme.of(context).colorScheme.primary
+                              : null,
                         ),
-                        markers: {
-                          Marker(
-                            markerId: const MarkerId('event_location'),
-                            position: LatLng(
-                              ticket.eventLocationLat!,
-                              ticket.eventLocationLng!,
-                            ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            ticket.eventLocationAddress!,
+                            style: ticket.eventLocationLat != null
+                                ? TextStyle(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    decoration: TextDecoration.underline,
+                                  )
+                                : null,
                           ),
-                        },
-                        zoomControlsEnabled: false,
-                        myLocationButtonEnabled: false,
-                        scrollGesturesEnabled: false,
-                        rotateGesturesEnabled: false,
-                        tiltGesturesEnabled: false,
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
