@@ -53,6 +53,8 @@ dependencies:
   dart_geohash: ^2.1.0
   flutter_custom_tabs: ^2.5.0
   responsive_framework: ^1.5.1
+  qr_flutter: ^4.1.0
+  uuid: ^4.5.3
 
 dependency_overrides:
   retrofit: 4.4.1
