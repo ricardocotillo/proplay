@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:map_location_picker/map_location_picker.dart';
 import 'package:proplay/models/ticket_model.dart';
 import 'package:proplay/services/ticket_service.dart';
 import 'package:proplay/utils/ticket_url_builder.dart';
@@ -10,14 +10,6 @@ class TicketDetailScreen extends StatelessWidget {
   final String ticketId;
 
   const TicketDetailScreen({super.key, required this.ticketId});
-
-  Future<void> _openMap(String address) async {
-    final uri = Uri.https('www.google.com', '/maps/search/', {
-      'api': '1',
-      'query': address,
-    });
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,27 +53,46 @@ class TicketDetailScreen extends StatelessWidget {
                 ),
                 if (ticket.eventLocationAddress != null) ...[
                   const SizedBox(height: 4),
-                  InkWell(
-                    onTap: () => _openMap(ticket.eventLocationAddress!),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.primary,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.location_on, size: 16),
+                      const SizedBox(width: 4),
+                      Flexible(child: Text(ticket.eventLocationAddress!)),
+                    ],
+                  ),
+                ],
+                if (ticket.eventLocationLat != null &&
+                    ticket.eventLocationLng != null) ...[
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: SizedBox(
+                      height: 180,
+                      width: double.infinity,
+                      child: GoogleMap(
+                        initialCameraPosition: CameraPosition(
+                          target: LatLng(
+                            ticket.eventLocationLat!,
+                            ticket.eventLocationLng!,
+                          ),
+                          zoom: 15,
                         ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            ticket.eventLocationAddress!,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.primary,
-                              decoration: TextDecoration.underline,
+                        markers: {
+                          Marker(
+                            markerId: const MarkerId('event_location'),
+                            position: LatLng(
+                              ticket.eventLocationLat!,
+                              ticket.eventLocationLng!,
                             ),
                           ),
-                        ),
-                      ],
+                        },
+                        zoomControlsEnabled: false,
+                        myLocationButtonEnabled: false,
+                        scrollGesturesEnabled: false,
+                        rotateGesturesEnabled: false,
+                        tiltGesturesEnabled: false,
+                      ),
                     ),
                   ),
                 ],

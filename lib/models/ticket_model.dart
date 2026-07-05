@@ -16,6 +16,8 @@ class TicketModel {
   final DateTime eventDate;
   final DateTime eventEndDate;
   final String? eventLocationAddress;
+  final double? eventLocationLat;
+  final double? eventLocationLng;
   final String sport;
 
   // Denormalized user snapshot
@@ -37,6 +39,8 @@ class TicketModel {
     required this.eventDate,
     required this.eventEndDate,
     this.eventLocationAddress,
+    this.eventLocationLat,
+    this.eventLocationLng,
     required this.sport,
     required this.userFirstName,
     required this.userLastName,
@@ -66,6 +70,8 @@ class TicketModel {
       eventDate: eventDate,
       eventEndDate: eventEndDate,
       eventLocationAddress: eventLocationAddress,
+      eventLocationLat: eventLocationLat,
+      eventLocationLng: eventLocationLng,
       sport: sport,
       userFirstName: userFirstName,
       userLastName: userLastName,
@@ -87,6 +93,8 @@ class TicketModel {
       'eventDate': Timestamp.fromDate(eventDate),
       'eventEndDate': Timestamp.fromDate(eventEndDate),
       'eventLocationAddress': eventLocationAddress,
+      'eventLocationLat': eventLocationLat,
+      'eventLocationLng': eventLocationLng,
       'sport': sport,
       'userFirstName': userFirstName,
       'userLastName': userLastName,
@@ -110,6 +118,8 @@ class TicketModel {
       eventEndDate:
           (map['eventEndDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       eventLocationAddress: map['eventLocationAddress'] as String?,
+      eventLocationLat: (map['eventLocationLat'] as num?)?.toDouble(),
+      eventLocationLng: (map['eventLocationLng'] as num?)?.toDouble(),
       sport: map['sport'] as String? ?? '',
       userFirstName: map['userFirstName'] as String? ?? '',
       userLastName: map['userLastName'] as String? ?? '',

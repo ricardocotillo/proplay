@@ -31,6 +31,8 @@ class TicketService {
       eventDate: session.eventDate,
       eventEndDate: session.eventEndDate,
       eventLocationAddress: session.locationAddress,
+      eventLocationLat: session.locationLat,
+      eventLocationLng: session.locationLng,
       sport: session.sport,
       userFirstName: user.firstName,
       userLastName: user.lastName,
