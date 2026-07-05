@@ -13,6 +13,7 @@ import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/services/ticket_service.dart';
+import 'package:proplay/screens/session_map_screen.dart';
 import 'package:proplay/screens/ticket_detail_screen.dart';
 import 'package:proplay/utils/auth_helper.dart';
 
@@ -169,6 +170,63 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                           ),
                         ],
                       ),
+                      if (session.locationAddress != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.location_on, size: 16),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    session.locationAddress!,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            if (session.locationLat != null &&
+                                session.locationLng != null)
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => SessionMapScreen(
+                                        title: session.title,
+                                        latitude: session.locationLat!,
+                                        longitude: session.locationLng!,
+                                        address: session.locationAddress,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 0,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  'ver en mapa',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       // Player count badge
                       _buildBadge(
