@@ -174,22 +174,23 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.location_on, size: 16),
-                                const SizedBox(width: 4),
-                                Flexible(
-                                  child: Text(
-                                    session.locationAddress!,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium,
-                                    overflow: TextOverflow.ellipsis,
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.location_on, size: 16),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      session.locationAddress!,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                            const Spacer(),
                             if (session.locationLat != null &&
                                 session.locationLng != null)
                               TextButton(
