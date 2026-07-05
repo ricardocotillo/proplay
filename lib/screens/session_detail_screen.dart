@@ -12,6 +12,9 @@ import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
+import 'package:proplay/services/ticket_service.dart';
+import 'package:proplay/screens/session_map_screen.dart';
+import 'package:proplay/screens/ticket_detail_screen.dart';
 import 'package:proplay/utils/auth_helper.dart';
 
 class SessionDetailScreen extends StatefulWidget {
@@ -167,6 +170,64 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                           ),
                         ],
                       ),
+                      if (session.locationAddress != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.location_on, size: 16),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(
+                                      session.locationAddress!,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (session.locationLat != null &&
+                                session.locationLng != null)
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => SessionMapScreen(
+                                        title: session.title,
+                                        latitude: session.locationLat!,
+                                        longitude: session.locationLng!,
+                                        address: session.locationAddress,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 0,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: Text(
+                                  'ver en mapa',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       // Player count badge
                       _buildBadge(
@@ -256,32 +317,66 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                   child: isProcessing
                       ? const Center(child: CircularProgressIndicator())
                       : isJoined
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.green.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.green, width: 2),
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                                size: 24,
+                      ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 16,
                               ),
-                              SizedBox(width: 8),
-                              Text(
-                                'Ya estás inscrito en esta pichanga',
-                                style: TextStyle(
+                              decoration: BoxDecoration(
+                                color: Colors.green.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
                                   color: Colors.green,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                  width: 2,
                                 ),
                               ),
-                            ],
-                          ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: Colors.green,
+                                    size: 24,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Ya estás inscrito en esta pichanga',
+                                    style: TextStyle(
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => TicketDetailScreen(
+                                      ticketId: TicketService.ticketId(
+                                        session.id,
+                                        currentUser.uid,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.qr_code),
+                              label: const Text('Ver mi Ticket'),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
+                                minimumSize: const Size(double.infinity, 0),
+                              ),
+                            ),
+                          ],
                         )
                       : ElevatedButton.icon(
                           onPressed: () {

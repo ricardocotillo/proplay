@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/session_template_model.dart';
 import 'package:proplay/models/user_model.dart';
+import 'package:proplay/services/ticket_service.dart';
 import 'package:proplay/utils/geohash_utils.dart';
 import 'package:proplay/utils/location_utils.dart';
 
@@ -653,6 +654,16 @@ class SessionService {
             'players': updatedPlayers.map((p) => p.toMap()).toList(),
             'playerCount': updatedPlayers.length,
           });
+
+          // Create the virtual ticket atomically with the join
+          final ticket = TicketService.buildTicketForJoin(
+            session: session,
+            user: user,
+          );
+          final ticketRef = _firestore
+              .collection(TicketService.ticketsCollection)
+              .doc(ticket.id);
+          transaction.set(ticketRef, ticket.toMap());
         } else {
           throw Exception('Session is full');
         }

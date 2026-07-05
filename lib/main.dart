@@ -31,6 +31,8 @@ import 'package:proplay/screens/purchase_credits_screen.dart';
 import 'package:proplay/screens/payment_success_screen.dart';
 import 'package:proplay/screens/payment_pending_screen.dart';
 import 'package:proplay/screens/payment_failure_screen.dart';
+import 'package:proplay/screens/my_tickets_screen.dart';
+import 'package:proplay/screens/validate_ticket_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -137,6 +139,18 @@ class MyApp extends StatelessWidget {
                       path: 'payment/failure',
                       name: 'payment-failure',
                       builder: (context, state) => const PaymentFailureScreen(),
+                    ),
+                    GoRoute(
+                      path: 'tickets',
+                      name: 'tickets',
+                      builder: (context, state) => const MyTicketsScreen(),
+                    ),
+                    GoRoute(
+                      path: 'validate-ticket',
+                      name: 'validate-ticket',
+                      builder: (context, state) => ValidateTicketScreen(
+                        token: state.uri.queryParameters['token'],
+                      ),
                     ),
                     GoRoute(
                       path: 'group/:id',
