@@ -50,12 +50,27 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
               }
             }
 
-            // If we successfully joined, refresh user credits
+            // If we successfully joined, refresh user credits and redirect to ticket view
             if (state is SessionDetailLoaded &&
                 _wasProcessingJoin &&
                 state.isCurrentUserJoined) {
               _wasProcessingJoin = false;
               context.read<AuthBloc>().add(const AuthRefreshUserRequested());
+
+              // Redirect to ticket view
+              if (mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TicketDetailScreen(
+                      ticketId: TicketService.ticketId(
+                        state.session.id,
+                        currentUser.uid,
+                      ),
+                    ),
+                  ),
+                );
+              }
             }
 
             if (state is SessionDetailError) {
@@ -221,7 +236,9 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
                                 ),
                               ),
@@ -321,9 +338,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 16,
-                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               decoration: BoxDecoration(
                                 color: Colors.green.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
