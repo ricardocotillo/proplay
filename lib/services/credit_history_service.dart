@@ -36,9 +36,15 @@ class CreditHistoryService {
           'currency': package.currency,
           'createdAt': FieldValue.serverTimestamp(),
           'status': 'completed',
+          'entryType': 'purchase',
+          'direction': 'credit',
+          'sourceType': 'payment',
+          'sourceId': paymentResult.transactionId,
           'transactionId': paymentResult.transactionId,
           'paymentMethod': paymentResult.paymentMethod,
           'paymentGateway': paymentResult.paymentGateway,
+          'balanceBefore': currentUser.creditsValue,
+          'balanceAfter': newCreditValue,
         });
 
         // Update user credits
@@ -69,6 +75,10 @@ class CreditHistoryService {
         'currency': package.currency,
         'createdAt': FieldValue.serverTimestamp(),
         'status': 'pending',
+        'entryType': 'purchase',
+        'direction': 'credit',
+        'sourceType': 'payment',
+        'sourceId': paymentResult.transactionId,
         'transactionId': paymentResult.transactionId,
         'paymentMethod': paymentResult.paymentMethod,
         'paymentGateway': paymentResult.paymentGateway,

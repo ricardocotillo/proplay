@@ -219,18 +219,33 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
                       leading: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.primaryContainer.withValues(alpha: 0.5),
+                          color: history.direction == 'debit'
+                              ? Colors.red.withValues(alpha: 0.1)
+                              : Theme.of(context).colorScheme.primaryContainer
+                                    .withValues(alpha: 0.5),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
-                          Icons.account_balance_wallet,
-                          color: Theme.of(context).colorScheme.primary,
+                          history.entryType == 'spend'
+                              ? Icons.sports_soccer
+                              : history.entryType == 'refund'
+                              ? Icons.replay
+                              : history.entryType == 'adjustment'
+                              ? Icons.settings
+                              : Icons.account_balance_wallet,
+                          color: history.direction == 'debit'
+                              ? Colors.red
+                              : Theme.of(context).colorScheme.primary,
                         ),
                       ),
                       title: Text(
-                        '${history.creditAmount} Créditos',
+                        history.entryType == 'spend'
+                            ? history.sessionTitle ?? 'Pichanga'
+                            : history.entryType == 'refund'
+                            ? 'Reembolso: ${history.sessionTitle ?? ""}'
+                            : history.entryType == 'adjustment'
+                            ? 'Ajuste: ${history.notes ?? ""}'
+                            : '${history.creditAmount} Créditos',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -240,6 +255,15 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 4),
+                          if (history.entryType == 'spend' ||
+                              history.entryType == 'refund' ||
+                              history.entryType == 'adjustment')
+                            Text(
+                              '${history.creditAmount} créditos',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           Text(
                             dateFormat.format(history.createdAt),
                             style: TextStyle(
@@ -248,40 +272,66 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _getStatusColor(
-                                history.status,
-                              ).withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _getStatusColor(history.status),
-                                width: 1,
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _getStatusColor(
+                                    history.status,
+                                  ).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: _getStatusColor(history.status),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  _getStatusText(history.status),
+                                  style: TextStyle(
+                                    color: _getStatusColor(history.status),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              _getStatusText(history.status),
-                              style: TextStyle(
-                                color: _getStatusColor(history.status),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                              ),
-                            ),
+                              if (history.balanceAfter != null) ...[
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Saldo: ${history.balanceAfter!.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),
-                      trailing: Text(
-                        'S/ ${history.amountPaid.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
+                      trailing: history.amountPaid > 0
+                          ? Text(
+                              'S/ ${history.amountPaid.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            )
+                          : Text(
+                              '${history.direction == 'debit' ? '-' : '+'}${history.creditAmount.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: history.direction == 'debit'
+                                    ? Colors.red
+                                    : Colors.green,
+                              ),
+                            ),
                     ),
                   );
                 },

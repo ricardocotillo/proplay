@@ -646,6 +646,26 @@ class SessionService {
         final userRef = _firestore.collection('users').doc(user.uid);
         transaction.update(userRef, {'credits': newCreditsFormatted});
 
+        // Create credit history entry for the spend
+        final creditHistoryRef = _firestore.collection('creditHistory').doc();
+        transaction.set(creditHistoryRef, {
+          'userId': user.uid,
+          'creditAmount': costPerPlayer,
+          'amountPaid': 0.0,
+          'createdAt': FieldValue.serverTimestamp(),
+          'status': 'completed',
+          'entryType': 'spend',
+          'direction': 'debit',
+          'sourceType': 'session',
+          'sourceId': sessionId,
+          'sessionId': sessionId,
+          'sessionTitle': session.title,
+          'groupId': session.groupId,
+          'balanceBefore': userCredits,
+          'balanceAfter': newCredits,
+          'notes': 'Unirse a pichanga: ${session.title}',
+        });
+
         // Check if there's space in the main player list
         if (players.length < session.maxPlayers) {
           // Add to main player list

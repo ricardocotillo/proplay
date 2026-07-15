@@ -266,7 +266,11 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
         final creditHistoryRef = FirebaseFirestore.instance
             .collection('creditHistory')
             .doc(item.creditHistory.id);
-        transaction.update(creditHistoryRef, {'status': 'approved'});
+        transaction.update(creditHistoryRef, {
+          'status': 'approved',
+          'balanceBefore': currentCreditsValue,
+          'balanceAfter': newCreditValue,
+        });
 
         // Update user's credit amount using the userId from creditHistory
         final userRef = FirebaseFirestore.instance
