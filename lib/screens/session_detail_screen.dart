@@ -169,7 +169,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                           const Icon(Icons.access_time, size: 16),
                           const SizedBox(width: 4),
                           Text(
-                            'Hasta: ${DateFormat.yMMMd().add_jm().format(session.eventEndDate)}',
+                            'Hasta: ${DateFormat.jm().format(session.eventEndDate)}',
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ],

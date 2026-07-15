@@ -47,7 +47,6 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   // Step 2: Date/time data
   DateTime? _eventDate;
   TimeOfDay? _eventTime;
-  DateTime? _eventEndDate;
   TimeOfDay? _eventEndTime;
 
   // Step 3: Form data
@@ -132,10 +131,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   }
 
   bool get _isStep2Valid {
-    if (_eventDate == null ||
-        _eventTime == null ||
-        _eventEndDate == null ||
-        _eventEndTime == null) {
+    if (_eventDate == null || _eventTime == null || _eventEndTime == null) {
       return false;
     }
     final start = DateTime(
@@ -146,9 +142,9 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
       _eventTime!.minute,
     );
     final end = DateTime(
-      _eventEndDate!.year,
-      _eventEndDate!.month,
-      _eventEndDate!.day,
+      _eventDate!.year,
+      _eventDate!.month,
+      _eventDate!.day,
       _eventEndTime!.hour,
       _eventEndTime!.minute,
     );
@@ -208,9 +204,9 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
       _eventTime!.minute,
     );
     final eventEndDateTime = DateTime(
-      _eventEndDate!.year,
-      _eventEndDate!.month,
-      _eventEndDate!.day,
+      _eventDate!.year,
+      _eventDate!.month,
+      _eventDate!.day,
       _eventEndTime!.hour,
       _eventEndTime!.minute,
     );
@@ -322,7 +318,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
 
           // Start date/time
           Text(
-            'Fecha de inicio',
+            'Fecha y hora de inicio',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
@@ -364,49 +360,23 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
           ),
           const SizedBox(height: 24),
 
-          // End date/time
+          // End time
           Text(
-            'Fecha de finalización',
+            'Hora de finalización',
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _buildDatePickerField(
-                  date: _eventEndDate,
-                  dateFormat: dateFormat,
-                  onTap: () async {
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate:
-                          _eventEndDate ?? _eventDate ?? DateTime.now(),
-                      firstDate: _eventDate ?? DateTime.now(),
-                      lastDate: DateTime(2101),
-                    );
-                    if (picked != null) {
-                      setState(() => _eventEndDate = picked);
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _buildTimePickerField(
-                  time: _eventEndTime,
-                  onTap: () async {
-                    final picked = await showTimePicker(
-                      context: context,
-                      initialTime:
-                          _eventEndTime ?? _eventTime ?? TimeOfDay.now(),
-                    );
-                    if (picked != null) {
-                      setState(() => _eventEndTime = picked);
-                    }
-                  },
-                ),
-              ),
-            ],
+          _buildTimePickerField(
+            time: _eventEndTime,
+            onTap: () async {
+              final picked = await showTimePicker(
+                context: context,
+                initialTime: _eventEndTime ?? _eventTime ?? TimeOfDay.now(),
+              );
+              if (picked != null) {
+                setState(() => _eventEndTime = picked);
+              }
+            },
           ),
           const SizedBox(height: 32),
 
@@ -446,6 +416,18 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
       return dateFormat.format(dt);
     }
 
+    String formatTime(DateTime? date, TimeOfDay? time) {
+      if (date == null || time == null) return 'No seleccionado';
+      final dt = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
+      return DateFormat.jm('es').format(dt);
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Form(
@@ -465,7 +447,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
               icon: Icons.calendar_today,
               title: 'Fecha y hora',
               subtitle:
-                  '${formatDateTime(_eventDate, _eventTime)} - ${formatDateTime(_eventEndDate, _eventEndTime)}',
+                  '${formatDateTime(_eventDate, _eventTime)} - ${formatTime(_eventDate, _eventEndTime)}',
               onTap: () => _goToStep(1),
             ),
             const SizedBox(height: 24),
