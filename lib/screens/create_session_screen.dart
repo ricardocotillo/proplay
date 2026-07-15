@@ -53,7 +53,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _maxPlayersController = TextEditingController();
-  final _totalCostController = TextEditingController();
+  final _costPerPlayerController = TextEditingController();
   String? _desiredGender;
   RangeValues _ageRange = const RangeValues(18, 80);
   bool _isPrivate = false;
@@ -97,7 +97,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
     _pageController.dispose();
     _titleController.dispose();
     _maxPlayersController.dispose();
-    _totalCostController.dispose();
+    _costPerPlayerController.dispose();
     super.dispose();
   }
 
@@ -211,14 +211,19 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
       _eventEndTime!.minute,
     );
 
+    final maxPlayers = int.parse(_maxPlayersController.text);
+    final costPerPlayer = double.parse(_costPerPlayerController.text);
+    final totalCost = costPerPlayer * maxPlayers;
+
     final template = SessionTemplateModel(
       groupId: widget.groupId,
       creatorId: currentUser.uid,
       title: _titleController.text,
       eventDate: Timestamp.fromDate(eventDateTime),
       eventEndDate: Timestamp.fromDate(eventEndDateTime),
-      maxPlayers: int.parse(_maxPlayersController.text),
-      totalCost: double.parse(_totalCostController.text),
+      maxPlayers: maxPlayers,
+      totalCost: totalCost,
+      costPerPlayer: costPerPlayer,
       isPrivate: _isPrivate,
       sport: _group!.sport,
       minAge: _ageRange.start.round(),
@@ -478,17 +483,18 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
             ),
             const SizedBox(height: 16),
 
-            // Total cost
+            // Cost per player
             TextFormField(
-              controller: _totalCostController,
+              controller: _costPerPlayerController,
               decoration: const InputDecoration(
-                labelText: 'Costo total',
+                labelText: 'Precio por jugador',
                 border: OutlineInputBorder(),
-                prefixText: '\$ ',
+                prefixText: 'PEN ',
               ),
               keyboardType: TextInputType.number,
-              validator: (value) =>
-                  value!.isEmpty ? 'Por favor, ingresa el costo total' : null,
+              validator: (value) => value!.isEmpty
+                  ? 'Por favor, ingresa el costo por jugador'
+                  : null,
             ),
             const SizedBox(height: 16),
 
