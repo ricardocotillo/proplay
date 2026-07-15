@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform, kIsWeb;
 
 class AppConstants {
   static const String _googleMapsApiKeyAndroid =
@@ -7,6 +8,9 @@ class AppConstants {
       'AIzaSyCTO2hGJLMHgHUgIzO0MN_DJmexpvku43E';
 
   static String get googleMapsApiKey {
+    if (kIsWeb) {
+      return 'AIzaSyDD-9jkMn3n-JmNmSOvfO7gO2-HTkXIWQ4'; // Key from index.html
+    }
     switch (defaultTargetPlatform) {
       case TargetPlatform.iOS:
         return _googleMapsApiKeyIOS;

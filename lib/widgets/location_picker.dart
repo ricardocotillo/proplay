@@ -92,10 +92,17 @@ class _LocationPickerState extends State<LocationPicker> {
         }
 
         final initialPosition = snapshot.data ?? _limaDefault;
+        final apiKey = AppConstants.googleMapsApiKey;
+
+        if (apiKey.isEmpty) {
+          return const Center(
+            child: Text('Error: Google Maps API key is missing'),
+          );
+        }
 
         return MapLocationPicker(
           config: MapLocationPickerConfig(
-            apiKey: AppConstants.googleMapsApiKey,
+            apiKey: apiKey,
             initialPosition: initialPosition,
             onNext: (result) {
               if (result != null && result.geometry != null) {
@@ -110,7 +117,7 @@ class _LocationPickerState extends State<LocationPicker> {
             },
           ),
           searchConfig: SearchConfig(
-            apiKey: AppConstants.googleMapsApiKey,
+            apiKey: apiKey,
             searchHintText: 'Buscar ubicación...',
             hideOnEmpty: true,
           ),
