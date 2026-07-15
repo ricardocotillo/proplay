@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 class YapeConfig {
   final String name;
@@ -27,7 +28,7 @@ class YapeService {
       }
       return null;
     } catch (e) {
-      print('Error fetching Yape config: $e');
+      if (kDebugMode) print('Error fetching Yape config: $e');
       return null;
     }
   }

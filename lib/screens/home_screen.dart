@@ -82,7 +82,9 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      print(e);
+      if (kDebugMode) {
+        print(e);
+      }
       // Location unavailable, continue without it
     }
   }

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/session_template_model.dart';
 import 'package:proplay/models/user_model.dart';
@@ -54,7 +55,7 @@ class SessionService {
         template: templateWithCalculations,
       );
     } catch (e) {
-      // TODO: Handle errors appropriately
+      if (kDebugMode) print(e);
       rethrow;
     }
   }
@@ -126,7 +127,7 @@ class SessionService {
         return SessionModel.fromMap(doc.id, filteredData);
       }).toList();
     } catch (e) {
-      // TODO: Handle errors appropriately
+      if (kDebugMode) print(e);
       rethrow;
     }
   }
@@ -329,7 +330,7 @@ class SessionService {
 
       return uniqueSessions.values.toList();
     } catch (e) {
-      print(e);
+      if (kDebugMode) print(e);
       rethrow;
     }
   }
@@ -582,7 +583,7 @@ class SessionService {
     try {
       await _firestore.collection('liveSessions').doc(sessionId).delete();
     } catch (e) {
-      // TODO: Handle errors appropriately
+      if (kDebugMode) print(e);
       rethrow;
     }
   }
