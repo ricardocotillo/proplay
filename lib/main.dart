@@ -41,8 +41,15 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  GoRouter? _router;
 
   @override
   Widget build(BuildContext context) {
@@ -88,11 +95,15 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ],
-        child: Builder(
-          builder: (context) {
-            final authState = context.watch<AuthBloc>().state;
-
-            final router = GoRouter(
+        child: BlocBuilder<AuthBloc, AuthState>(
+          buildWhen: (previous, current) {
+            // Only rebuild when transitioning between AuthInitial and non-AuthInitial
+            final wasInitial = previous is AuthInitial;
+            final isInitial = current is AuthInitial;
+            return wasInitial != isInitial;
+          },
+          builder: (context, authState) {
+            _router ??= GoRouter(
               routes: [
                 GoRoute(
                   path: '/',
@@ -209,6 +220,7 @@ class MyApp extends StatelessWidget {
                   }
                 }
 
+                final authState = context.read<AuthBloc>().state;
                 final loggedIn = authState is AuthAuthenticated;
                 final loggingIn = state.matchedLocation == '/login';
                 final registering = state.matchedLocation == '/registration';
@@ -295,7 +307,7 @@ class MyApp extends StatelessWidget {
                   ),
                 ],
               ),
-              routerConfig: router,
+              routerConfig: _router!,
               title: 'ProPlay',
               theme: ThemeData(
                 colorScheme: const ColorScheme.light(
@@ -325,6 +337,12 @@ class MyApp extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _router?.dispose();
+    super.dispose();
   }
 }
 
