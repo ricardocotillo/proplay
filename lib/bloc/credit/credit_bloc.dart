@@ -6,7 +6,9 @@ import 'package:proplay/bloc/credit/credit_state.dart';
 class CreditBloc extends Bloc<CreditEvent, CreditState> {
   final CreditHistoryService _creditHistoryService;
 
-  CreditBloc({required this._creditHistoryService}) : super(CreditInitial()) {
+  CreditBloc({required CreditHistoryService creditHistoryService})
+    : _creditHistoryService = creditHistoryService,
+      super(CreditInitial()) {
     on<CreditPurchaseRequested>(_onCreditPurchaseRequested);
     on<CreditYapePurchaseRequested>(_onCreditYapePurchaseRequested);
   }

@@ -6,7 +6,9 @@ import 'package:proplay/bloc/user/user_state.dart';
 class UserBloc extends Bloc<UserEvent, UserState> {
   final UserService _userService;
 
-  UserBloc({required this._userService}) : super(UserInitial()) {
+  UserBloc({required UserService userService})
+    : _userService = userService,
+      super(UserInitial()) {
     on<UserUpdateRequested>(_onUserUpdateRequested);
     on<UserMatchInfoUpdateRequested>(_onUserMatchInfoUpdateRequested);
     on<UserProfileCompletionDismissedRequested>(

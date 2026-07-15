@@ -15,10 +15,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   StreamSubscription<User?>? _authSubscription;
 
   AuthBloc({
-    required this._authService,
-    required this._userService,
-    required this._groupService,
-  }) : super(AuthInitial()) {
+    required AuthService authService,
+    required UserService userService,
+    required GroupService groupService,
+  }) : _authService = authService,
+       _userService = userService,
+       _groupService = groupService,
+       super(AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
     on<AuthRegisterRequested>(_onAuthRegisterRequested);
