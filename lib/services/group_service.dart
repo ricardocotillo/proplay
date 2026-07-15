@@ -8,7 +8,7 @@ class GroupService {
   final UserService _userService;
   static const String groupsCollection = 'groups';
 
-  GroupService({required this._userService});
+  GroupService({required UserService userService}) : _userService = userService;
 
   // Generate a unique 6-character alphanumeric code
   Future<String> _generateUniqueCode() async {
