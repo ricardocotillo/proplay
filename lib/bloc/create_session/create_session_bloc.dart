@@ -9,9 +9,8 @@ part 'create_session_state.dart';
 class CreateSessionBloc extends Bloc<CreateSessionEvent, CreateSessionState> {
   final SessionService _sessionService;
 
-  CreateSessionBloc({required SessionService sessionService})
-      : _sessionService = sessionService,
-        super(CreateSessionInitial()) {
+  CreateSessionBloc({required this._sessionService})
+    : super(CreateSessionInitial()) {
     on<CreateSessionTemplate>(_onCreateSessionTemplate);
   }
 

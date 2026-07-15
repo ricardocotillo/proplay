@@ -6,9 +6,7 @@ import 'package:proplay/bloc/group/group_state.dart';
 class GroupBloc extends Bloc<GroupEvent, GroupState> {
   final GroupService _groupService;
 
-  GroupBloc({required GroupService groupService})
-    : _groupService = groupService,
-      super(GroupInitial()) {
+  GroupBloc({required this._groupService}) : super(GroupInitial()) {
     on<GroupCreateRequested>(_onGroupCreateRequested);
     on<GroupJoinRequested>(_onGroupJoinRequested);
     on<GroupLoadUserGroups>(_onGroupLoadUserGroups);

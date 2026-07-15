@@ -12,12 +12,9 @@ class GroupEditBloc extends bloc.Bloc<GroupEditEvent, GroupEditState> {
   final GroupService _groupService;
   final StorageService _storageService;
 
-  GroupEditBloc({
-    required GroupService groupService,
-    StorageService? storageService,
-  }) : _groupService = groupService,
-       _storageService = storageService ?? StorageService(),
-       super(GroupEditInitial()) {
+  GroupEditBloc({required this._groupService, StorageService? storageService})
+    : _storageService = storageService ?? StorageService(),
+      super(GroupEditInitial()) {
     on<GroupEditSubmitted>(_onGroupEditSubmitted);
     on<GroupDeleted>(_onGroupDeleted);
   }

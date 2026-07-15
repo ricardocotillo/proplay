@@ -13,13 +13,10 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
   final String? _currentUserId;
 
   SessionBloc({
-    required SessionService sessionService,
-    GroupService? groupService,
-    String? currentUserId,
-  }) : _sessionService = sessionService,
-       _groupService = groupService,
-       _currentUserId = currentUserId,
-       super(SessionInitial()) {
+    required this._sessionService,
+    this._groupService,
+    this._currentUserId,
+  }) : super(SessionInitial()) {
     on<LoadSessions>(_onLoadSessions);
     on<LoadAllUserSessions>(_onLoadAllUserSessions);
     on<DeleteSession>(_onDeleteSession);
