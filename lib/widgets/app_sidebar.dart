@@ -7,6 +7,7 @@ import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/screens/credit_history_screen.dart';
 import 'package:proplay/screens/credit_approval_screen.dart';
+import 'package:proplay/screens/my_tickets_screen.dart';
 
 /// A persistent sidebar for desktop layouts.
 /// This replaces the drawer on wider screens.
@@ -125,11 +126,24 @@ class AppSidebar extends StatelessWidget {
                     );
                   },
                 ),
+                _SidebarMenuItem(
+                  icon: Icons.qr_code,
+                  label: 'Mis Tickets',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MyTicketsScreen(),
+                      ),
+                    );
+                  },
+                ),
                 if (user?.superUser == true) ...[
                   const Divider(),
                   _SidebarMenuItem(
                     icon: Icons.admin_panel_settings,
                     label: 'Aprobar Créditos',
+                    isPrimary: true,
                     onTap: () {
                       Navigator.push(
                         context,
@@ -187,21 +201,34 @@ class _SidebarMenuItem extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   final bool isDestructive;
+  final bool isPrimary;
 
   const _SidebarMenuItem({
     required this.icon,
     required this.label,
     required this.onTap,
     this.isDestructive = false,
+    this.isPrimary = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color = isDestructive ? Colors.red : null;
+    Color? color;
+    FontWeight? fontWeight;
+
+    if (isDestructive) {
+      color = Colors.red;
+    } else if (isPrimary) {
+      color = Theme.of(context).colorScheme.primary;
+      fontWeight = FontWeight.w600;
+    }
 
     return ListTile(
       leading: Icon(icon, color: color),
-      title: Text(label, style: TextStyle(color: color)),
+      title: Text(
+        label,
+        style: TextStyle(color: color, fontWeight: fontWeight),
+      ),
       onTap: onTap,
       hoverColor: Theme.of(
         context,
