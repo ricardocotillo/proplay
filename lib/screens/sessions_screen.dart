@@ -31,6 +31,34 @@ class _SessionsScreenState extends State<SessionsScreen> {
   }
 
   Future<void> _loadLocation() async {
+    if (kIsWeb) {
+      // On web, permission_handler doesn't support locationWhenInUse.
+      // geolocator uses the browser's native Geolocation API which handles
+      // permissions internally via a browser prompt.
+      try {
+        final position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.low,
+            timeLimit: Duration(seconds: 10),
+          ),
+        );
+        if (mounted) {
+          setState(() {
+            _userLat = position.latitude;
+            _userLng = position.longitude;
+            _locationLoaded = true;
+          });
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _locationLoaded = true;
+          });
+        }
+      }
+      return;
+    }
+
     final status = await Permission.location.status;
     final status2 = await Permission.locationWhenInUse.status;
 
@@ -38,9 +66,7 @@ class _SessionsScreenState extends State<SessionsScreen> {
       try {
         // Try last known position first (works better on emulators)
         Position? position;
-        if (!kIsWeb) {
-          position = await Geolocator.getLastKnownPosition();
-        }
+        position = await Geolocator.getLastKnownPosition();
 
         // If no last known position, try getting current position
         position ??= await Geolocator.getCurrentPosition(
