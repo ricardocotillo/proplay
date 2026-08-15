@@ -1,350 +1,175 @@
-# ProPlay - Claude Code Project Guide
+# ProPlay — Agent Working Guide
 
-## Project Overview
-ProPlay is a Flutter application built with Firebase backend services, implementing a robust authentication system with user profile management.
+ProPlay is a Flutter + Firebase app for organizing and discovering amateur sports sessions in Peru. Users join groups, match into nearby sessions, spend **pro coins**, and check in with QR tickets.
 
-## Architecture Pattern: BLoC (Business Logic Component)
+**Human onboarding:** [README.md](README.md)
+**Living architecture (update this when the app changes):** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
-This project **STRICTLY** follows the BLoC pattern for state management. All business logic must be separated from the UI layer.
+This file is the short contract for coding agents. Prefer it over older copies in `CLAUDE.md` / `GEMINI.md` / `QWEN.md` if they disagree with the architecture guide.
 
-### BLoC Structure
+---
+
+## Architecture: BLoC only
+
+Business logic stays out of widgets.
+
 ```
 lib/
-├── bloc/
-│   └── auth/
-│       ├── auth_bloc.dart    # Business logic
-│       ├── auth_event.dart   # Events (user actions)
-│       └── auth_state.dart   # States (UI states)
-├── models/                    # Data models
-├── services/                  # External service interactions
-├── screens/                   # UI screens
-├── widgets/                   # Reusable widgets
-└── utils/                     # Helper utilities
+├── bloc/{feature}/     # *_bloc.dart, *_event.dart, *_state.dart
+├── models/             # Firestore / payment models
+├── services/           # Auth, Firestore, Storage, payments — I/O only
+├── screens/            # Full-page UI
+├── widgets/            # Shared UI
+└── utils/              # Helpers (auth, geohash, ticket URLs, breakpoints)
 ```
 
-### Key BLoC Principles
-1. **Never put business logic in UI widgets** - Always use BLoC
-2. **Events trigger actions** - User interactions dispatch events
-3. **States represent UI** - UI rebuilds based on state changes
-4. **Services are injected into BLoCs** - Not directly accessed from UI
-
-## Firebase Configuration
-
-### Services Used
-- **Firebase Auth**: User authentication (email/password)
-- **Cloud Firestore**: User data storage (users collection)
-- **Firebase Storage**: File uploads (profile images)
-
-### Firebase Structure
-```
-Firestore Collections:
-├── users/
-│   └── {userId}/
-│       ├── uid: string
-│       ├── email: string
-│       ├── firstName: string
-│       ├── lastName: string
-│       ├── profileImageUrl: string?
-│       └── createdAt: Timestamp
-```
-
-### Firebase Files
-- `firebase.json` - Firebase configuration
-- `lib/firebase_options.dart` - Generated Firebase options (DO NOT EDIT MANUALLY)
-
-## Authentication Flow
-
-### Login Flow
-1. User enters credentials on `LoginScreen`
-2. `AuthLoginRequested` event dispatched
-3. `AuthBloc` calls `AuthService.signInWithEmailAndPassword()`
-4. User document fetched from Firestore via `UserService`
-5. `AuthAuthenticated` state emitted with `UserModel`
-6. `AuthWrapper` navigates to `HomeScreen`
-
-### Registration Flow
-1. User fills registration form (first name, last name, email, password)
-2. `AuthRegisterRequested` event dispatched with user info
-3. `AuthBloc` creates Firebase Auth account
-4. `UserModel` created and saved to Firestore
-5. `AuthAuthenticated` state emitted
-6. Navigation pops back to root, `AuthWrapper` shows `HomeScreen`
-
-### Logout Flow
-1. User taps logout in drawer
-2. Confirmation dialog shown
-3. `AuthLogoutRequested` event dispatched
-4. `AuthBloc` calls `AuthService.signOut()`
-5. `AuthUnauthenticated` state emitted
-6. `AuthWrapper` navigates to `LoginScreen`
-
-## Current User Access
-
-### Global User Object
-The current user is accessible globally through the `AuthHelper` utility:
+1. Widgets dispatch events. They do not call Firebase (do not copy `CreditApprovalScreen` / `CreditHistoryScreen`).
+2. BLoCs orchestrate use cases and emit `Equatable` states.
+3. Services are constructor-injected into BLoCs.
+4. After a write that changes the signed-in user, dispatch `AuthRefreshUserRequested`.
 
 ```dart
-// Method 1: Using context extension (recommended)
-final user = context.currentUser;  // Read once, won't rebuild
+// Correct
+context.read<AuthBloc>().add(AuthLoginRequested(email: email, password: password));
 
-// Method 2: Watch for changes (rebuilds on auth state change)
-final user = context.watchUser;
-
-// Method 3: Using AuthHelper class
-final user = AuthHelper.getCurrentUser(context);
-
-// Check authentication
-bool authenticated = context.isAuthenticated;
-```
-
-### UserModel Properties
-```dart
-class UserModel {
-  final String uid;
-  final String email;
-  final String firstName;
-  final String lastName;
-  final String? profileImageUrl;
-  final DateTime createdAt;
-
-  String get fullName => '$firstName $lastName';
-}
-```
-
-## UI Components
-
-### Screens
-- `LoginScreen` - Email/password login with navigation to registration
-- `RegistrationScreen` - User registration with first name, last name, email, password
-- `HomeScreen` - Main app screen with profile image in AppBar
-- `CreateGroupScreen` - Create a new group with name and sports
-- `EditProfileScreen` - Edit user profile with first name, last name, email, password
-
-### Widgets
-- `AppDrawer` - Side drawer with user profile and menu options
-  - User header with profile image/initials
-  - Edit Profile (placeholder)
-  - Log Out (with confirmation)
-
-### Profile Image Display
-- Uses `CachedNetworkImage` for efficient image loading
-- Fallback to user initials when no profile image exists
-- Circular avatar with theme colors
-- Loading and error states handled
-
-## Code Patterns & Guidelines
-
-### 1. Always Use BLoC for State Management
-```dart
-// ✅ CORRECT - Dispatch event
-context.read<AuthBloc>().add(AuthLoginRequested(
-  email: email,
-  password: password,
-));
-
-// ❌ WRONG - Direct service call from UI
+// Wrong
 await AuthService().signInWithEmailAndPassword(email, password);
 ```
 
-### 2. Service Layer
-Services handle external interactions only:
-- `AuthService` - Firebase Auth operations
-- `UserService` - Firestore user operations
+Current user:
 
 ```dart
-// Services are injected into BLoCs
-AuthBloc(
-  authService: AuthService(),
-  userService: UserService(),
-)
-```
-
-### 3. File Naming Convention
-- Screens: `{name}_screen.dart` (e.g., `login_screen.dart`)
-- Widgets: `{name}.dart` (e.g., `app_drawer.dart`)
-- Models: `{name}_model.dart` (e.g., `user_model.dart`)
-- Services: `{name}_service.dart` (e.g., `auth_service.dart`)
-- BLoCs: `{name}_bloc.dart`, `{name}_event.dart`, `{name}_state.dart`
-
-### 4. Import Organization
-```dart
-// Flutter imports
-import 'package:flutter/material.dart';
-
-// Package imports
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-
-// Project imports
-import 'package:proplay/services/auth_service.dart';
-import 'package:proplay/models/user_model.dart';
-```
-
-### 5. State Management Best Practices
-- Use `BlocBuilder` for UI that depends on state
-- Use `BlocListener` for one-time actions (navigation, dialogs)
-- Use `BlocConsumer` when you need both
-- Always provide specific state types (avoid dynamic)
-
-### 6. Navigation Patterns
-```dart
-// Pop to root (used after registration)
-Navigator.of(context).popUntil((route) => route.isFirst);
-
-// Simple navigation
-Navigator.push(context, MaterialPageRoute(
-  builder: (context) => const SomeScreen(),
-));
-
-// Pop current screen
-Navigator.pop(context);
-```
-
-## Dependencies
-
-### Core Dependencies
-```yaml
-firebase_core: ^4.1.1           # Firebase initialization
-firebase_auth: ^6.1.0           # Authentication
-cloud_firestore: ^6.0.2         # Database
-firebase_storage: ^13.0.2       # File storage
-flutter_bloc: ^9.1.1            # BLoC state management
-equatable: ^2.0.7               # Value equality
-provider: ^6.1.5+1              # Dependency injection
-cached_network_image: ^3.4.1    # Image caching
-image_picker: ^1.2.0            # Image picker
-```
-
-## Key Files to Never Modify Manually
-- `lib/firebase_options.dart` - Generated by FlutterFire CLI
-- `android/app/google-services.json` - Firebase Android config
-- `ios/Runner/GoogleService-Info.plist` - Firebase iOS config
-
-## Common Tasks
-
-### Adding a New Screen
-1. Create screen file in `lib/screens/`
-2. If needs state management, create corresponding BLoC
-3. Add navigation from existing screen
-4. Follow BLoC pattern for all logic
-
-### Adding a New BLoC
-1. Create folder in `lib/bloc/{name}/`
-2. Create `{name}_event.dart` with events
-3. Create `{name}_state.dart` with states (extend Equatable)
-4. Create `{name}_bloc.dart` with business logic
-5. Provide BLoC in widget tree
-6. Dispatch events from UI, listen to states
-
-### Adding Firestore Collection
-1. Create model in `lib/models/`
-2. Add `toMap()` and `fromMap()` methods
-3. Create service in `lib/services/`
-4. Inject service into relevant BLoC
-5. Use BLoC to interact with service
-
-### Adding Authentication Feature
-1. Add method to `AuthService`
-2. Create event in `auth_event.dart`
-3. Add handler in `auth_bloc.dart`
-4. Update states if needed in `auth_state.dart`
-5. Dispatch event from UI
-
-## Error Handling
-
-### Firebase Auth Errors
-Handled in `AuthService._handleAuthException()`:
-- user-not-found
-- wrong-password
-- email-already-in-use
-- invalid-email
-- weak-password
-
-### UI Error Display
-- Use `BlocListener` for error state
-- Show `SnackBar` for errors
-- Use `ScaffoldMessenger.of(context).showSnackBar()`
-
-## Testing Guidelines
-- Unit test BLoCs (test events → states)
-- Mock services in BLoC tests
-- Widget tests for screens
-- Integration tests for flows
-
-## Important Notes
-
-### When Adding New Features
-1. ✅ Always follow BLoC pattern
-2. ✅ Keep business logic in BLoCs
-3. ✅ Services only for external interactions
-4. ✅ UI only for presentation
-5. ✅ Use proper file structure
-6. ✅ Follow naming conventions
-
-### When Debugging
-1. Check BLoC state transitions
-2. Verify events are dispatched correctly
-3. Ensure services are injected properly
-4. Check Firebase console for data
-5. Review error messages in auth_service
-
-### Performance Considerations
-- Use `const` constructors when possible
-- Implement `Equatable` for states and events
-- Use `CachedNetworkImage` for images
-- Avoid rebuilding entire tree (use specific BlocBuilder)
-
-## Project Status
-
-### Completed Features
-- ✅ Firebase Authentication (email/password)
-- ✅ User registration with Firestore integration
-- ✅ Login/Logout functionality
-- ✅ Global user state management
-- ✅ Profile image display with fallback
-- ✅ App drawer with user menu
-- ✅ Navigation flow
-
-### Placeholder Features (To Implement)
-- ⏳ Edit Profile screen
-- ⏳ Profile image upload
-- ⏳ Password reset
-- ⏳ Email verification
-
-## Quick Reference
-
-### Get Current User
-```dart
-final user = context.currentUser;
-```
-
-### Dispatch Auth Event
-```dart
-context.read<AuthBloc>().add(SomeAuthEvent());
-```
-
-### Listen to Auth State
-```dart
-BlocBuilder<AuthBloc, AuthState>(
-  builder: (context, state) {
-    if (state is AuthAuthenticated) {
-      return HomeScreen();
-    }
-    return LoginScreen();
-  },
-)
-```
-
-### Access User Data
-```dart
-final user = context.currentUser;
-final fullName = user?.fullName;
-final email = user?.email;
-final profileUrl = user?.profileImageUrl;
+final user = context.currentUser; // read
+final user = context.watchUser;   // rebuild on auth change
+bool ok = context.isAuthenticated;
 ```
 
 ---
 
-**Last Updated**: Project initialization with authentication system
-**Flutter Version**: 3.9.2+
-**Firebase Project**: proplay-eac23
+## Firebase
+
+Project: **`proplay-eac23`**. Hosted web app: https://proplayapp.com
+
+Services in use: Auth (email/password + Google), Firestore, Storage, Hosting.
+
+**Do not hand-edit:** `lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`.
+
+There is no Cloud Functions package and no rules/index files in git. Client code currently performs sensitive writes (join + credit debit). Treat that as a known risk; do not loosen it further.
+
+### Collections that exist in code
+
+```
+users/{uid}
+  └─ groups/{groupId}                 # { role, joinedAt }
+groups/{groupId}
+  └─ members/{userId}                 # { role, joinedAt }  source of truth for membership
+sessionTemplates/{templateId}
+liveSessions/{sessionId}              # players[] embedded on the document
+tickets/{sessionId}_{userId}
+creditHistory/{id}
+yape/{firstDoc}                       # { name, phone, qr }
+```
+
+Credits on the **user** are a **string** with 2 decimals (`"15.00"`). Ledger amounts are **doubles**. Always use `UserModel.formatCredits` / `creditsValue`.
+
+Sport values must stay canonical: `fútbol`, `baloncesto`, `voleibol`, `tenis`, `natación`, `running`, `ciclismo`, `gimnasio`, `pádel`, `béisbol`.
+
+Full field lists: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#7-firestore-data-model).
+
+---
+
+## Routing
+
+`go_router` in `lib/main.dart` is auth-gated. Unauthenticated users only see `/login` and `/registration`.
+
+Primary routes: `/`, `/sessions`, `/create-group`, `/edit-profile`, `/purchase-credits`, `/tickets`, `/validate-ticket`, `/group/:id`, `/group/:id/edit`, `/group/:id/info`, `/payment/{success,pending,failure}`.
+
+These screens are still `Navigator.push` only (no deep link): session create/detail/map, ticket detail, credit history, credit approval.
+
+New primary destinations go in `GoRouter`. Update the table in `docs/ARCHITECTURE.md`.
+
+---
+
+## Feature map (shipped)
+
+| Area | Entry | Notes |
+| --- | --- | --- |
+| Auth | `AuthBloc` + `AuthService` | Email, Google, password reset, optional group code on register |
+| Profile | `UserBloc` | Name, photo, gender/age, sports |
+| Groups | `GroupBloc` / `GroupDetailBloc` / `GroupEditBloc` | Create, join by 6-char code, roles `owner`/`admin`/`member` |
+| Sessions | `CreateSessionBloc`, `SessionBloc`, `SessionDetailBloc` | Template + first live session; join is a Firestore transaction |
+| Matchmaking | `SessionService.getAllUpcomingSessions` | Sport, gender, age, optional geohash radius |
+| Credits | `CreditBloc` + Yape | Pending purchase; `superUser` approves in `CreditApprovalScreen` |
+| Tickets | `TicketService`, `MyTicketsBloc`, `ValidateTicketBloc` | Created atomically on join; validate via token URL |
+
+Join transaction (`SessionService.joinSession`): check seats + balance → debit credits → ledger spend → append player → write ticket. Leave/remove does **not** refund or delete the ticket.
+
+Live payment path is **manual Yape**, not the stub `PaymentService` / Mercado Pago samples. Details: [docs/PAYMENT_SYSTEM.md](docs/PAYMENT_SYSTEM.md).
+
+---
+
+## Conventions
+
+### File names
+
+- Screens: `{name}_screen.dart`
+- Loaders: `{name}_screen_loader.dart`
+- Widgets: `{name}.dart`
+- Models: `{name}_model.dart`
+- Services: `{name}_service.dart`
+- BLoCs: `{name}_bloc.dart`, `{name}_event.dart`, `{name}_state.dart`
+
+### Imports
+
+Flutter → package imports → `package:proplay/...`
+
+### UI
+
+- `BlocBuilder` for rebuilds, `BlocListener` for snackbars/navigation, `BlocConsumer` when both.
+- Product copy is Spanish. Developer docs are English.
+- Theme primary: `#BA1B1D`. Responsive via `responsive_framework` (`ResponsiveLayout`, drawer vs `AppSidebar`).
+
+### Adding work
+
+| Task | Steps |
+| --- | --- |
+| New screen | File in `lib/screens/`, BLoC if needed, `GoRoute`, update architecture doc |
+| New BLoC | Folder under `lib/bloc/`, inject services, provide near the screen |
+| New collection | Model `toMap`/`fromMap`, service, BLoC, document in architecture §7 |
+| New auth action | `AuthService` → event → handler → UI dispatch |
+
+---
+
+## Commands
+
+```bash
+flutter pub get
+flutter run
+flutter analyze
+flutter test          # default counter test only — not a real suite
+flutter build web
+npx -y firebase-tools@latest deploy --only hosting
+```
+
+Version: `1.0.7+10` (`pubspec.yaml`). Dart SDK `^3.8.0`.
+
+---
+
+## Do not regress these
+
+- Do not put Firebase calls in new widgets.
+- Do not store user credits as a raw `num` without going through `formatCredits`.
+- Do not add a sport in only one of the duplicated sport lists — extract a shared constant if you touch them.
+- Do not treat `GroupService.streamUserGroups` as correct membership (it queries a `members` array that create/join do not write).
+- Do not implement card collection against `CardDetails` (PCI). Gateway SDK / redirect only.
+- Do not hand-roll another credit write outside a transaction if a race is possible.
+
+---
+
+## Status
+
+**Done:** auth (email + Google + reset), profiles, groups + roles, session create/join, matchmaking (sport/gender/age/distance), Yape credits + admin approval, tickets + QR validation, responsive shell, Firebase Hosting.
+
+**Not done / leftover:** automated payment gateway, recurring sessions, waitlist, refunds on leave/cancel, email verification, rules/indexes in repo, real tests, moving join/credits server-side, aligning remaining screens on GoRouter.
+
+Pitfalls and full flows: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
