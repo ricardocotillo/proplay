@@ -35,8 +35,11 @@ class GroupsSessionsScreen extends StatelessWidget {
                     (state.currentUserRole == 'owner' ||
                         state.currentUserRole == 'admin')) {
                   return Builder(
-                    builder: (builderContext) => IconButton(
-                      icon: const Icon(Icons.add),
+                    builder: (builderContext) => TextButton(
+                      child: Text(
+                        'Crear +',
+                        style: const TextStyle(color: Colors.white),
+                      ),
                       onPressed: () async {
                         // Capture the bloc before the async navigation
                         final sessionBloc = builderContext.read<SessionBloc>();

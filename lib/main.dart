@@ -244,6 +244,7 @@ class _MyAppState extends State<MyApp> {
 
             if (authState is AuthInitial) {
               return MaterialApp(
+                debugShowCheckedModeBanner: false,
                 builder: (context, child) => ResponsiveBreakpoints.builder(
                   child: child!,
                   breakpoints: [
@@ -279,6 +280,7 @@ class _MyAppState extends State<MyApp> {
             }
 
             return MaterialApp.router(
+              debugShowCheckedModeBanner: false,
               builder: (context, child) => ResponsiveBreakpoints.builder(
                 child: child!,
                 breakpoints: [

@@ -2,14 +2,14 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Flutter: Web",
+      "name": "Flutter (FVM): Web",
       "type": "dart",
       "request": "launch",
       "program": "lib/main.dart",
       "args": ["-d", "chrome", "--web-port", "53213"]
     },
     {
-      "name": "Flutter: Emulator",
+      "name": "Flutter (FVM): Emulator",
       "type": "dart",
       "request": "launch",
       "program": "lib/main.dart"
