@@ -83,6 +83,7 @@ flutter:
   assets:
     - assets/google.png
     - assets/thumbnail.png
+    - assets/images/landing/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

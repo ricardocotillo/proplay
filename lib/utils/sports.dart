@@ -13,3 +13,14 @@ const List<({String display, String value, IconData icon})> kSports = [
   (display: 'Pádel', value: 'pádel', icon: Icons.sports_tennis),
   (display: 'Béisbol', value: 'béisbol', icon: Icons.sports_baseball),
 ];
+
+/// Landing/tile image for a canonical sport value (accents stripped in file names).
+String sportImage(String value) {
+  const from = 'áéíóú';
+  const to = 'aeiou';
+  var name = value;
+  for (var i = 0; i < from.length; i++) {
+    name = name.replaceAll(from[i], to[i]);
+  }
+  return 'assets/images/landing/sport-$name.webp';
+}
