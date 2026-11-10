@@ -133,6 +133,38 @@ class _Section extends StatelessWidget {
   }
 }
 
+class _Brand extends StatelessWidget {
+  const _Brand({this.color});
+
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: Image.asset(
+            'assets/images/landing/logo.webp',
+            height: 36,
+            semanticLabel: 'Logo de ProPlay',
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          'ProPlay',
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: color ?? theme.colorScheme.primary,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _NavBar extends StatelessWidget {
   const _NavBar();
 
@@ -140,14 +172,12 @@ class _NavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(
-          'ProPlay',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: Theme.of(context).colorScheme.primary,
-            fontWeight: FontWeight.w800,
+        const Expanded(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: FittedBox(fit: BoxFit.scaleDown, child: _Brand()),
           ),
         ),
-        const Spacer(),
         TextButton(
           onPressed: () => context.go('/login'),
           child: const Text('Ingresar'),
@@ -443,13 +473,7 @@ class _Footer extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'ProPlay',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: white,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+              const _Brand(color: white),
               const SizedBox(height: 4),
               const Text('Organiza y descubre deporte amateur en Perú.'),
               const SizedBox(height: 12),
