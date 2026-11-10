@@ -158,6 +158,7 @@ Version: `1.0.7+10` (`pubspec.yaml`). Dart SDK `^3.13.0`.
 ## Do not regress these
 
 - Do not put Firebase calls in new widgets.
+- `analysis_options.yaml` includes `flutter_lints` but the dev dependency is commented out in `pubspec.yaml`; `flutter analyze` always reports `include_file_not_found`. Uncomment it to fix.
 - Do not store user credits as a raw `num` without going through `formatCredits`.
 - Do not add a sport in only one of the duplicated sport lists — extract a shared constant if you touch them.
 - Do not treat `GroupService.streamUserGroups` as correct membership (it queries a `members` array that create/join do not write).
