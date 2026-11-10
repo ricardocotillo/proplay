@@ -21,7 +21,7 @@ UI language is Spanish. Currency is PEN.
 
 | Layer | Choice |
 | --- | --- |
-| App | Flutter (Dart SDK `^3.8.0`), current version `1.0.7+10` |
+| App | Flutter (Dart SDK `^3.13.0`), current version `1.0.7+10` |
 | State | BLoC (`flutter_bloc` + `equatable`) |
 | Routing | `go_router` (auth + primary screens) plus `Navigator.push` for some detail flows |
 | Backend | Firebase project **`proplay-eac23`** |
@@ -57,7 +57,7 @@ Agent working notes: [AGENTS.md](AGENTS.md), [CLAUDE.md](CLAUDE.md).
 
 ## Prerequisites
 
-- Flutter SDK that satisfies `sdk: ^3.8.0` (`flutter doctor` should be clean for the platform you target)
+- Flutter SDK that satisfies `sdk: ^3.13.0` (`flutter doctor` should be clean for the platform you target)
 - A Firebase login with access to **`proplay-eac23`**
 - Android Studio / Xcode only if you run native Android or iOS
 - Google Maps keys are already wired for Android, iOS, and web (see architecture guide)

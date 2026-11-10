@@ -152,7 +152,7 @@ flutter build web
 npx -y firebase-tools@latest deploy --only hosting
 ```
 
-Version: `1.0.7+10` (`pubspec.yaml`). Dart SDK `^3.8.0`.
+Version: `1.0.7+10` (`pubspec.yaml`). Dart SDK `^3.13.0`.
 
 ---
 
