@@ -18,6 +18,8 @@ import 'package:proplay/bloc/auth/auth_state.dart';
 import 'package:proplay/bloc/user/user_bloc.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/credit/credit_bloc.dart';
+import 'package:proplay/screens/landing_screen.dart';
+import 'package:proplay/utils/auth_redirect.dart';
 import 'package:proplay/screens/login_screen.dart';
 import 'package:proplay/screens/home_screen.dart';
 import 'package:proplay/screens/registration_screen.dart';
@@ -197,6 +199,11 @@ class _MyAppState extends State<MyApp> {
                   builder: (context, state) => const LoginScreen(),
                 ),
                 GoRoute(
+                  path: '/welcome',
+                  name: 'welcome',
+                  builder: (context, state) => const LandingScreen(),
+                ),
+                GoRoute(
                   path: '/registration',
                   name: 'registration',
                   builder: (context, state) => const RegistrationScreen(),
@@ -221,21 +228,10 @@ class _MyAppState extends State<MyApp> {
                 }
 
                 final authState = context.read<AuthBloc>().state;
-                final loggedIn = authState is AuthAuthenticated;
-                final loggingIn = state.matchedLocation == '/login';
-                final registering = state.matchedLocation == '/registration';
-
-                // Allow access to login and registration when not logged in
-                if (!loggedIn && !loggingIn && !registering) {
-                  return '/login';
-                }
-
-                // Redirect to home if already logged in and trying to access auth screens
-                if (loggedIn && (loggingIn || registering)) {
-                  return '/';
-                }
-
-                return null;
+                return authRedirect(
+                  loggedIn: authState is AuthAuthenticated,
+                  location: state.matchedLocation,
+                );
               },
               refreshListenable: GoRouterRefreshStream(
                 context.read<AuthBloc>().stream,

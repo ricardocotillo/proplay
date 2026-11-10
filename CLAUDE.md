@@ -81,7 +81,7 @@ Full field lists: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#7-firestore-data-m
 
 ## Routing
 
-`go_router` in `lib/main.dart` is auth-gated. Unauthenticated users only see `/login` and `/registration`.
+`go_router` in `lib/main.dart` is auth-gated. Unauthenticated users only see `/welcome` (landing), `/login` and `/registration`.
 
 Primary routes: `/`, `/sessions`, `/create-group`, `/edit-profile`, `/purchase-credits`, `/tickets`, `/validate-ticket`, `/group/:id`, `/group/:id/edit`, `/group/:id/info`, `/payment/{success,pending,failure}`.
 
