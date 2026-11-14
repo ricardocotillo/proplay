@@ -1,11 +1,15 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:proplay/services/auth_service.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/models/user_model.dart';
+import 'package:proplay/utils/document.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/bloc/auth/auth_state.dart';
+
 import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
@@ -143,9 +147,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         lastName: event.lastName,
         profileImageUrl: null,
         createdAt: DateTime.now(),
+        documentType: event.documentType.name,
+        documentNumber: normalizeDocument(event.documentNumber),
       );
 
-      await _userService.createUser(user);
+      try {
+        await _userService.createUserWithDocument(user);
+      } catch (_) {
+        await _rollbackAuthUser();
+        rethrow;
+      }
 
       if (event.groupCode != null && event.groupCode!.isNotEmpty) {
         try {
@@ -154,8 +165,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           // Group not found, but registration is successful
           emit(
             AuthSuccessWithInfo(
-              message:
-                  'Usuário registrado com sucesso, mas o código do grupo não foi encontrado.',
+              message: 'Usuário registrado com sucesso, mas o código do grupo não foi encontrado.',
               firebaseUser: userCredential.user!,
               userModel: user,
             ),
@@ -187,6 +197,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       // If user doesn't exist, create a new user document
       if (userModel == null) {
+        final docType = event.documentType;
+        final docNumber = event.documentNumber;
+        if (docType == null || docNumber == null) {
+          // Login screen: no account without a document.
+          await _rollbackAuthUser();
+          emit(
+            AuthError(
+              'Primero regístrate con tu documento (DNI o carnet de extranjería).',
+            ),
+          );
+          emit(AuthUnauthenticated());
+          return;
+        }
+
         // Extract first and last name from Google display name
         final displayName = firebaseUser.displayName ?? '';
         final nameParts = displayName.split(' ');
@@ -202,9 +226,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           lastName: lastName,
           profileImageUrl: firebaseUser.photoURL,
           createdAt: DateTime.now(),
+          documentType: docType.name,
+          documentNumber: normalizeDocument(docNumber),
         );
 
-        await _userService.createUser(userModel);
+        try {
+          await _userService.createUserWithDocument(userModel);
+        } catch (_) {
+          await _rollbackAuthUser();
+          rethrow;
+        }
 
         // Join group if group code is provided
         if (event.groupCode != null && event.groupCode!.isNotEmpty) {
@@ -214,8 +245,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             // Group not found, but registration is successful
             emit(
               AuthSuccessWithInfo(
-                message:
-                    'Usuário registrado com sucesso, mas o código do grupo não foi encontrado.',
+                message: 'Usuário registrado com sucesso, mas o código do grupo não foi encontrado.',
                 firebaseUser: firebaseUser,
                 userModel: userModel,
               ),
@@ -229,6 +259,16 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } catch (e) {
       emit(AuthError(e.toString()));
       emit(AuthUnauthenticated());
+    }
+  }
+
+  /// Removes the Auth user created moments ago when its Firestore doc could not be written.
+  Future<void> _rollbackAuthUser() async {
+    try {
+      await _authService.deleteCurrentUser();
+    } catch (e) {
+      // Cannot recover here; surface it so an orphan Auth user is traceable.
+      debugPrint('AuthBloc: rollback of Auth user failed: $e');
     }
   }
 

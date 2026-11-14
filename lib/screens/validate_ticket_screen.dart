@@ -154,6 +154,16 @@ class ValidateTicketScreen extends StatelessWidget {
                       Text(ticket.userFullName),
                     ],
                   ),
+                  if (ticket.userDocumentLabel.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.badge, size: 16),
+                        const SizedBox(width: 4),
+                        Text(ticket.userDocumentLabel),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -276,6 +286,12 @@ class ValidateTicketScreen extends StatelessWidget {
               style: const TextStyle(fontSize: 16),
               textAlign: TextAlign.center,
             ),
+            if (ticket.userDocumentLabel.isNotEmpty)
+              Text(
+                ticket.userDocumentLabel,
+                style: const TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => Navigator.of(context).popUntil(

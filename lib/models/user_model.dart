@@ -77,6 +77,8 @@ class UserModel {
   final String credits;
   final bool superUser;
   final List<String> sports;
+  final String documentType; // 'dni' | 'ce' (DocumentType.name)
+  final String documentNumber;
 
   UserModel({
     required this.uid,
@@ -91,6 +93,8 @@ class UserModel {
     this.credits = '0.00',
     this.superUser = false,
     this.sports = const [],
+    required this.documentType,
+    required this.documentNumber,
   });
 
   bool get isMatchInfoComplete => gender != null && age != null;
@@ -118,6 +122,8 @@ class UserModel {
       'credits': credits,
       'superUser': superUser,
       'sports': sports,
+      'documentType': documentType,
+      'documentNumber': documentNumber,
     };
   }
 
@@ -159,6 +165,8 @@ class UserModel {
       credits: creditsString,
       superUser: map['superUser'] ?? false,
       sports: List<String>.from(map['sports'] ?? []),
+      documentType: map['documentType'] ?? '',
+      documentNumber: map['documentNumber'] ?? '',
     );
   }
 

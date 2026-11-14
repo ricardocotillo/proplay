@@ -8,7 +8,7 @@ Last reviewed against the codebase: 2026-08-14. App version in `pubspec.yaml`: *
 
 ## 1. Product snapshot
 
-ProPlay connects amateur athletes in Peru with group and public sports sessions.
+ProPlay connects athletes in Peru with group and public sports sessions.
 
 | Concept | Meaning |
 | --- | --- |
@@ -21,7 +21,9 @@ ProPlay connects amateur athletes in Peru with group and public sports sessions.
 
 Supported sports (canonical `value` strings — keep them identical everywhere):
 
-`fútbol`, `baloncesto`, `voleibol`, `tenis`, `natación`, `running`, `ciclismo`, `gimnasio`, `pádel`, `béisbol`
+`fútbol`, `baloncesto`, `voleibol`
+
+Single source: `kSports` in `lib/utils/sports.dart`. Every screen iterates it; never keep a local list.
 
 ---
 
@@ -224,7 +226,7 @@ Theme: primary `#BA1B1D`, light surfaces. Set in `MaterialApp.router`.
 
 ## 7. Firestore data model
 
-Firebase project: **`proplay-eac23`**. There are **no rules/index files in this repo**; production indexes and rules live in the Firebase console until they are checked in.
+Firebase project: **`proplay-eac23`**. Firestore rules are checked in as `firestore.rules` (`firebase.json` points to it); deploy them **before** hosting with `npx -y firebase-tools@latest deploy --only firestore:rules`. There is no index file: production indexes live in the Firebase console.
 
 ```
 users/{uid}
@@ -236,6 +238,7 @@ groups/{groupId}
 sessionTemplates/{templateId}
 liveSessions/{sessionId}         # players[] embedded on the document
 tickets/{sessionId}_{userId}
+documents/{type}_{number}        # uniqueness lock: { uid, createdAt }
 creditHistory/{id}
 yape/{id}                        # first doc wins — admin QR / phone / name
 ```
@@ -255,6 +258,8 @@ yape/{id}                        # first doc wins — admin QR / phone / name
 | `credits` | **string** | Always 2 decimals, e.g. `"15.00"` |
 | `superUser` | bool | Admin |
 | `sports` | string[] | Canonical sport values |
+| `documentType` | string | `dni` \| `ce` (`DocumentType.name`). Mandatory at registration; `''` on legacy docs |
+| `documentNumber` | string | Normalized (trim + uppercase). DNI: 8 digits. CE: 9–12 alphanumerics |
 
 `isMatchInfoComplete` is `gender != null && age != null`.
 
@@ -305,7 +310,13 @@ List queries deliberately drop `players` to keep payloads small. Detail views st
 
 Created **inside** the join transaction. Status: `valid` | `used`. Includes a denormalized snapshot of event + user so the ticket screen works if the live session later changes.
 
+Snapshot also holds `userDocumentType` / `userDocumentNumber`, so `ValidateTicketScreen` shows `DNI 12345678` to door staff without reading `users/`.
+
 Lookups: by `userId` (client-sorted by `eventDate`), or by `validationToken`.
+
+### `documents/{type}_{number}`
+
+Uniqueness lock, e.g. `dni_12345678`. Fields: `uid`, `createdAt`. Written in the same transaction as `users/{uid}` by `UserService.createUserWithDocument`; a second claim throws `DocumentAlreadyRegistered`. Rules (`firestore.rules`): `get` for signed-in users; `create` only in the same write as the owner's `users/{uid}` doc that declares exactly that document (`getAfter`), with `uid == auth.uid`; no update/delete/list. `users/{uid}` cannot change `documentType`/`documentNumber` after creation, and a ticket's document snapshot must equal the holder's profile.
 
 ### `creditHistory/{id}` — `CreditHistoryModel`
 
@@ -341,13 +352,16 @@ First document: `{ name, phone, qr }`. Shown on the purchase screen.
 LoginScreen / RegistrationScreen
   → AuthLoginRequested | AuthRegisterRequested | AuthGoogleSignInRequested
   → AuthService (Firebase Auth)
-  → UserService.createUser / getUser
+  → UserService.createUserWithDocument (claims documents/{key}) / getUser
   → optional GroupService.joinGroup(code)
   → AuthAuthenticated
   → GoRouter redirect to /
 ```
 
 - Google (web): `signInWithPopup`. Native: `signInWithProvider`.
+- DNI or carnet de extranjería is mandatory (email and Google). Registration screen validates it before the Google popup opens.
+- If claiming the document fails (duplicate, network), the just-created Auth user is deleted (`AuthService.deleteCurrentUser`) — no orphan accounts.
+- Google from the login screen with an unknown account: Auth user deleted, error "Primero regístrate…". No account exists without a document.
 - New Google users split `displayName` into first/last and copy `photoURL`.
 - Invalid invite code still creates the account and emits `AuthSuccessWithInfo`.
 - Password reset: `AuthPasswordResetRequested` → email → `AuthPasswordResetEmailSent` → back to unauthenticated.
@@ -542,7 +556,7 @@ Hosting: `public: build/web`, SPA rewrite `** → /index.html`. Public ticket li
 2. Service for all reads/writes.
 3. BLoC between UI and service.
 4. Document the collection in §7.
-5. Remember console indexes/rules — they are not in git yet.
+5. Remember console indexes (not in git). Rules: edit `firestore.rules` and deploy.
 
 ### New auth capability
 
@@ -580,7 +594,7 @@ Intended direction (from project guidelines):
 4. **Two membership models.** Subcollections are source of truth. Do not revive `streamUserGroups` without writing `groups.members[]`.
 5. **Duplicate sport lists** in `HomeScreen`, `CreateGroupScreen`, `GroupEditScreen`. Extract a constant before adding a sport.
 6. **Owner checks disagree** across session detail vs ticket validation.
-7. **No Cloud Functions / no checked-in rules.** Client writes can be abused if rules are loose. Moving join + credit approval server-side is the durable fix.
+7. **No Cloud Functions.** Client writes can be abused if rules are loose (known gaps in `firestore.rules`: any signed-in user can write `groups/*/members` and update `liveSessions`, and users can edit their own `credits`). Moving join + credit approval server-side is the durable fix.
 8. **`PaymentService` is a stub.** Do not hook a real card form to `CardDetails` (PCI). Use a gateway SDK / redirect.
 9. **Mixed navigation.** Deep links only work for GoRouter paths.
 10. **API keys in client files** (`AppConstants`, manifests, `web/index.html`) are expected for Maps but should be restricted by bundle id / HTTP referrer in Google Cloud.
@@ -610,7 +624,7 @@ Intended direction (from project guidelines):
 - Recurring sessions / waitlist (`docs/sessions.md`)
 - Refunds when leaving or deleting a session
 - Email verification
-- Firestore rules + indexes in the repo
+- Firestore indexes in the repo
 - Real test suite
 - Aligning all navigation on GoRouter
 - Extracting admin screens off raw Firestore
