@@ -183,8 +183,24 @@ service cloud.firestore {
       // Create: only group owners (usually from template creation)
       allow create: if signedIn() && isGroupOwner(request.resource.data.groupId);
 
-      // Update/delete: only group owners (your joinSession uses transaction update; see note below)
-      allow update, delete: if signedIn();
+      // Update: any signed-in user may still update (joinSession / leave / admin removal
+      // write players and playerCount from the client), BUT:
+      // - groupId can never change (otherwise a user could re-point a session to a group
+      //   they own and then pass the owner check below), and
+      // - isPrivate can only be changed by the owner of the session's group. isPrivate
+      //   drives the public projection (publicEvents, readable by guests), so a non-owner
+      //   must not be able to publish somebody else's private event.
+      // Compared with .get(..., null) so legacy docs without isPrivate keep working.
+      allow update: if signedIn()
+        && request.resource.data.groupId == resource.data.groupId
+        && (
+          request.resource.data.get('isPrivate', null) == resource.data.get('isPrivate', null)
+          || isGroupOwner(resource.data.groupId)
+        );
+
+      // Delete: still open to any signed-in user (known gap; moving join and session
+      // management server-side is the durable fix).
+      allow delete: if signedIn();
     }
 
     // -------------------------

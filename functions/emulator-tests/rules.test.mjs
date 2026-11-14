@@ -18,6 +18,11 @@ await env.withSecurityRulesDisabled(async (ctx) => {
   await setDoc(doc(d, 'liveSessions/s1'), {groupId: 'g1', isPrivate: false, costPerPlayer: 10, players: [{uid: 'alice', firstName: 'Ana'}]});
   await setDoc(doc(d, 'liveSessions/priv'), {groupId: 'g1', isPrivate: true, costPerPlayer: 10});
   await setDoc(doc(d, 'publicEvents/s1'), {title: 'Pichanga', playerCount: 1});
+  await setDoc(doc(d, 'liveSessions/legacy'), {groupId: 'g1', costPerPlayer: 10, playerCount: 0});
+  await setDoc(doc(d, 'liveSessions/priv2'), {groupId: 'g1', isPrivate: true, costPerPlayer: 10});
+  await setDoc(doc(d, 'groups/g1/members/admin1'), {role: 'admin'});
+  await setDoc(doc(d, 'groups/g2'), {name: 'G2'});
+  await setDoc(doc(d, 'groups/g2/members/mallory'), {role: 'owner'});
   await setDoc(doc(d, 'users/owner1'), {credits: '0.00'});
   await setDoc(doc(d, 'users/alice'), {credits: '5.00', documentType: 'dni', documentNumber: '12345678'});
   for (const u of ['bob','c1','c2','c3','c4','c5','c6','c7','c8','u9','u10','v1','v2','zed'])
@@ -88,9 +93,28 @@ await t('random user cannot validate a ticket', () => assertFails(updateDoc(doc(
 await t('owner cannot set status cancelled', () => assertFails(updateDoc(doc(owner, 'tickets/s1_v2'), {status: 'cancelled'})));
 await t('other user cannot read someone else ticket', () => assertFails(getDoc(doc(bob, 'tickets/s1_v2'))));
 
+
+// --- isPrivate / groupId hardening on liveSessions ---
+const mallory = env.authenticatedContext('mallory').firestore(); // owner of ANOTHER group (g2)
+const admin1 = env.authenticatedContext('admin1').firestore();   // admin (not owner) of g1
+await t('non-owner cannot make a private event public', () => assertFails(updateDoc(doc(bob, 'liveSessions/priv'), {isPrivate: false})));
+await t('non-owner cannot make a public event private', () => assertFails(updateDoc(doc(bob, 'liveSessions/s1'), {isPrivate: true})));
+await t('owner of ANOTHER group cannot flip isPrivate', () => assertFails(updateDoc(doc(mallory, 'liveSessions/priv'), {isPrivate: false})));
+await t('group admin (not owner) cannot flip isPrivate', () => assertFails(updateDoc(doc(admin1, 'liveSessions/priv'), {isPrivate: false})));
+await t('bypass step 1: non-owner cannot re-point groupId to a group they own', () => assertFails(updateDoc(doc(mallory, 'liveSessions/priv2'), {groupId: 'g2'})));
+await t('bypass in one write: re-point groupId AND flip isPrivate denied', () => assertFails(updateDoc(doc(mallory, 'liveSessions/priv2'), {groupId: 'g2', isPrivate: false})));
+await t('nobody can change groupId, not even the group owner', () => assertFails(updateDoc(doc(owner, 'liveSessions/priv2'), {groupId: 'g2'})));
+await t('group owner CAN flip isPrivate', () => assertSucceeds(updateDoc(doc(owner, 'liveSessions/priv2'), {isPrivate: false})));
+await t('join-style update (players + playerCount) on a private event still works for a non-owner', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/priv'), {players: [{uid: 'bob'}], playerCount: 1})));
+await t('join-style update on a public event still works', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/s1'), {players: [{uid: 'bob'}], playerCount: 1})));
+await t('legacy doc without isPrivate: join-style update still works', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/legacy'), {playerCount: 1})));
+await t('legacy doc without isPrivate: a non-owner cannot ADD isPrivate:false', () => assertFails(updateDoc(doc(bob, 'liveSessions/legacy'), {isPrivate: false})));
+await t('owner can still create a session for their group', () => assertSucceeds(setDoc(doc(owner, 'liveSessions/new1'), {groupId: 'g1', isPrivate: false, costPerPlayer: 5})));
+await t('non-owner cannot create a session for a group they do not own', () => assertFails(setDoc(doc(bob, 'liveSessions/new2'), {groupId: 'g1', isPrivate: false})));
+
 // --- accepted pre-existing holes (should still be open; documenting, NOT regressions) ---
 await t('[known hole] user can still edit own credits', () => assertSucceeds(updateDoc(doc(alice, 'users/alice'), {credits: '999.00'})));
-await t('[known hole] any signed-in user can update any liveSession', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/s1'), {playerCount: 0})));
+await t('[known hole] any signed-in user can still update players/playerCount/title of any liveSession', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/s1'), {playerCount: 0})));
 
 
 // --- identity-document rules from the other task must still hold in the merged file ---
