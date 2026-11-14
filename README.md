@@ -118,7 +118,7 @@ dart run flutter_launcher_icons
 
 ## Cloud Functions
 
-`functions/` is a TypeScript (Node 20, Firebase Functions v2) package in region `southamerica-east1`:
+`functions/` is a TypeScript (Node 22, Firebase Functions v2) package in region `southamerica-east1`:
 
 - `cancelParticipation` — callable; cancels the caller's spot and refunds in full when the event is 24 h or more away.
 - `mirrorPublicEvent` — Firestore trigger; keeps `publicEvents/{id}` (public, no `players`) in sync with public `liveSessions`.
