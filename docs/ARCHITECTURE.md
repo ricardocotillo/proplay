@@ -130,7 +130,7 @@ While `AuthBloc` is still `AuthInitial`, a spinner `MaterialApp` is shown (no ro
 | `/group/:id` | `group-detail` | `GroupDetailScreenLoader` |
 | `/group/:id/edit` | `group-edit` | `GroupEditScreenLoader` |
 | `/group/:id/info` | `group-info` | `GroupInfoScreenLoader` |
-| `/welcome` | `welcome` | `LandingScreen` (public landing, placeholder content) |
+| `/welcome` | `welcome` | `LandingScreen` (public landing page) |
 | `/login` | `login` | `LoginScreen` |
 | `/registration` | `registration` | `RegistrationScreen` |
 
