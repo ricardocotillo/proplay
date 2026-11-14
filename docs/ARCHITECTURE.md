@@ -103,8 +103,8 @@ Feature BLoCs (`SessionBloc`, `SessionDetailBloc`, `CreateSessionBloc`, `GroupDe
 
 Redirect rules:
 
-- Unauthenticated users may only visit `/login` and `/registration`.
-- Authenticated users hitting those two routes go to `/`.
+- Unauthenticated users may only visit `/welcome`, `/login` and `/registration`; anything else redirects to `/welcome`.
+- Authenticated users hitting those three routes go to `/`.
 - Custom scheme `proplay://success|pending|failure` remaps to `/payment/...` (Mercado Pago return path; not the live Yape flow).
 
 While `AuthBloc` is still `AuthInitial`, a spinner `MaterialApp` is shown (no router yet).
@@ -130,6 +130,7 @@ While `AuthBloc` is still `AuthInitial`, a spinner `MaterialApp` is shown (no ro
 | `/group/:id` | `group-detail` | `GroupDetailScreenLoader` |
 | `/group/:id/edit` | `group-edit` | `GroupEditScreenLoader` |
 | `/group/:id/info` | `group-info` | `GroupInfoScreenLoader` |
+| `/welcome` | `welcome` | `LandingScreen` (public landing, placeholder content) |
 | `/login` | `login` | `LoginScreen` |
 | `/registration` | `registration` | `RegistrationScreen` |
 
