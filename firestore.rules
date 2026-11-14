@@ -23,6 +23,12 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role == "owner";
     }
 
+    // Owner or admin of the group (role in the members subcollection).
+    function isGroupStaff(groupId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role in ["owner", "admin"];
+    }
+
     function isSuperUser() {
       return signedIn() &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.superUser == true;
@@ -183,24 +189,26 @@ service cloud.firestore {
       // Create: only group owners (usually from template creation)
       allow create: if signedIn() && isGroupOwner(request.resource.data.groupId);
 
-      // Update: any signed-in user may still update (joinSession / leave / admin removal
-      // write players and playerCount from the client), BUT:
-      // - groupId can never change (otherwise a user could re-point a session to a group
-      //   they own and then pass the owner check below), and
-      // - isPrivate can only be changed by the owner of the session's group. isPrivate
-      //   drives the public projection (publicEvents, readable by guests), so a non-owner
-      //   must not be able to publish somebody else's private event.
-      // Compared with .get(..., null) so legacy docs without isPrivate keep working.
+      // Update:
+      // - groupId is immutable (otherwise a user could re-point a session to a group
+      //   they own and then pass the owner check below).
+      // - The owner of the session's group may change anything else (isPrivate, title,
+      //   place, price...). Those fields feed the public projection (publicEvents, readable
+      //   by guests), so nobody else may touch them.
+      // - Any other signed-in user may only write players and playerCount: joinSession,
+      //   uploadReceipt and admin removal do exactly that from the client. This is a known
+      //   gap (players is still client-written, so a user can add or remove entries);
+      //   moving join server-side is the durable fix.
+      // diff().affectedKeys() lists only changed fields, so legacy docs without isPrivate work.
       allow update: if signedIn()
         && request.resource.data.groupId == resource.data.groupId
         && (
-          request.resource.data.get('isPrivate', null) == resource.data.get('isPrivate', null)
-          || isGroupOwner(resource.data.groupId)
+          isGroupOwner(resource.data.groupId)
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players', 'playerCount'])
         );
 
-      // Delete: still open to any signed-in user (known gap; moving join and session
-      // management server-side is the durable fix).
-      allow delete: if signedIn();
+      // Delete: owner or admin of the session's group (the Sessions UI lets both delete).
+      allow delete: if isGroupStaff(resource.data.groupId);
     }
 
     // -------------------------

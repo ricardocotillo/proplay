@@ -21,6 +21,12 @@ await env.withSecurityRulesDisabled(async (ctx) => {
   await setDoc(doc(d, 'liveSessions/legacy'), {groupId: 'g1', costPerPlayer: 10, playerCount: 0});
   await setDoc(doc(d, 'liveSessions/priv2'), {groupId: 'g1', isPrivate: true, costPerPlayer: 10});
   await setDoc(doc(d, 'groups/g1/members/admin1'), {role: 'admin'});
+  const rich = {groupId: 'g1', isPrivate: false, title: 'Pichanga', costPerPlayer: 10, maxPlayers: 10, playerCount: 0, players: [],
+    locationLat: -12.1, locationLng: -77.0, locationAddress: 'Av. X', district: 'Miraflores', format: '5v5', sport: 'fútbol', status: 'OPEN'};
+  for (const id of ['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10', 'f11'])
+    await setDoc(doc(d, 'liveSessions/' + id), rich);
+  for (const id of ['del1', 'del2', 'del3', 'del4', 'del5'])
+    await setDoc(doc(d, 'liveSessions/' + id), rich);
   await setDoc(doc(d, 'groups/g2'), {name: 'G2'});
   await setDoc(doc(d, 'groups/g2/members/mallory'), {role: 'owner'});
   await setDoc(doc(d, 'users/owner1'), {credits: '0.00'});
@@ -112,9 +118,35 @@ await t('legacy doc without isPrivate: a non-owner cannot ADD isPrivate:false', 
 await t('owner can still create a session for their group', () => assertSucceeds(setDoc(doc(owner, 'liveSessions/new1'), {groupId: 'g1', isPrivate: false, costPerPlayer: 5})));
 await t('non-owner cannot create a session for a group they do not own', () => assertFails(setDoc(doc(bob, 'liveSessions/new2'), {groupId: 'g1', isPrivate: false})));
 
+
+// --- non-owners cannot edit public-facing fields (title, place, price...) ---
+const fieldAttempts = {
+  title: {title: 'HACKED'}, locationLat: {locationLat: 0}, locationAddress: {locationAddress: 'elsewhere'},
+  costPerPlayer: {costPerPlayer: 0}, maxPlayers: {maxPlayers: 1}, district: {district: 'Callao'},
+  format: {format: 'x'}, status: {status: 'CLOSED'}, sport: {sport: 'tenis'}, newField: {injected: true},
+};
+for (const [name, patch] of Object.entries(fieldAttempts))
+  await t('non-owner cannot change ' + name, () => assertFails(updateDoc(doc(bob, 'liveSessions/f1'), patch)));
+await t('non-owner cannot smuggle a title change inside a join-style write', () => assertFails(updateDoc(doc(bob, 'liveSessions/f1'), {players: [{uid: 'bob'}], playerCount: 1, title: 'HACKED'})));
+await t('owner of another group cannot change the title', () => assertFails(updateDoc(doc(mallory, 'liveSessions/f1'), {title: 'HACKED'})));
+await t('group admin (not owner) cannot change the title', () => assertFails(updateDoc(doc(admin1, 'liveSessions/f1'), {title: 'HACKED'})));
+await t('group admin CAN remove a player (players + playerCount)', () => assertSucceeds(updateDoc(doc(admin1, 'liveSessions/f2'), {players: [], playerCount: 0})));
+await t('join: players + playerCount allowed for any signed-in user', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/f3'), {players: [{uid: 'bob', firstName: 'B'}], playerCount: 1})));
+await t('receipt upload: players only allowed', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/f4'), {players: [{uid: 'bob', receiptUrl: 'r', isConfirmed: true}]})));
+await t('owner CAN change title', () => assertSucceeds(updateDoc(doc(owner, 'liveSessions/f5'), {title: 'Nuevo titulo'})));
+await t('owner CAN change location and price', () => assertSucceeds(updateDoc(doc(owner, 'liveSessions/f6'), {locationLat: -12.2, locationAddress: 'Av. Y', costPerPlayer: 12})));
+await t('owner still cannot change groupId', () => assertFails(updateDoc(doc(owner, 'liveSessions/f7'), {groupId: 'g2'})));
+
+// --- delete: only owner/admin of the session's group ---
+await t('random signed-in user cannot delete a session', () => assertFails(deleteDoc(doc(bob, 'liveSessions/del1'))));
+await t('owner of ANOTHER group cannot delete a session', () => assertFails(deleteDoc(doc(mallory, 'liveSessions/del1'))));
+await t('guest cannot delete a session', () => assertFails(deleteDoc(doc(anon, 'liveSessions/del1'))));
+await t('group admin CAN delete a session', () => assertSucceeds(deleteDoc(doc(admin1, 'liveSessions/del2'))));
+await t('group owner CAN delete a session', () => assertSucceeds(deleteDoc(doc(owner, 'liveSessions/del3'))));
+
 // --- accepted pre-existing holes (should still be open; documenting, NOT regressions) ---
 await t('[known hole] user can still edit own credits', () => assertSucceeds(updateDoc(doc(alice, 'users/alice'), {credits: '999.00'})));
-await t('[known hole] any signed-in user can still update players/playerCount/title of any liveSession', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/s1'), {playerCount: 0})));
+await t('[known hole] any signed-in user can still write players/playerCount of any liveSession (join is client-side)', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/s1'), {playerCount: 0})));
 
 
 // --- identity-document rules from the other task must still hold in the merged file ---
@@ -145,6 +177,9 @@ await t('[COMPAT] ticket WITHOUT userDocument* (our current client) denied for a
   const t0 = ticket('bob'); delete t0.userDocumentType; delete t0.userDocumentNumber; delete t0.pricePaid;
   await assertFails(setDoc(doc(bob, 'tickets/s1_bob_nodoc'), t0));
 });
+
+await t('[known hole] a non-owner can still inflate playerCount (join is client-side)', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/f8'), {players: [], playerCount: 999})));
+await t('[known hole] a non-owner can still remove other players', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/f9'), {players: [], playerCount: 0})));
 
 await env.cleanup();
 const failed = results.filter((r) => !r).length;
