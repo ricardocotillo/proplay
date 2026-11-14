@@ -37,6 +37,8 @@ class TicketService {
       userFirstName: user.firstName,
       userLastName: user.lastName,
       userProfileImageUrl: user.profileImageUrl,
+      userDocumentType: user.documentType,
+      userDocumentNumber: user.documentNumber,
     );
   }
 

@@ -6,7 +6,7 @@ If anything here drifts, treat **docs/ARCHITECTURE.md** as source of truth for h
 
 ---
 
-ProPlay is a Flutter + Firebase app for organizing and discovering amateur sports sessions in Peru. Users join groups, match into nearby sessions, spend **pro coins**, and check in with QR tickets.
+ProPlay is a Flutter + Firebase app for organizing and discovering sports sessions in Peru. Users join groups, match into nearby sessions, spend **pro coins**, and check in with QR tickets.
 
 ---
 
@@ -55,7 +55,7 @@ Services in use: Auth (email/password + Google), Firestore, Storage, Hosting.
 
 **Do not hand-edit:** `lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`.
 
-There is no Cloud Functions package and no rules/index files in git. Client code currently performs sensitive writes (join + credit debit). Treat that as a known risk; do not loosen it further.
+There is no Cloud Functions package and no index file in git. Firestore rules live in `firestore.rules` (deploy with `npx -y firebase-tools@latest deploy --only firestore:rules`, **before** deploying hosting). Client code currently performs sensitive writes (join + credit debit). Treat that as a known risk; do not loosen it further.
 
 ### Collections that exist in code
 
@@ -67,13 +67,14 @@ groups/{groupId}
 sessionTemplates/{templateId}
 liveSessions/{sessionId}              # players[] embedded on the document
 tickets/{sessionId}_{userId}
+documents/{type}_{number}              # DNI/CE uniqueness lock { uid, createdAt }
 creditHistory/{id}
 yape/{firstDoc}                       # { name, phone, qr }
 ```
 
 Credits on the **user** are a **string** with 2 decimals (`"15.00"`). Ledger amounts are **doubles**. Always use `UserModel.formatCredits` / `creditsValue`.
 
-Sport values must stay canonical: `fútbol`, `baloncesto`, `voleibol`, `tenis`, `natación`, `running`, `ciclismo`, `gimnasio`, `pádel`, `béisbol`.
+Sport values must stay canonical: `fútbol`, `baloncesto`, `voleibol`.
 
 Full field lists: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#7-firestore-data-model).
 
@@ -161,7 +162,8 @@ Version: `1.0.7+10` (`pubspec.yaml`). Dart SDK `^3.13.0`.
 - Do not put Firebase calls in new widgets.
 - `analysis_options.yaml` includes `flutter_lints` but the dev dependency is commented out in `pubspec.yaml`; `flutter analyze` always reports `include_file_not_found`. Uncomment it to fix.
 - Do not store user credits as a raw `num` without going through `formatCredits`.
-- Do not add a sport in only one of the duplicated sport lists — extract a shared constant if you touch them.
+- Sports live only in `kSports` (`lib/utils/sports.dart`); never add a local sport list.
+- Identity document (DNI/CE) is mandatory and unique: always create users via `UserService.createUserWithDocument`, never `createUser`.
 - Do not treat `GroupService.streamUserGroups` as correct membership (it queries a `members` array that create/join do not write).
 - Do not implement card collection against `CardDetails` (PCI). Gateway SDK / redirect only.
 - Do not hand-roll another credit write outside a transaction if a race is possible.
@@ -172,6 +174,6 @@ Version: `1.0.7+10` (`pubspec.yaml`). Dart SDK `^3.13.0`.
 
 **Done:** auth (email + Google + reset), profiles, groups + roles, session create/join, matchmaking (sport/gender/age/distance), Yape credits + admin approval, tickets + QR validation, responsive shell, Firebase Hosting.
 
-**Not done / leftover:** automated payment gateway, recurring sessions, waitlist, refunds on leave/cancel, email verification, rules/indexes in repo, real tests, moving join/credits server-side, aligning remaining screens on GoRouter.
+**Not done / leftover:** automated payment gateway, recurring sessions, waitlist, refunds on leave/cancel, email verification, indexes in repo, real tests, moving join/credits server-side, aligning remaining screens on GoRouter.
 
 Pitfalls and full flows: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).

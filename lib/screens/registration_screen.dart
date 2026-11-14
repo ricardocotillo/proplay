@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/bloc/auth/auth_state.dart';
+import 'package:proplay/utils/document.dart';
 import 'package:proplay/widgets/responsive_layout.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -21,6 +22,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _groupCodeController = TextEditingController();
+  final _documentController = TextEditingController();
+  final _docFieldKey = GlobalKey<FormFieldState<String>>();
+  DocumentType _docType = DocumentType.dni;
 
   @override
   void dispose() {
@@ -30,6 +34,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _groupCodeController.dispose();
+    _documentController.dispose();
     super.dispose();
   }
 
@@ -44,17 +49,23 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         password: _passwordController.text,
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
+        documentType: _docType,
+        documentNumber: normalizeDocument(_documentController.text),
         groupCode: _groupCodeController.text.trim(),
       ),
     );
   }
 
   void _signInWithGoogle() {
+    // The document is mandatory before the Google popup opens.
+    if (!_docFieldKey.currentState!.validate()) return;
     context.read<AuthBloc>().add(
       AuthGoogleSignInRequested(
         groupCode: _groupCodeController.text.trim().isEmpty
             ? null
             : _groupCodeController.text.trim(),
+        documentType: _docType,
+        documentNumber: normalizeDocument(_documentController.text),
       ),
     );
   }
@@ -129,6 +140,43 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         }
                         return null;
                       },
+                    ),
+                    const SizedBox(height: 16),
+                    SegmentedButton<DocumentType>(
+                      segments: const [
+                        ButtonSegment(
+                          value: DocumentType.dni,
+                          label: Text('DNI'),
+                        ),
+                        ButtonSegment(
+                          value: DocumentType.ce,
+                          label: Text('Carnet de extranjería'),
+                        ),
+                      ],
+                      selected: {_docType},
+                      onSelectionChanged: isLoading
+                          ? null
+                          : (s) => setState(() {
+                              _docType = s.first;
+                              if (_documentController.text.isNotEmpty) {
+                                _docFieldKey.currentState?.validate();
+                              }
+                            }),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      key: _docFieldKey,
+                      controller: _documentController,
+                      decoration: const InputDecoration(
+                        labelText: 'Número de documento',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.badge),
+                      ),
+                      keyboardType: _docType == DocumentType.dni
+                          ? TextInputType.number
+                          : TextInputType.text,
+                      enabled: !isLoading,
+                      validator: (v) => validateDocument(_docType, v),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(

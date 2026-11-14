@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:proplay/utils/document.dart';
 
 abstract class AuthEvent extends Equatable {
   const AuthEvent();
@@ -34,6 +35,8 @@ class AuthRegisterRequested extends AuthEvent {
   final String password;
   final String firstName;
   final String lastName;
+  final DocumentType documentType;
+  final String documentNumber;
   final String? groupCode;
 
   const AuthRegisterRequested({
@@ -41,20 +44,38 @@ class AuthRegisterRequested extends AuthEvent {
     required this.password,
     required this.firstName,
     required this.lastName,
+    required this.documentType,
+    required this.documentNumber,
     this.groupCode,
   });
 
   @override
-  List<Object?> get props => [email, password, firstName, lastName, groupCode];
+  List<Object?> get props => [
+    email,
+    password,
+    firstName,
+    lastName,
+    documentType,
+    documentNumber,
+    groupCode,
+  ];
 }
 
 class AuthGoogleSignInRequested extends AuthEvent {
   final String? groupCode;
 
-  const AuthGoogleSignInRequested({this.groupCode});
+  /// Required for new accounts (registration screen). Null on the login screen.
+  final DocumentType? documentType;
+  final String? documentNumber;
+
+  const AuthGoogleSignInRequested({
+    this.groupCode,
+    this.documentType,
+    this.documentNumber,
+  });
 
   @override
-  List<Object?> get props => [groupCode];
+  List<Object?> get props => [groupCode, documentType, documentNumber];
 }
 
 class AuthLogoutRequested extends AuthEvent {}
