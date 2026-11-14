@@ -46,3 +46,7 @@ app.*.map.json
 .fvm/
 
 .firebase/
+# Firebase emulator logs
+firestore-debug.log
+ui-debug.log
+firebase-debug.log

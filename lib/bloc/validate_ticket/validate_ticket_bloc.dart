@@ -109,11 +109,7 @@ class ValidateTicketBloc
       );
     } catch (e) {
       emit(
-        ValidateTicketError(
-          e.toString(),
-          ticket: ticket,
-          isOwnerOrAdmin: true,
-        ),
+        ValidateTicketError(e.toString(), ticket: ticket, isOwnerOrAdmin: true),
       );
     }
   }

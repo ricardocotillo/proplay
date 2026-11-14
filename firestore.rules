@@ -1,0 +1,323 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    // Checks whether the authenticated user is a member of the group.
+    function isGroupMember(groupId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid));
+    }
+
+    // Checks whether the authenticated user is an owner of the group.
+    function isGroupOwner(groupId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role == "owner";
+    }
+
+    // Owner or admin of the group (role in the members subcollection).
+    function isGroupStaff(groupId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role in ["owner", "admin"];
+    }
+
+    function isSuperUser() {
+      return signedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.superUser == true;
+    }
+
+    // -------------------------
+    // IDENTITY DOCUMENT (DNI / carnet de extranjería)
+    // -------------------------
+    // Lock id = "{documentType}_{documentNumber}", e.g. "dni_12345678".
+    function documentKey(d) {
+      return d.documentType + '_' + d.documentNumber;
+    }
+
+    // A new users/{uid} doc must start with zero credits, no admin flag and a
+    // valid document whose uniqueness lock is created in the SAME write
+    // (transaction/batch) and belongs to the same uid.
+    function isValidNewUser(userId, d) {
+      return d.documentType in ['dni', 'ce']
+        && d.documentNumber is string
+        && (d.documentType == 'dni'
+            ? d.documentNumber.matches('^[0-9]{8}$')
+            : d.documentNumber.matches('^[A-Z0-9]{9,12}$'))
+        && d.superUser == false
+        && d.credits == '0.00'
+        && getAfter(/databases/$(database)/documents/documents/$(documentKey(d))).data.uid == userId;
+    }
+
+    // The document cannot change after registration (it is what door staff
+    // verify, and the lock in documents/ would go out of sync).
+    function documentUnchanged() {
+      return request.resource.data.get('documentType', '') == resource.data.get('documentType', '')
+        && request.resource.data.get('documentNumber', '') == resource.data.get('documentNumber', '');
+    }
+
+    match /documents/{key} {
+      // get is needed so the registration transaction can check for an existing lock.
+      allow get: if signedIn();
+      allow list: if false;
+
+      // Only claimable together with the user's own users/{uid} doc, and only
+      // for the exact document that user doc declares (prevents squatting
+      // other people's DNI without registering).
+      allow create: if signedIn()
+        && key.matches('^(dni_[0-9]{8}|ce_[A-Z0-9]{9,12})$')
+        && request.resource.data.keys().hasAll(['uid', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.documentType
+             + '_'
+             + getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.documentNumber == key;
+
+      allow update, delete: if false;
+    }
+
+    // -------------------------
+    // PUBLIC EVENTS (server-written projection of public liveSessions)
+    // -------------------------
+    match /publicEvents/{eventId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // -------------------------
+    // YAPE
+    // -------------------------
+    match /yape/{entryId} {
+      // Allows any authenticated user to read any document in this collection
+      allow read: if signedIn();
+
+      // Restrict writing (create/update/delete) to prevent unauthorized changes
+      // If you want users to be able to create entries, change 'false' to 'signedIn()'
+      allow write: if false;
+    }
+
+    // -------------------------
+    // USERS
+    // -------------------------
+    match /users/{userId} {
+      // Option A (public profiles for signed-in users):
+      allow read: if signedIn();
+
+      // Needed for sign-up ("create users/{uid}" on register / first Google sign-in).
+      allow create: if isOwner(userId) && isValidNewUser(userId, request.resource.data);
+
+      // Only user can edit own profile (never the document)
+      allow update: if (isOwner(userId) || isSuperUser()) && documentUnchanged();
+
+      allow delete: if isOwner(userId) || isSuperUser();
+
+      // user's groups subcollection
+      match /groups/{groupId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // -------------------------
+    // GROUPS
+    // -------------------------
+    match /groups/{groupId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+
+      allow update: if isGroupMember(groupId);
+      allow delete: if isGroupOwner(groupId);
+
+      match /members/{memberId} {
+        allow read: if signedIn();
+
+        allow create: if signedIn();
+
+        allow update: if signedIn();
+
+        allow delete: if signedIn();
+      }
+    }
+
+    // -------------------------
+    // CREDIT HISTORY
+    // -------------------------
+    match /creditHistory/{id} {
+      // User can see their own history
+      allow read: if signedIn() && (resource.data.userId == request.auth.uid || isSuperUser());
+
+      // User can create their own credit request
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+
+      // IMPORTANT: approving credits updates status.
+      // Without admin claims, you cannot safely allow this from client.
+      // For now, keep updates blocked:
+      allow update, delete: if signedIn() && isSuperUser();
+    }
+
+    // -------------------------
+    // SESSION TEMPLATES
+    // -------------------------
+    match /sessionTemplates/{templateId} {
+      // Safest default: only group members can read templates
+      allow read: if signedIn() && isGroupMember(resource.data.groupId);
+
+      // Create/update/delete only group owners
+      allow create: if signedIn() && isGroupOwner(request.resource.data.groupId);
+      allow update, delete: if signedIn() && isGroupOwner(resource.data.groupId);
+    }
+
+    // -------------------------
+    // LIVE SESSIONS
+    // -------------------------
+    match /liveSessions/{sessionId} {
+      // Read:
+      // - If public session: any signed-in user can read
+      // - If private session: only group members can read
+      allow read: if signedIn() && (
+        resource.data.isPrivate == false ||
+        isGroupMember(resource.data.groupId)
+      );
+
+      // Create: only group owners (usually from template creation)
+      allow create: if signedIn() && isGroupOwner(request.resource.data.groupId);
+
+      // Update:
+      // - groupId is immutable (otherwise a user could re-point a session to a group
+      //   they own and then pass the owner check below).
+      // - The owner of the session's group may change anything else (isPrivate, title,
+      //   place, price...). Those fields feed the public projection (publicEvents, readable
+      //   by guests), so nobody else may touch them.
+      // - Any other signed-in user may only write players and playerCount: joinSession,
+      //   uploadReceipt and admin removal do exactly that from the client. This is a known
+      //   gap (players is still client-written, so a user can add or remove entries);
+      //   moving join server-side is the durable fix.
+      // diff().affectedKeys() lists only changed fields, so legacy docs without isPrivate work.
+      allow update: if signedIn()
+        && request.resource.data.groupId == resource.data.groupId
+        && (
+          isGroupOwner(resource.data.groupId)
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players', 'playerCount'])
+        );
+
+      // Delete: owner or admin of the session's group (the Sessions UI lets both delete).
+      allow delete: if isGroupStaff(resource.data.groupId);
+    }
+
+    // -------------------------
+    // TICKETS
+    // -------------------------
+    //
+    // Ticket document model (top-level collection, doc id = "{sessionId}_{userId}"):
+    //   sessionId: string (required) - the liveSessions doc this ticket is for
+    //   groupId: string (required) - must match liveSessions/{sessionId}.groupId
+    //   userId: string (required) - the ticket holder; must equal creator's auth.uid
+    //   validationToken: string (required) - random token encoded in the QR URL
+    //   status: string (required) - "valid" | "used" (a cancelled ticket is deleted by the cancelParticipation function)
+    //   createdAt: timestamp (required)
+    //   usedAt: timestamp or null - set only when validated
+    //   validatedBy: string or null - uid of the validator, set only when validated
+    //   eventTitle, sport, userFirstName, userLastName: string (required) - denormalized snapshot
+    //   userDocumentType, userDocumentNumber: string - copy of users/{uid}.documentType/Number
+    //     (must match the holder's profile: door staff verify the buyer with it)
+    //   pricePaid: number (optional, legacy tickets lack it) - amount debited at join; <= the session's costPerPlayer
+    //   eventDate, eventEndDate: timestamp (required) - denormalized snapshot
+    //   eventLocationAddress, userProfileImageUrl: string or null - denormalized snapshot
+    //   eventLocationLat, eventLocationLng: number or null - denormalized snapshot
+    //
+    match /tickets/{ticketId} {
+      // Owner or admin of the ticket's group (checked against the real membership
+      // subcollection, same source of truth as isGroupOwner() above, but also
+      // recognizes the "admin" role that group owners can grant to members).
+      function isGroupOwnerOrAdmin(groupId) {
+        return signedIn()
+          && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid))
+          && get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role in ["owner", "admin"];
+      }
+
+      // Full-schema validator, used for both ticket creation and a ticket holder
+      // re-issuing their own ticket (e.g. after leaving and rejoining a session).
+      function isValidTicketData(data) {
+        return data.keys().hasOnly([
+            'sessionId', 'groupId', 'userId', 'validationToken', 'status',
+            'createdAt', 'usedAt', 'validatedBy', 'eventTitle', 'eventDate',
+            'eventEndDate', 'eventLocationAddress', 'eventLocationLat',
+            'eventLocationLng', 'sport',
+            'userFirstName', 'userLastName', 'userProfileImageUrl',
+            'userDocumentType', 'userDocumentNumber',
+            'pricePaid'
+          ])
+          && data.userId is string && data.userId == request.auth.uid
+          && data.sessionId is string && data.sessionId.size() > 0 && data.sessionId.size() < 200
+          && data.groupId is string && data.groupId.size() > 0 && data.groupId.size() < 200
+          && data.validationToken is string && data.validationToken.size() > 0 && data.validationToken.size() < 200
+          && (!('pricePaid' in data) || (
+                data.pricePaid is number && data.pricePaid >= 0
+                // pricePaid drives the server refund: it can never exceed the event price.
+                && data.pricePaid <= get(/databases/$(database)/documents/liveSessions/$(data.sessionId)).data.costPerPlayer
+              ))
+          && data.status == 'valid'
+          && data.createdAt is timestamp
+          && data.usedAt == null
+          && data.validatedBy == null
+          && data.eventTitle is string && data.eventTitle.size() < 300
+          && data.eventDate is timestamp
+          && data.eventEndDate is timestamp
+          && (data.eventLocationAddress == null ||
+              (data.eventLocationAddress is string && data.eventLocationAddress.size() < 500))
+          && (data.eventLocationLat == null || data.eventLocationLat is number)
+          && (data.eventLocationLng == null || data.eventLocationLng is number)
+          && data.sport is string && data.sport.size() < 100
+          && data.userFirstName is string && data.userFirstName.size() < 100
+          && data.userLastName is string && data.userLastName.size() < 100
+          && (data.userProfileImageUrl == null ||
+              (data.userProfileImageUrl is string && data.userProfileImageUrl.size() < 1000))
+          // The document snapshot must be the holder's real one (cannot be forged).
+          && data.get('userDocumentType', '') == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('documentType', '')
+          && data.get('userDocumentNumber', '') == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('documentNumber', '')
+          // The ticket must correspond to a real session, and its groupId must
+          // match that session's actual group (prevents fabricated tickets).
+          && exists(/databases/$(database)/documents/liveSessions/$(data.sessionId))
+          && get(/databases/$(database)/documents/liveSessions/$(data.sessionId)).data.groupId == data.groupId;
+      }
+
+      // A validator (group owner/admin/superUser) flipping a valid ticket to
+      // used, and changing nothing else.
+      function isValidValidationUpdate(data) {
+        return resource.data.status == 'valid'
+          && data.status == 'used'
+          && data.diff(resource.data).affectedKeys().hasOnly(['status', 'usedAt', 'validatedBy'])
+          && data.usedAt is timestamp
+          && data.validatedBy == request.auth.uid;
+      }
+
+      // Read: the ticket holder, an owner/admin of the ticket's group, or a superUser.
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isGroupOwnerOrAdmin(resource.data.groupId) ||
+        isSuperUser()
+      );
+
+      // Create: only the ticket holder themself, and only as a fresh, valid
+      // ticket tied to a real session/group.
+      allow create: if signedIn() && isValidTicketData(request.resource.data);
+
+      // Update: either the ticket holder re-issuing their own ticket (e.g. after
+      // leaving and rejoining the session), or a group owner/admin/superUser
+      // marking a valid ticket used.
+      allow update: if signedIn() && (
+        (resource.data.userId == request.auth.uid && resource.data.status == 'valid' && isValidTicketData(request.resource.data)) ||
+        ((isGroupOwnerOrAdmin(resource.data.groupId) || isSuperUser()) && isValidValidationUpdate(request.resource.data))
+      );
+
+      allow delete: if false;
+    }
+  }
+}

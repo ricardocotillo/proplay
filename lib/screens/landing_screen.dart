@@ -24,14 +24,6 @@ const _fakeEvents =
         seats: 4,
       ),
       (
-        sport: 'Pádel',
-        image: 'event-2-padel',
-        place: 'Club de pádel, San Isidro',
-        when: 'Mié 20:30',
-        price: 12,
-        seats: 2,
-      ),
-      (
         sport: 'Voleibol',
         image: 'event-3-voleibol',
         place: 'Losa deportiva, Surco',
@@ -46,22 +38,6 @@ const _fakeEvents =
         when: 'Vie 19:30',
         price: 7,
         seats: 3,
-      ),
-      (
-        sport: 'Running',
-        image: 'event-5-running',
-        place: 'Parque, Barranco',
-        when: 'Sáb 07:00',
-        price: 3,
-        seats: 15,
-      ),
-      (
-        sport: 'Tenis',
-        image: 'event-6-tenis',
-        place: 'Cancha de arcilla, Lince',
-        when: 'Dom 10:00',
-        price: 10,
-        seats: 2,
       ),
     ];
 
@@ -216,7 +192,7 @@ class _Hero extends StatelessWidget {
             children: [
               const SizedBox(height: 24),
               Text(
-                'DEPORTE AMATEUR EN PERÚ',
+                'DEPORTE EN PERÚ',
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: white,
                   letterSpacing: 1.2,
@@ -256,16 +232,21 @@ class _Hero extends StatelessWidget {
                     onPressed: () => context.go('/login'),
                     child: const Text('Ingresar'),
                   ),
+                  TextButton(
+                    style: TextButton.styleFrom(foregroundColor: white),
+                    onPressed: () => context.go('/events'),
+                    child: const Text('Ver eventos'),
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
-              const Wrap(
+              Wrap(
                 spacing: 32,
                 runSpacing: 12,
                 children: [
-                  _Stat('10', 'deportes'),
-                  _Stat('Yape', 'recarga tus pro coins'),
-                  _Stat('QR', 'check-in con ticket'),
+                  _Stat('${kSports.length}', 'deportes'),
+                  const _Stat('Yape', 'recarga tus pro coins'),
+                  const _Stat('QR', 'check-in con ticket'),
                 ],
               ),
               const SizedBox(height: 24),
@@ -311,7 +292,7 @@ class _SportsWrap extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cols = constraints.maxWidth >= 900 ? 5 : 2;
+        final cols = constraints.maxWidth >= 900 ? kSports.length : 2;
         const gap = 12.0;
         final size = (constraints.maxWidth - gap * (cols - 1)) / cols;
         return Wrap(
@@ -475,7 +456,7 @@ class _Footer extends StatelessWidget {
             children: [
               const _Brand(color: white),
               const SizedBox(height: 4),
-              const Text('Organiza y descubre deporte amateur en Perú.'),
+              const Text('Organiza y descubre deporte en Perú.'),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 8,

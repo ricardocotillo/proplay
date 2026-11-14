@@ -20,13 +20,11 @@ class ValidateTicketScreen extends StatelessWidget {
     final currentUser = context.currentUser!;
 
     return BlocProvider(
-      create: (context) =>
-          ValidateTicketBloc(
-              ticketService: TicketService(),
-              groupService: GroupService(userService: UserService()),
-              currentUser: currentUser,
-            )
-            ..add(LoadTicketByToken(token)),
+      create: (context) => ValidateTicketBloc(
+        ticketService: TicketService(),
+        groupService: GroupService(userService: UserService()),
+        currentUser: currentUser,
+      )..add(LoadTicketByToken(token)),
       child: Scaffold(
         appBar: AppBar(title: const Text('Validar Ticket')),
         body: BlocConsumer<ValidateTicketBloc, ValidateTicketState>(
@@ -90,8 +88,7 @@ class ValidateTicketScreen extends StatelessWidget {
             };
             final isOwnerOrAdmin = switch (state) {
               ValidateTicketLoaded(:final isOwnerOrAdmin) => isOwnerOrAdmin,
-              ValidateTicketProcessing(:final isOwnerOrAdmin) =>
-                isOwnerOrAdmin,
+              ValidateTicketProcessing(:final isOwnerOrAdmin) => isOwnerOrAdmin,
               ValidateTicketError(:final isOwnerOrAdmin) => isOwnerOrAdmin,
               _ => false,
             };
@@ -132,9 +129,8 @@ class ValidateTicketScreen extends StatelessWidget {
                 children: [
                   Text(
                     ticket.eventTitle,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: Theme.of(context).textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -154,6 +150,16 @@ class ValidateTicketScreen extends StatelessWidget {
                       Text(ticket.userFullName),
                     ],
                   ),
+                  if (ticket.userDocumentLabel.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.badge, size: 16),
+                        const SizedBox(width: 4),
+                        Text(ticket.userDocumentLabel),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -276,11 +282,16 @@ class ValidateTicketScreen extends StatelessWidget {
               style: const TextStyle(fontSize: 16),
               textAlign: TextAlign.center,
             ),
+            if (ticket.userDocumentLabel.isNotEmpty)
+              Text(
+                ticket.userDocumentLabel,
+                style: const TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () => Navigator.of(context).popUntil(
-                (route) => route.isFirst,
-              ),
+              onPressed: () =>
+                  Navigator.of(context).popUntil((route) => route.isFirst),
               child: const Text('Volver'),
             ),
           ],

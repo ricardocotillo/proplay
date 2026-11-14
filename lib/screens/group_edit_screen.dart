@@ -9,6 +9,7 @@ import 'package:proplay/bloc/group_edit/group_edit_bloc.dart';
 import 'package:proplay/models/group_model.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
+import 'package:proplay/utils/sports.dart';
 
 class GroupEditScreen extends StatefulWidget {
   final GroupModel group;
@@ -24,20 +25,6 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
   late TextEditingController _nameController;
   final ImagePicker _imagePicker = ImagePicker();
   File? _selectedImage;
-
-  // Available sports
-  final List<Map<String, String>> _availableSports = [
-    {'display': 'Fútbol', 'value': 'fútbol'},
-    {'display': 'Baloncesto', 'value': 'baloncesto'},
-    {'display': 'Voleibol', 'value': 'voleibol'},
-    {'display': 'Tenis', 'value': 'tenis'},
-    {'display': 'Natación', 'value': 'natación'},
-    {'display': 'Running', 'value': 'running'},
-    {'display': 'Ciclismo', 'value': 'ciclismo'},
-    {'display': 'Gimnasio', 'value': 'gimnasio'},
-    {'display': 'Pádel', 'value': 'pádel'},
-    {'display': 'Béisbol', 'value': 'béisbol'},
-  ];
 
   String? _selectedSport;
 
@@ -209,9 +196,9 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: _availableSports.map((sport) {
-                          final sportDisplay = sport['display']!;
-                          final sportValue = sport['value']!;
+                        children: kSports.map((sport) {
+                          final sportDisplay = sport.display;
+                          final sportValue = sport.value;
                           final isSelected = _selectedSport == sportValue;
                           return ChoiceChip(
                             label: Text(sportDisplay),

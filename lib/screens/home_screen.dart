@@ -6,10 +6,11 @@ import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/utils/sports.dart';
 import 'package:proplay/widgets/app_drawer.dart';
 import 'package:proplay/widgets/app_sidebar.dart';
 import 'package:proplay/widgets/wallet_indicator.dart';
-import 'package:proplay/widgets/upcoming_events.dart';
+import 'package:proplay/widgets/events_feed_view.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/group/group_event.dart';
 import 'package:proplay/bloc/group/group_state.dart';
@@ -238,28 +239,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
 
                       if (state is GroupLoaded) {
-                        final user = context.currentUser;
-                        final userSports = user?.sports ?? [];
-                        final groupIds = state.groups.map((g) => g.id).toList();
-                        return Column(
+                        return ListView(
                           children: [
-                            if (_userLat != null && _userLng != null)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                child: UpcomingEventsCarousel(
-                                  groupIds: groupIds,
-                                  userSports: userSports,
-                                  userLat: _userLat,
-                                  userLng: _userLng,
-                                ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
                               ),
-                            Expanded(
-                              child: state.groups.isEmpty
-                                  ? _buildEmptyState(context)
-                                  : _buildGroupsList(state.groups),
+                              child: EventsFeedView(
+                                userLat: _userLat,
+                                userLng: _userLng,
+                              ),
                             ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                              child: Text(
+                                'Mis grupos',
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            if (state.groups.isEmpty)
+                              _buildEmptyState(context)
+                            else
+                              _buildGroupsList(state.groups),
                           ],
                         );
                       }
@@ -404,31 +407,33 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        Expanded(
-          child: isTablet
-              ? GridView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    childAspectRatio: 2.5,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: groups.length,
-                  itemBuilder: (context, index) {
-                    final group = groups[index];
-                    return _buildGroupCard(group);
-                  },
-                )
-              : ListView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                  itemCount: groups.length,
-                  itemBuilder: (context, index) {
-                    final group = groups[index];
-                    return _buildGroupCard(group);
-                  },
+        isTablet
+            ? GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  childAspectRatio: 2.5,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
                 ),
-        ),
+                itemCount: groups.length,
+                itemBuilder: (context, index) {
+                  final group = groups[index];
+                  return _buildGroupCard(group);
+                },
+              )
+            : ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                itemCount: groups.length,
+                itemBuilder: (context, index) {
+                  final group = groups[index];
+                  return _buildGroupCard(group);
+                },
+              ),
       ],
     );
   }
@@ -624,27 +629,6 @@ class _ProfileSetupDialog extends StatefulWidget {
 }
 
 class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
-  final List<Map<String, dynamic>> _availableSports = [
-    {'display': 'Fútbol', 'value': 'fútbol', 'icon': Icons.sports_soccer},
-    {
-      'display': 'Baloncesto',
-      'value': 'baloncesto',
-      'icon': Icons.sports_basketball,
-    },
-    {
-      'display': 'Voleibol',
-      'value': 'voleibol',
-      'icon': Icons.sports_volleyball,
-    },
-    {'display': 'Tenis', 'value': 'tenis', 'icon': Icons.sports_tennis},
-    {'display': 'Natación', 'value': 'natación', 'icon': Icons.pool},
-    {'display': 'Running', 'value': 'running', 'icon': Icons.directions_run},
-    {'display': 'Ciclismo', 'value': 'ciclismo', 'icon': Icons.directions_bike},
-    {'display': 'Gimnasio', 'value': 'gimnasio', 'icon': Icons.fitness_center},
-    {'display': 'Pádel', 'value': 'pádel', 'icon': Icons.sports_tennis},
-    {'display': 'Béisbol', 'value': 'béisbol', 'icon': Icons.sports_baseball},
-  ];
-
   late final TextEditingController _ageController;
   late final Set<String> _selectedSports;
   String? _gender;
@@ -711,10 +695,10 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
                 'Selecciona tus deportes y (opcional) completa tus datos. Esto nos ayuda a encontrarte mejores partidos y eventos.',
               ),
               const SizedBox(height: 16),
-              ..._availableSports.map((sport) {
-                final sportDisplay = sport['display'] as String;
-                final sportValue = sport['value'] as String;
-                final sportIcon = sport['icon'] as IconData;
+              ...kSports.map((sport) {
+                final sportDisplay = sport.display;
+                final sportValue = sport.value;
+                final sportIcon = sport.icon;
                 final isSelected = _selectedSports.contains(sportValue);
 
                 return CheckboxListTile(

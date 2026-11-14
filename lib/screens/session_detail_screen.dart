@@ -16,6 +16,7 @@ import 'package:proplay/services/ticket_service.dart';
 import 'package:proplay/screens/session_map_screen.dart';
 import 'package:proplay/screens/ticket_detail_screen.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/utils/refund_policy.dart';
 
 class SessionDetailScreen extends StatefulWidget {
   final String sessionId;
@@ -73,6 +74,19 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
               }
             }
 
+            if (state is SessionDetailCancelled) {
+              context.read<AuthBloc>().add(const AuthRefreshUserRequested());
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    state.refunded
+                        ? 'Reembolso acreditado: S/ ${UserModel.formatCredits(state.amount)}'
+                        : 'Cupo cancelado, sin reembolso',
+                  ),
+                ),
+              );
+            }
+
             if (state is SessionDetailError) {
               _wasProcessingJoin = false;
               ScaffoldMessenger.of(context).showSnackBar(
@@ -115,6 +129,8 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                 ? state.session
                 : (state is SessionDetailProcessing)
                 ? state.session
+                : (state is SessionDetailCancelled)
+                ? state.session
                 : (state as SessionDetailError).session!;
 
             final isLoaded = state is SessionDetailLoaded;
@@ -132,9 +148,8 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).primaryColor.withValues(alpha: 0.1),
+                    color: Theme.of(context).primaryColor
+                        .withValues(alpha: 0.1),
                     border: Border(
                       bottom: BorderSide(
                         color: Theme.of(context).dividerColor,
@@ -197,9 +212,9 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                                   Flexible(
                                     child: Text(
                                       session.locationAddress!,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
@@ -236,9 +251,9 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary,
                                   ),
                                 ),
                               ),
@@ -391,6 +406,24 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                                 minimumSize: const Size(double.infinity, 0),
                               ),
                             ),
+                            // The server rejects cancelling once the event started.
+                            if (session.eventDate.isAfter(DateTime.now())) ...[
+                              const SizedBox(height: 8),
+                              OutlinedButton.icon(
+                                onPressed: isProcessing
+                                    ? null
+                                    : () => _showCancelDialog(context, session),
+                                icon: const Icon(Icons.cancel_outlined),
+                                label: const Text('Cancelar mi cupo'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.red,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  minimumSize: const Size(double.infinity, 0),
+                                ),
+                              ),
+                            ],
                           ],
                         )
                       : ElevatedButton.icon(
@@ -568,7 +601,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'IMPORTANTE: No podrás salir de esta pichanga después de unirte, los créditos NO serán devueltos.',
+                    'Puedes cancelar hasta 24 horas antes del evento y recibir reembolso completo.',
                     style: TextStyle(
                       color: Colors.orange,
                       fontWeight: FontWeight.w500,
@@ -593,6 +626,43 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
             },
             style: TextButton.styleFrom(foregroundColor: Colors.green),
             child: const Text('Unirse'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCancelDialog(BuildContext context, SessionModel session) {
+    final refundable = isRefundable(session.eventDate, DateTime.now());
+    final cost = UserModel.formatCredits(session.costPerPlayer);
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancelar mi cupo'),
+        content: Text(
+          refundable
+              ? 'Reembolso completo de S/ $cost.'
+              : 'Si cancelas ahora no recibirás reembolso.',
+          style: TextStyle(
+            fontWeight: FontWeight.w500,
+            color: refundable ? Colors.green : Colors.orange,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Volver'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.read<SessionDetailBloc>().add(
+                const CancelParticipation(),
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Cancelar mi cupo'),
           ),
         ],
       ),

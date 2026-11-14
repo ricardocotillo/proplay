@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -6,7 +7,9 @@ import 'package:proplay/utils/breakpoints.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
 import 'firebase_options.dart';
+
 import 'package:proplay/services/auth_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/services/group_service.dart';
@@ -28,7 +31,8 @@ import 'package:proplay/screens/edit_profile_screen.dart';
 import 'package:proplay/screens/group_detail_screen_loader.dart';
 import 'package:proplay/screens/group_edit_screen_loader.dart';
 import 'package:proplay/screens/group_info_screen_loader.dart';
-import 'package:proplay/screens/sessions_screen.dart';
+import 'package:proplay/screens/events_feed_screen.dart';
+import 'package:proplay/screens/public_event_screen.dart';
 import 'package:proplay/screens/purchase_credits_screen.dart';
 import 'package:proplay/screens/payment_success_screen.dart';
 import 'package:proplay/screens/payment_pending_screen.dart';
@@ -115,7 +119,7 @@ class _MyAppState extends State<MyApp> {
                     GoRoute(
                       path: 'sessions',
                       name: 'sessions',
-                      builder: (context, state) => const SessionsScreen(),
+                      builder: (context, state) => const EventsFeedScreen(),
                     ),
                     GoRoute(
                       path: 'create-group',
@@ -202,6 +206,20 @@ class _MyAppState extends State<MyApp> {
                   path: '/welcome',
                   name: 'welcome',
                   builder: (context, state) => const LandingScreen(),
+                ),
+                GoRoute(
+                  path: '/events',
+                  name: 'events',
+                  builder: (context, state) => const EventsFeedScreen(),
+                  routes: [
+                    GoRoute(
+                      path: ':id',
+                      name: 'event-detail',
+                      builder: (context, state) => PublicEventScreen(
+                        eventId: state.pathParameters['id']!,
+                      ),
+                    ),
+                  ],
                 ),
                 GoRoute(
                   path: '/registration',

@@ -1,0 +1,24 @@
+{
+  "name": "proplay-functions",
+  "private": true,
+  "main": "lib/index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --import tsx --test test/*.test.ts",
+    "test:emulator": "npm run build && cd .. && npx -y firebase-tools@latest emulators:exec --project demo-proplay --only firestore \"node functions/emulator-tests/cancel.test.mjs && node functions/emulator-tests/rules.test.mjs\" && npx -y firebase-tools@latest emulators:exec --project demo-proplay --only firestore \"node functions/emulator-tests/backfill.test.mjs\" && npx -y firebase-tools@latest emulators:exec --project demo-proplay --only firestore,functions \"node functions/emulator-tests/trigger.test.mjs\""
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "@types/node": "^20.0.0",
+    "firebase": "^11.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

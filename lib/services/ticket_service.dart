@@ -26,6 +26,7 @@ class TicketService {
       userId: user.uid,
       validationToken: validationToken ?? _uuid.v4(),
       status: 'valid',
+      pricePaid: session.costPerPlayer,
       createdAt: DateTime.now(),
       eventTitle: session.title,
       eventDate: session.eventDate,
@@ -37,6 +38,8 @@ class TicketService {
       userFirstName: user.firstName,
       userLastName: user.lastName,
       userProfileImageUrl: user.profileImageUrl,
+      userDocumentType: user.documentType,
+      userDocumentNumber: user.documentNumber,
     );
   }
 
