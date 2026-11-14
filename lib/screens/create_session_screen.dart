@@ -43,6 +43,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   double? _locationLat;
   double? _locationLng;
   String? _locationAddress;
+  String? _locationDistrict;
 
   // Step 2: Date/time data
   DateTime? _eventDate;
@@ -54,6 +55,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   final _titleController = TextEditingController();
   final _maxPlayersController = TextEditingController();
   final _costPerPlayerController = TextEditingController();
+  final _formatController = TextEditingController();
   String? _desiredGender;
   RangeValues _ageRange = const RangeValues(18, 80);
   bool _isPrivate = false;
@@ -98,6 +100,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
     _titleController.dispose();
     _maxPlayersController.dispose();
     _costPerPlayerController.dispose();
+    _formatController.dispose();
     super.dispose();
   }
 
@@ -232,6 +235,10 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
       locationLat: _locationLat,
       locationLng: _locationLng,
       locationAddress: _locationAddress,
+      district: _locationDistrict,
+      format: _formatController.text.trim().isEmpty
+          ? null
+          : _formatController.text.trim(),
     );
 
     context.read<CreateSessionBloc>().add(CreateSessionTemplate(template));
@@ -298,6 +305,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
           _locationLat = result.lat;
           _locationLng = result.lng;
           _locationAddress = result.address;
+          _locationDistrict = result.district;
         });
         _goToNextStep();
       },
@@ -518,6 +526,17 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
               validator: (value) => (value == null || value.isEmpty)
                   ? 'Por favor, selecciona una opción'
                   : null,
+            ),
+            const SizedBox(height: 16),
+
+            // Format (optional), e.g. "7 vs 7"
+            TextFormField(
+              controller: _formatController,
+              decoration: const InputDecoration(
+                labelText: 'Formato (opcional)',
+                hintText: 'Ej. 7 vs 7',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
 

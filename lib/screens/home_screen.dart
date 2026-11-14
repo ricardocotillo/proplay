@@ -10,7 +10,7 @@ import 'package:proplay/utils/sports.dart';
 import 'package:proplay/widgets/app_drawer.dart';
 import 'package:proplay/widgets/app_sidebar.dart';
 import 'package:proplay/widgets/wallet_indicator.dart';
-import 'package:proplay/widgets/upcoming_events.dart';
+import 'package:proplay/widgets/events_feed_view.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/group/group_event.dart';
 import 'package:proplay/bloc/group/group_state.dart';
@@ -239,28 +239,30 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
 
                       if (state is GroupLoaded) {
-                        final user = context.currentUser;
-                        final userSports = user?.sports ?? [];
-                        final groupIds = state.groups.map((g) => g.id).toList();
-                        return Column(
+                        return ListView(
                           children: [
-                            if (_userLat != null && _userLng != null)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                child: UpcomingEventsCarousel(
-                                  groupIds: groupIds,
-                                  userSports: userSports,
-                                  userLat: _userLat,
-                                  userLng: _userLng,
-                                ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
                               ),
-                            Expanded(
-                              child: state.groups.isEmpty
-                                  ? _buildEmptyState(context)
-                                  : _buildGroupsList(state.groups),
+                              child: EventsFeedView(
+                                userLat: _userLat,
+                                userLng: _userLng,
+                              ),
                             ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                              child: Text(
+                                'Mis grupos',
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            if (state.groups.isEmpty)
+                              _buildEmptyState(context)
+                            else
+                              _buildGroupsList(state.groups),
                           ],
                         );
                       }
@@ -405,31 +407,33 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        Expanded(
-          child: isTablet
-              ? GridView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    childAspectRatio: 2.5,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: groups.length,
-                  itemBuilder: (context, index) {
-                    final group = groups[index];
-                    return _buildGroupCard(group);
-                  },
-                )
-              : ListView.builder(
-                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                  itemCount: groups.length,
-                  itemBuilder: (context, index) {
-                    final group = groups[index];
-                    return _buildGroupCard(group);
-                  },
+        isTablet
+            ? GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
+                  childAspectRatio: 2.5,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
                 ),
-        ),
+                itemCount: groups.length,
+                itemBuilder: (context, index) {
+                  final group = groups[index];
+                  return _buildGroupCard(group);
+                },
+              )
+            : ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                itemCount: groups.length,
+                itemBuilder: (context, index) {
+                  final group = groups[index];
+                  return _buildGroupCard(group);
+                },
+              ),
       ],
     );
   }

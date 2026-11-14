@@ -34,15 +34,31 @@ class SessionDetailLoaded extends SessionDetailState {
   List<Object?> get props => [session, isCurrentUserJoined, isOwnerOrAdmin];
 }
 
-/// Processing join/leave action
+/// Processing join/cancel action
 class SessionDetailProcessing extends SessionDetailState {
   final SessionModel session;
-  final String action; // 'joining' or 'leaving'
+  final String action; // 'joining' or 'cancelling'
 
   const SessionDetailProcessing({required this.session, required this.action});
 
   @override
   List<Object?> get props => [session, action];
+}
+
+/// The user's spot was cancelled (the session stream then emits Loaded)
+class SessionDetailCancelled extends SessionDetailState {
+  final SessionModel session;
+  final bool refunded;
+  final double amount;
+
+  const SessionDetailCancelled({
+    required this.session,
+    required this.refunded,
+    required this.amount,
+  });
+
+  @override
+  List<Object?> get props => [session, refunded, amount];
 }
 
 /// Error occurred

@@ -23,6 +23,12 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role == "owner";
     }
 
+    // Owner or admin of the group (role in the members subcollection).
+    function isGroupStaff(groupId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role in ["owner", "admin"];
+    }
+
     function isSuperUser() {
       return signedIn() &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.superUser == true;
@@ -76,6 +82,14 @@ service cloud.firestore {
              + getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.documentNumber == key;
 
       allow update, delete: if false;
+    }
+
+    // -------------------------
+    // PUBLIC EVENTS (server-written projection of public liveSessions)
+    // -------------------------
+    match /publicEvents/{eventId} {
+      allow read: if true;
+      allow write: if false;
     }
 
     // -------------------------
@@ -175,8 +189,26 @@ service cloud.firestore {
       // Create: only group owners (usually from template creation)
       allow create: if signedIn() && isGroupOwner(request.resource.data.groupId);
 
-      // Update/delete: only group owners (your joinSession uses transaction update; see note below)
-      allow update, delete: if signedIn();
+      // Update:
+      // - groupId is immutable (otherwise a user could re-point a session to a group
+      //   they own and then pass the owner check below).
+      // - The owner of the session's group may change anything else (isPrivate, title,
+      //   place, price...). Those fields feed the public projection (publicEvents, readable
+      //   by guests), so nobody else may touch them.
+      // - Any other signed-in user may only write players and playerCount: joinSession,
+      //   uploadReceipt and admin removal do exactly that from the client. This is a known
+      //   gap (players is still client-written, so a user can add or remove entries);
+      //   moving join server-side is the durable fix.
+      // diff().affectedKeys() lists only changed fields, so legacy docs without isPrivate work.
+      allow update: if signedIn()
+        && request.resource.data.groupId == resource.data.groupId
+        && (
+          isGroupOwner(resource.data.groupId)
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players', 'playerCount'])
+        );
+
+      // Delete: owner or admin of the session's group (the Sessions UI lets both delete).
+      allow delete: if isGroupStaff(resource.data.groupId);
     }
 
     // -------------------------
@@ -188,13 +220,14 @@ service cloud.firestore {
     //   groupId: string (required) - must match liveSessions/{sessionId}.groupId
     //   userId: string (required) - the ticket holder; must equal creator's auth.uid
     //   validationToken: string (required) - random token encoded in the QR URL
-    //   status: string (required) - "valid" | "used"
+    //   status: string (required) - "valid" | "used" (a cancelled ticket is deleted by the cancelParticipation function)
     //   createdAt: timestamp (required)
     //   usedAt: timestamp or null - set only when validated
     //   validatedBy: string or null - uid of the validator, set only when validated
     //   eventTitle, sport, userFirstName, userLastName: string (required) - denormalized snapshot
     //   userDocumentType, userDocumentNumber: string - copy of users/{uid}.documentType/Number
     //     (must match the holder's profile: door staff verify the buyer with it)
+    //   pricePaid: number (optional, legacy tickets lack it) - amount debited at join; <= the session's costPerPlayer
     //   eventDate, eventEndDate: timestamp (required) - denormalized snapshot
     //   eventLocationAddress, userProfileImageUrl: string or null - denormalized snapshot
     //   eventLocationLat, eventLocationLng: number or null - denormalized snapshot
@@ -218,12 +251,18 @@ service cloud.firestore {
             'eventEndDate', 'eventLocationAddress', 'eventLocationLat',
             'eventLocationLng', 'sport',
             'userFirstName', 'userLastName', 'userProfileImageUrl',
-            'userDocumentType', 'userDocumentNumber'
+            'userDocumentType', 'userDocumentNumber',
+            'pricePaid'
           ])
           && data.userId is string && data.userId == request.auth.uid
           && data.sessionId is string && data.sessionId.size() > 0 && data.sessionId.size() < 200
           && data.groupId is string && data.groupId.size() > 0 && data.groupId.size() < 200
           && data.validationToken is string && data.validationToken.size() > 0 && data.validationToken.size() < 200
+          && (!('pricePaid' in data) || (
+                data.pricePaid is number && data.pricePaid >= 0
+                // pricePaid drives the server refund: it can never exceed the event price.
+                && data.pricePaid <= get(/databases/$(database)/documents/liveSessions/$(data.sessionId)).data.costPerPlayer
+              ))
           && data.status == 'valid'
           && data.createdAt is timestamp
           && data.usedAt == null
@@ -274,7 +313,7 @@ service cloud.firestore {
       // leaving and rejoining the session), or a group owner/admin/superUser
       // marking a valid ticket used.
       allow update: if signedIn() && (
-        (resource.data.userId == request.auth.uid && isValidTicketData(request.resource.data)) ||
+        (resource.data.userId == request.auth.uid && resource.data.status == 'valid' && isValidTicketData(request.resource.data)) ||
         ((isGroupOwnerOrAdmin(resource.data.groupId) || isSuperUser()) && isValidValidationUpdate(request.resource.data))
       );
 

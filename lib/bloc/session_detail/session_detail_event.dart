@@ -22,9 +22,9 @@ class JoinSession extends SessionDetailEvent {
   const JoinSession();
 }
 
-/// Leave the current session
-class LeaveSession extends SessionDetailEvent {
-  const LeaveSession();
+/// Cancel the current user's spot (server-side; refund if >= 24 h before)
+class CancelParticipation extends SessionDetailEvent {
+  const CancelParticipation();
 }
 
 /// Upload receipt for confirmation

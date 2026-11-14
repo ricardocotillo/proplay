@@ -116,6 +116,34 @@ App icon generation:
 dart run flutter_launcher_icons
 ```
 
+## Cloud Functions
+
+`functions/` is a TypeScript (Node 20, Firebase Functions v2) package in region `southamerica-east1`:
+
+- `cancelParticipation` — callable; cancels the caller's spot and refunds in full when the event is 24 h or more away.
+- `mirrorPublicEvent` — Firestore trigger; keeps `publicEvents/{id}` (public, no `players`) in sync with public `liveSessions`.
+
+```bash
+cd functions
+npm install
+npm run build
+npm test            # unit tests
+npm run test:emulator   # emulator tests (needs Java): rules, cancelParticipation, trigger, backfill
+```
+
+## Deploy order
+
+Run by hand from the repo root, **in this order** (rules are additive, so the old app keeps working until step 4):
+
+```bash
+npx -y firebase-tools@latest deploy --only firestore:rules,firestore:indexes   # 1. rules
+npx -y firebase-tools@latest deploy --only functions                           # 2. functions
+(cd functions && npx tsx scripts/backfillPublicEvents.ts)                      # 3. copy existing public events (gcloud auth application-default login first)
+flutter build web && npx -y firebase-tools@latest deploy --only hosting       # 4. web app
+```
+
+Mobile apps ship after step 4. Local testing: `npx -y firebase-tools@latest emulators:start --only firestore,functions,auth`.
+
 ## Repo layout
 
 ```

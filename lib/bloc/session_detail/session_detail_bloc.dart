@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:proplay/bloc/session_detail/session_detail_event.dart';
 import 'package:proplay/bloc/session_detail/session_detail_state.dart';
@@ -21,7 +22,7 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
   }) : super(const SessionDetailInitial()) {
     on<LoadSessionDetail>(_onLoadSessionDetail);
     on<JoinSession>(_onJoinSession);
-    on<LeaveSession>(_onLeaveSession);
+    on<CancelParticipation>(_onCancelParticipation);
     on<RemoveUserFromSession>(_onRemoveUserFromSession);
     on<_UpdateSessionState>(_onUpdateSessionState);
     on<_SessionError>(_onSessionError);
@@ -98,23 +99,32 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
     }
   }
 
-  Future<void> _onLeaveSession(
-    LeaveSession event,
+  Future<void> _onCancelParticipation(
+    CancelParticipation event,
     Emitter<SessionDetailState> emit,
   ) async {
     final currentState = state;
     if (currentState is! SessionDetailLoaded) return;
 
     emit(
-      SessionDetailProcessing(session: currentState.session, action: 'leaving'),
+      SessionDetailProcessing(
+        session: currentState.session,
+        action: 'cancelling',
+      ),
     );
 
     try {
-      await sessionService.leaveSession(
+      final result = await sessionService.cancelParticipation(
         currentState.session.id,
-        currentUser.uid,
       );
-      // The stream will automatically update the state with the new session data
+      emit(
+        SessionDetailCancelled(
+          session: currentState.session,
+          refunded: result.refunded,
+          amount: result.amount,
+        ),
+      );
+      // The session stream then emits Loaded with the updated players list.
     } catch (e) {
       emit(SessionDetailError(e.toString(), session: currentState.session));
     }

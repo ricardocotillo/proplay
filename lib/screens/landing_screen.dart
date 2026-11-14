@@ -232,6 +232,11 @@ class _Hero extends StatelessWidget {
                     onPressed: () => context.go('/login'),
                     child: const Text('Ingresar'),
                   ),
+                  TextButton(
+                    style: TextButton.styleFrom(foregroundColor: white),
+                    onPressed: () => context.go('/events'),
+                    child: const Text('Ver eventos'),
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
