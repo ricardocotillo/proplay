@@ -457,7 +457,7 @@ Guests tap a card → `/events/:id` (`PublicEventScreen`, "Regístrate para unir
 
 ### Cloud Functions (`functions/`)
 
-TypeScript, Node 20, v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation` (callable) and `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel` (callable logic), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
+TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation` (callable) and `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel` (callable logic), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
 
 ### Matchmaking
 
