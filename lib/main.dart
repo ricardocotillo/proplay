@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:proplay/utils/breakpoints.dart';

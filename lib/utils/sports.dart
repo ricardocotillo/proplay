@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Canonical sports. `value` is what Firestore stores; keep accents exact.
 const List<({String display, String value, IconData icon})> kSports = [

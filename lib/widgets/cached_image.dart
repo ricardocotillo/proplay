@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 /// Returns a [CachedNetworkImageProvider] on native platforms
