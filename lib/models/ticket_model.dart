@@ -27,6 +27,8 @@ class TicketModel {
   final String userFirstName;
   final String userLastName;
   final String? userProfileImageUrl;
+  final String userDocumentType; // 'dni' | 'ce'
+  final String userDocumentNumber;
 
   const TicketModel({
     required this.id,
@@ -49,11 +51,18 @@ class TicketModel {
     required this.userFirstName,
     required this.userLastName,
     this.userProfileImageUrl,
+    required this.userDocumentType,
+    required this.userDocumentNumber,
   });
 
   bool get isUsed => status == 'used';
 
   String get userFullName => '$userFirstName $userLastName';
+
+  /// e.g. `DNI 12345678`; empty when the holder has no document on file.
+  String get userDocumentLabel => userDocumentNumber.isEmpty
+      ? ''
+      : '${userDocumentType.toUpperCase()} $userDocumentNumber';
 
   TicketModel copyWith({
     String? status,
@@ -81,6 +90,8 @@ class TicketModel {
       userFirstName: userFirstName,
       userLastName: userLastName,
       userProfileImageUrl: userProfileImageUrl,
+      userDocumentType: userDocumentType,
+      userDocumentNumber: userDocumentNumber,
     );
   }
 
@@ -105,6 +116,8 @@ class TicketModel {
       'userFirstName': userFirstName,
       'userLastName': userLastName,
       'userProfileImageUrl': userProfileImageUrl,
+      'userDocumentType': userDocumentType,
+      'userDocumentNumber': userDocumentNumber,
     };
   }
 
@@ -131,6 +144,8 @@ class TicketModel {
       userFirstName: map['userFirstName'] as String? ?? '',
       userLastName: map['userLastName'] as String? ?? '',
       userProfileImageUrl: map['userProfileImageUrl'] as String?,
+      userDocumentType: map['userDocumentType'] as String? ?? '',
+      userDocumentNumber: map['userDocumentNumber'] as String? ?? '',
     );
   }
 }

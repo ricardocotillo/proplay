@@ -65,6 +65,9 @@ class AuthService {
     }
   }
 
+  /// Deletes the signed-in Auth user (rollback of a half-finished registration).
+  Future<void> deleteCurrentUser() async => await _auth.currentUser?.delete();
+
   // Sign out
   Future<void> signOut() async {
     await _auth.signOut();

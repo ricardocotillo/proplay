@@ -29,6 +29,56 @@ service cloud.firestore {
     }
 
     // -------------------------
+    // IDENTITY DOCUMENT (DNI / carnet de extranjería)
+    // -------------------------
+    // Lock id = "{documentType}_{documentNumber}", e.g. "dni_12345678".
+    function documentKey(d) {
+      return d.documentType + '_' + d.documentNumber;
+    }
+
+    // A new users/{uid} doc must start with zero credits, no admin flag and a
+    // valid document whose uniqueness lock is created in the SAME write
+    // (transaction/batch) and belongs to the same uid.
+    function isValidNewUser(userId, d) {
+      return d.documentType in ['dni', 'ce']
+        && d.documentNumber is string
+        && (d.documentType == 'dni'
+            ? d.documentNumber.matches('^[0-9]{8}$')
+            : d.documentNumber.matches('^[A-Z0-9]{9,12}$'))
+        && d.superUser == false
+        && d.credits == '0.00'
+        && getAfter(/databases/$(database)/documents/documents/$(documentKey(d))).data.uid == userId;
+    }
+
+    // The document cannot change after registration (it is what door staff
+    // verify, and the lock in documents/ would go out of sync).
+    function documentUnchanged() {
+      return request.resource.data.get('documentType', '') == resource.data.get('documentType', '')
+        && request.resource.data.get('documentNumber', '') == resource.data.get('documentNumber', '');
+    }
+
+    match /documents/{key} {
+      // get is needed so the registration transaction can check for an existing lock.
+      allow get: if signedIn();
+      allow list: if false;
+
+      // Only claimable together with the user's own users/{uid} doc, and only
+      // for the exact document that user doc declares (prevents squatting
+      // other people's DNI without registering).
+      allow create: if signedIn()
+        && key.matches('^(dni_[0-9]{8}|ce_[A-Z0-9]{9,12})$')
+        && request.resource.data.keys().hasAll(['uid', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.documentType
+             + '_'
+             + getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.documentNumber == key;
+
+      allow update, delete: if false;
+    }
+
+    // -------------------------
     // PUBLIC EVENTS (server-written projection of public liveSessions)
     // -------------------------
     match /publicEvents/{eventId} {
@@ -55,11 +105,13 @@ service cloud.firestore {
       // Option A (public profiles for signed-in users):
       allow read: if signedIn();
 
-      // Needed for Google sign-in “if missing, create users/{uid}”
-      allow create: if isOwner(userId);
+      // Needed for sign-up ("create users/{uid}" on register / first Google sign-in).
+      allow create: if isOwner(userId) && isValidNewUser(userId, request.resource.data);
 
-      // Only user can edit/delete own profile
-      allow update, delete: if isOwner(userId) || isSuperUser();
+      // Only user can edit own profile (never the document)
+      allow update: if (isOwner(userId) || isSuperUser()) && documentUnchanged();
+
+      allow delete: if isOwner(userId) || isSuperUser();
 
       // user's groups subcollection
       match /groups/{groupId} {
@@ -149,10 +201,12 @@ service cloud.firestore {
     //   usedAt: timestamp or null - set only when validated
     //   validatedBy: string or null - uid of the validator, set only when validated
     //   eventTitle, sport, userFirstName, userLastName: string (required) - denormalized snapshot
+    //   userDocumentType, userDocumentNumber: string - copy of users/{uid}.documentType/Number
+    //     (must match the holder's profile: door staff verify the buyer with it)
+    //   pricePaid: number (optional, legacy tickets lack it) - amount debited at join; <= the session's costPerPlayer
     //   eventDate, eventEndDate: timestamp (required) - denormalized snapshot
     //   eventLocationAddress, userProfileImageUrl: string or null - denormalized snapshot
     //   eventLocationLat, eventLocationLng: number or null - denormalized snapshot
-    //   pricePaid: number (optional, legacy tickets lack it) - amount debited at join; <= the session's costPerPlayer
     //
     match /tickets/{ticketId} {
       // Owner or admin of the ticket's group (checked against the real membership
@@ -173,17 +227,18 @@ service cloud.firestore {
             'eventEndDate', 'eventLocationAddress', 'eventLocationLat',
             'eventLocationLng', 'sport',
             'userFirstName', 'userLastName', 'userProfileImageUrl',
+            'userDocumentType', 'userDocumentNumber',
             'pricePaid'
           ])
+          && data.userId is string && data.userId == request.auth.uid
+          && data.sessionId is string && data.sessionId.size() > 0 && data.sessionId.size() < 200
+          && data.groupId is string && data.groupId.size() > 0 && data.groupId.size() < 200
+          && data.validationToken is string && data.validationToken.size() > 0 && data.validationToken.size() < 200
           && (!('pricePaid' in data) || (
                 data.pricePaid is number && data.pricePaid >= 0
                 // pricePaid drives the server refund: it can never exceed the event price.
                 && data.pricePaid <= get(/databases/$(database)/documents/liveSessions/$(data.sessionId)).data.costPerPlayer
               ))
-          && data.userId is string && data.userId == request.auth.uid
-          && data.sessionId is string && data.sessionId.size() > 0 && data.sessionId.size() < 200
-          && data.groupId is string && data.groupId.size() > 0 && data.groupId.size() < 200
-          && data.validationToken is string && data.validationToken.size() > 0 && data.validationToken.size() < 200
           && data.status == 'valid'
           && data.createdAt is timestamp
           && data.usedAt == null
@@ -200,6 +255,9 @@ service cloud.firestore {
           && data.userLastName is string && data.userLastName.size() < 100
           && (data.userProfileImageUrl == null ||
               (data.userProfileImageUrl is string && data.userProfileImageUrl.size() < 1000))
+          // The document snapshot must be the holder's real one (cannot be forged).
+          && data.get('userDocumentType', '') == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('documentType', '')
+          && data.get('userDocumentNumber', '') == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('documentNumber', '')
           // The ticket must correspond to a real session, and its groupId must
           // match that session's actual group (prevents fabricated tickets).
           && exists(/databases/$(database)/documents/liveSessions/$(data.sessionId))
@@ -227,8 +285,8 @@ service cloud.firestore {
       // ticket tied to a real session/group.
       allow create: if signedIn() && isValidTicketData(request.resource.data);
 
-      // Update: either the ticket holder re-issuing their own still-valid ticket
-      // (e.g. after an admin removal and rejoin; a used ticket cannot be revived), or a group owner/admin/superUser
+      // Update: either the ticket holder re-issuing their own ticket (e.g. after
+      // leaving and rejoining the session), or a group owner/admin/superUser
       // marking a valid ticket used.
       allow update: if signedIn() && (
         (resource.data.userId == request.auth.uid && resource.data.status == 'valid' && isValidTicketData(request.resource.data)) ||

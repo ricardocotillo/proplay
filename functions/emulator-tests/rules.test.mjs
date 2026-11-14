@@ -1,9 +1,9 @@
-// Emulator test: firestore.rules (guests/publicEvents, ticket create/revive/validate, known open holes).
+// Emulator test: firestore.rules (guests/publicEvents, ticket create/revive/validate, identity-document rules, known open holes).
 // Run: npm run test:emulator (from functions/).
 import fs from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {initializeTestEnvironment, assertSucceeds, assertFails} from '@firebase/rules-unit-testing';
-import {doc, getDoc, setDoc, updateDoc, deleteDoc, Timestamp} from 'firebase/firestore';
+import {doc, getDoc, setDoc, updateDoc, deleteDoc, Timestamp, writeBatch, serverTimestamp} from 'firebase/firestore';
 
 const RULES = fileURLToPath(new URL('../../firestore.rules', import.meta.url));
 const env = await initializeTestEnvironment({
@@ -19,7 +19,9 @@ await env.withSecurityRulesDisabled(async (ctx) => {
   await setDoc(doc(d, 'liveSessions/priv'), {groupId: 'g1', isPrivate: true, costPerPlayer: 10});
   await setDoc(doc(d, 'publicEvents/s1'), {title: 'Pichanga', playerCount: 1});
   await setDoc(doc(d, 'users/owner1'), {credits: '0.00'});
-  await setDoc(doc(d, 'users/alice'), {credits: '5.00'});
+  await setDoc(doc(d, 'users/alice'), {credits: '5.00', documentType: 'dni', documentNumber: '12345678'});
+  for (const u of ['bob','c1','c2','c3','c4','c5','c6','c7','c8','u9','u10','v1','v2','zed'])
+    await setDoc(doc(d, 'users/' + u), {credits: '0.00', documentType: 'dni', documentNumber: '12345678'});
 });
 
 const ts = () => Timestamp.now();
@@ -27,7 +29,7 @@ const ticket = (uid, extra = {}) => ({
   sessionId: 's1', groupId: 'g1', userId: uid, validationToken: 'tok-' + Math.random(), status: 'valid',
   createdAt: ts(), usedAt: null, validatedBy: null, eventTitle: 'P', eventDate: ts(), eventEndDate: ts(),
   eventLocationAddress: null, eventLocationLat: null, eventLocationLng: null, sport: 'fútbol',
-  userFirstName: 'A', userLastName: 'B', userProfileImageUrl: null, ...extra,
+  userFirstName: 'A', userLastName: 'B', userProfileImageUrl: null, userDocumentType: 'dni', userDocumentNumber: '12345678', ...extra,
 });
 
 const anon = env.unauthenticatedContext().firestore();
@@ -89,6 +91,36 @@ await t('other user cannot read someone else ticket', () => assertFails(getDoc(d
 // --- accepted pre-existing holes (should still be open; documenting, NOT regressions) ---
 await t('[known hole] user can still edit own credits', () => assertSucceeds(updateDoc(doc(alice, 'users/alice'), {credits: '999.00'})));
 await t('[known hole] any signed-in user can update any liveSession', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/s1'), {playerCount: 0})));
+
+
+// --- identity-document rules from the other task must still hold in the merged file ---
+const newUser = (n) => ({credits: '0.00', superUser: false, documentType: 'dni', documentNumber: n, firstName: 'N'});
+await t('[theirs] register: users doc + documents lock in one batch', async () => {
+  const db = as('reg1'); const b = writeBatch(db);
+  b.set(doc(db, 'users/reg1'), newUser('11111111'));
+  b.set(doc(db, 'documents/dni_11111111'), {uid: 'reg1', createdAt: serverTimestamp()});
+  await assertSucceeds(b.commit());
+});
+await t('[theirs] register without the documents lock denied', () => assertFails(setDoc(doc(as('reg2'), 'users/reg2'), newUser('22222222'))));
+await t('[theirs] register with credits 50.00 denied', async () => {
+  const db = as('reg3'); const b = writeBatch(db);
+  b.set(doc(db, 'users/reg3'), {...newUser('33333333'), credits: '50.00'});
+  b.set(doc(db, 'documents/dni_33333333'), {uid: 'reg3', createdAt: serverTimestamp()});
+  await assertFails(b.commit());
+});
+await t('[theirs] register as superUser denied', async () => {
+  const db = as('reg4'); const b = writeBatch(db);
+  b.set(doc(db, 'users/reg4'), {...newUser('44444444'), superUser: true});
+  b.set(doc(db, 'documents/dni_44444444'), {uid: 'reg4', createdAt: serverTimestamp()});
+  await assertFails(b.commit());
+});
+await t('[theirs] user cannot change own document number', () => assertFails(updateDoc(doc(alice, 'users/alice'), {documentNumber: '99999999'})));
+await t('[theirs] documents collection cannot be listed or deleted by clients', () => assertFails(deleteDoc(doc(alice, 'documents/dni_11111111'))));
+await t('[theirs] ticket with FORGED document snapshot denied', () => assertFails(setDoc(doc(as('v1'), 'tickets/s1_v1b'), ticket('v1', {userDocumentNumber: '00000000'}))));
+await t('[COMPAT] ticket WITHOUT userDocument* (our current client) denied for a user who has a document', async () => {
+  const t0 = ticket('bob'); delete t0.userDocumentType; delete t0.userDocumentNumber; delete t0.pricePaid;
+  await assertFails(setDoc(doc(bob, 'tickets/s1_bob_nodoc'), t0));
+});
 
 await env.cleanup();
 const failed = results.filter((r) => !r).length;

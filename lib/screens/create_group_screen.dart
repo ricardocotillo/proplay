@@ -5,6 +5,7 @@ import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/group/group_event.dart';
 import 'package:proplay/bloc/group/group_state.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/utils/sports.dart';
 import 'package:proplay/widgets/responsive_layout.dart';
 
 class CreateGroupScreen extends StatefulWidget {
@@ -17,20 +18,6 @@ class CreateGroupScreen extends StatefulWidget {
 class _CreateGroupScreenState extends State<CreateGroupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _groupNameController = TextEditingController();
-
-  // Available sports
-  final List<Map<String, String>> _availableSports = [
-    {'display': 'Fútbol', 'value': 'fútbol'},
-    {'display': 'Baloncesto', 'value': 'baloncesto'},
-    {'display': 'Voleibol', 'value': 'voleibol'},
-    {'display': 'Tenis', 'value': 'tenis'},
-    {'display': 'Natación', 'value': 'natación'},
-    {'display': 'Running', 'value': 'running'},
-    {'display': 'Ciclismo', 'value': 'ciclismo'},
-    {'display': 'Gimnasio', 'value': 'gimnasio'},
-    {'display': 'Pádel', 'value': 'pádel'},
-    {'display': 'Béisbol', 'value': 'béisbol'},
-  ];
 
   String? _selectedSport;
 
@@ -131,9 +118,9 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: _availableSports.map((sport) {
-                        final sportDisplay = sport['display']!;
-                        final sportValue = sport['value']!;
+                      children: kSports.map((sport) {
+                        final sportDisplay = sport.display;
+                        final sportValue = sport.value;
                         final isSelected = _selectedSport == sportValue;
                         return ChoiceChip(
                           label: Text(sportDisplay),

@@ -6,7 +6,7 @@ If anything here drifts, treat **docs/ARCHITECTURE.md** as source of truth for h
 
 ---
 
-ProPlay is a Flutter + Firebase app for organizing and discovering amateur sports sessions in Peru. Users join groups, match into nearby sessions, spend **pro coins**, and check in with QR tickets.
+ProPlay is a Flutter + Firebase app for organizing and discovering sports sessions in Peru. Users join groups, match into nearby sessions, spend **pro coins**, and check in with QR tickets.
 
 ---
 
@@ -55,7 +55,7 @@ Services in use: Auth (email/password + Google), Firestore, Storage, Hosting.
 
 **Do not hand-edit:** `lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`.
 
-Rules (`firestore.rules`), indexes and Cloud Functions (`functions/`, TypeScript, region `southamerica-east1`) are in git but **deployed by hand** (order: rules → functions → backfill → hosting; see README). `cancelParticipation` (callable) refunds server-side; `mirrorPublicEvent` (Firestore trigger) projects public `liveSessions` into `publicEvents`. Join and credit approval are still client writes. Treat that as a known risk; do not loosen it further.
+Rules (`firestore.rules`), indexes and Cloud Functions (`functions/`, TypeScript, region `southamerica-east1`) are in git but **deployed by hand** (order: rules → functions → backfill → hosting; see README). `cancelParticipation` (callable) refunds server-side; `mirrorPublicEvent` (Firestore trigger) projects public `liveSessions` into `publicEvents`. Join and credit approval are still client writes. Treat that as a known risk; do not loosen it further. Identity-document locks live in `documents/` (see docs/ARCHITECTURE.md); `firestore.rules` is the single source for rules, so never deploy it without first diffing against the console.
 
 ### Collections that exist in code
 
@@ -68,13 +68,14 @@ sessionTemplates/{templateId}
 liveSessions/{sessionId}              # players[] embedded on the document
 publicEvents/{sessionId}              # server-written projection of public events (no players), readable by anyone
 tickets/{sessionId}_{userId}
+documents/{type}_{number}              # DNI/CE uniqueness lock { uid, createdAt }
 creditHistory/{id}
 yape/{firstDoc}                       # { name, phone, qr }
 ```
 
 Credits on the **user** are a **string** with 2 decimals (`"15.00"`). Ledger amounts are **doubles**. Always use `UserModel.formatCredits` / `creditsValue`.
 
-Sport values must stay canonical: `fútbol`, `baloncesto`, `voleibol`, `tenis`, `natación`, `running`, `ciclismo`, `gimnasio`, `pádel`, `béisbol`.
+Sport values must stay canonical: `fútbol`, `baloncesto`, `voleibol`.
 
 Full field lists: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#7-firestore-data-model).
 
@@ -84,7 +85,7 @@ Full field lists: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#7-firestore-data-m
 
 `go_router` in `lib/main.dart` is auth-gated. Unauthenticated users only see `/welcome` (landing), `/login`, `/registration` and the public feed `/events` + `/events/:id` (read-only, `publicEvents` only).
 
-Primary routes: `/`, `/events`, `/events/:id`, `/sessions` (same feed), `/create-group`, `/edit-profile`, `/purchase-credits`, `/tickets`, `/validate-ticket`, `/group/:id`, `/group/:id/edit`, `/group/:id/info`, `/payment/{success,pending,failure}`.
+Primary routes: `/welcome`, `/`, `/events`, `/events/:id`, `/sessions` (same feed), `/create-group`, `/edit-profile`, `/purchase-credits`, `/tickets`, `/validate-ticket`, `/group/:id`, `/group/:id/edit`, `/group/:id/info`, `/payment/{success,pending,failure}`.
 
 These screens are still `Navigator.push` only (no deep link): session create/detail/map, ticket detail, credit history, credit approval.
 
@@ -165,7 +166,8 @@ Version: `1.0.7+10` (`pubspec.yaml`). Dart SDK `^3.13.0`.
 - Do not put Firebase calls in new widgets.
 - `analysis_options.yaml` includes `flutter_lints` but the dev dependency is commented out in `pubspec.yaml`; `flutter analyze` always reports `include_file_not_found`. Uncomment it to fix.
 - Do not store user credits as a raw `num` without going through `formatCredits`.
-- Do not add a sport in only one of the duplicated sport lists — extract a shared constant if you touch them.
+- Sports live only in `kSports` (`lib/utils/sports.dart`); never add a local sport list.
+- Identity document (DNI/CE) is mandatory and unique: always create users via `UserService.createUserWithDocument`, never `createUser`.
 - Do not treat `GroupService.streamUserGroups` as correct membership (it queries a `members` array that create/join do not write).
 - Do not implement card collection against `CardDetails` (PCI). Gateway SDK / redirect only.
 - Do not hand-roll another credit write outside a transaction if a race is possible.

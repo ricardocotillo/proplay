@@ -8,7 +8,7 @@ Last reviewed against the codebase: 2026-11-13. App version in `pubspec.yaml`: *
 
 ## 1. Product snapshot
 
-ProPlay connects amateur athletes in Peru with group and public sports sessions.
+ProPlay connects athletes in Peru with group and public sports sessions.
 
 | Concept | Meaning |
 | --- | --- |
@@ -21,7 +21,9 @@ ProPlay connects amateur athletes in Peru with group and public sports sessions.
 
 Supported sports (canonical `value` strings — keep them identical everywhere):
 
-`fútbol`, `baloncesto`, `voleibol`, `tenis`, `natación`, `running`, `ciclismo`, `gimnasio`, `pádel`, `béisbol`
+`fútbol`, `baloncesto`, `voleibol`
+
+Single source: `kSports` in `lib/utils/sports.dart`. Every screen iterates it; never keep a local list.
 
 ---
 
@@ -132,7 +134,7 @@ While `AuthBloc` is still `AuthInitial`, a spinner `MaterialApp` is shown (no ro
 | `/group/:id` | `group-detail` | `GroupDetailScreenLoader` |
 | `/group/:id/edit` | `group-edit` | `GroupEditScreenLoader` |
 | `/group/:id/info` | `group-info` | `GroupInfoScreenLoader` |
-| `/welcome` | `welcome` | `LandingScreen` (public landing, placeholder content) |
+| `/welcome` | `welcome` | `LandingScreen` (public landing page) |
 | `/login` | `login` | `LoginScreen` |
 | `/registration` | `registration` | `RegistrationScreen` |
 
@@ -226,7 +228,7 @@ Theme: primary `#BA1B1D`, light surfaces. Set in `MaterialApp.router`.
 
 ## 7. Firestore data model
 
-Firebase project: **`proplay-eac23`**. There are **no rules/index files in this repo**; production indexes and rules live in the Firebase console until they are checked in.
+Firebase project: **`proplay-eac23`**. Firestore rules are checked in as `firestore.rules` (`firebase.json` points to it); deploy them **before** hosting with `npx -y firebase-tools@latest deploy --only firestore:rules`. There is no index file: production indexes live in the Firebase console.
 
 ```
 users/{uid}
@@ -238,6 +240,7 @@ groups/{groupId}
 sessionTemplates/{templateId}
 liveSessions/{sessionId}         # players[] embedded on the document
 tickets/{sessionId}_{userId}
+documents/{type}_{number}        # uniqueness lock: { uid, createdAt }
 creditHistory/{id}
 yape/{id}                        # first doc wins — admin QR / phone / name
 ```
@@ -257,6 +260,8 @@ yape/{id}                        # first doc wins — admin QR / phone / name
 | `credits` | **string** | Always 2 decimals, e.g. `"15.00"` |
 | `superUser` | bool | Admin |
 | `sports` | string[] | Canonical sport values |
+| `documentType` | string | `dni` \| `ce` (`DocumentType.name`). Mandatory at registration; `''` on legacy docs |
+| `documentNumber` | string | Normalized (trim + uppercase). DNI: 8 digits. CE: 9–12 alphanumerics |
 
 `isMatchInfoComplete` is `gender != null && age != null`.
 
@@ -311,7 +316,13 @@ Created **inside** the join transaction. Status: `valid` | `used`. A cancelled t
 
 Extra fields: `pricePaid` (number, written by the client at join; optional on legacy tickets), which the rule caps at the session's `costPerPlayer` and which the server caps again at refund time. Only the holder of a still-`valid` ticket can re-issue it (rule); a used ticket cannot be revived. Rejoining after a cancel is a plain create. Keeping `cancelled` tickets for history is a planned follow-up (own plan).
 
+Snapshot also holds `userDocumentType` / `userDocumentNumber`, so `ValidateTicketScreen` shows `DNI 12345678` to door staff without reading `users/`.
+
 Lookups: by `userId` (client-sorted by `eventDate`), or by `validationToken`.
+
+### `documents/{type}_{number}`
+
+Uniqueness lock, e.g. `dni_12345678`. Fields: `uid`, `createdAt`. Written in the same transaction as `users/{uid}` by `UserService.createUserWithDocument`; a second claim throws `DocumentAlreadyRegistered`. Rules (`firestore.rules`): `get` for signed-in users; `create` only in the same write as the owner's `users/{uid}` doc that declares exactly that document (`getAfter`), with `uid == auth.uid`; no update/delete/list. `users/{uid}` cannot change `documentType`/`documentNumber` after creation, and a ticket's document snapshot must equal the holder's profile.
 
 ### `publicEvents/{sessionId}` — projection
 
@@ -351,13 +362,16 @@ First document: `{ name, phone, qr }`. Shown on the purchase screen.
 LoginScreen / RegistrationScreen
   → AuthLoginRequested | AuthRegisterRequested | AuthGoogleSignInRequested
   → AuthService (Firebase Auth)
-  → UserService.createUser / getUser
+  → UserService.createUserWithDocument (claims documents/{key}) / getUser
   → optional GroupService.joinGroup(code)
   → AuthAuthenticated
   → GoRouter redirect to /
 ```
 
 - Google (web): `signInWithPopup`. Native: `signInWithProvider`.
+- DNI or carnet de extranjería is mandatory (email and Google). Registration screen validates it before the Google popup opens.
+- If claiming the document fails (duplicate, network), the just-created Auth user is deleted (`AuthService.deleteCurrentUser`) — no orphan accounts.
+- Google from the login screen with an unknown account: Auth user deleted, error "Primero regístrate…". No account exists without a document.
 - New Google users split `displayName` into first/last and copy `photoURL`.
 - Invalid invite code still creates the account and emits `AuthSuccessWithInfo`.
 - Password reset: `AuthPasswordResetRequested` → email → `AuthPasswordResetEmailSent` → back to unauthenticated.
@@ -585,7 +599,7 @@ Hosting: `public: build/web`, SPA rewrite `** → /index.html`. Public ticket li
 2. Service for all reads/writes.
 3. BLoC between UI and service.
 4. Document the collection in §7.
-5. Remember console indexes/rules — they are not in git yet.
+5. Remember console indexes (not in git). Rules: edit `firestore.rules` and deploy.
 
 ### New auth capability
 
