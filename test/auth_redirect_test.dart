@@ -19,6 +19,13 @@ void main() {
     }
   });
 
+  test('events feed is open to guests and signed-in users', () {
+    for (final r in ['/events', '/events/abc']) {
+      expect(authRedirect(loggedIn: false, location: r), isNull);
+      expect(authRedirect(loggedIn: true, location: r), isNull);
+    }
+  });
+
   test('signed-in user on protected route stays', () {
     expect(authRedirect(loggedIn: true, location: '/tickets'), isNull);
   });

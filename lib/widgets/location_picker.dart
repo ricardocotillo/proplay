@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:map_location_picker/map_location_picker.dart';
 
 import 'package:proplay/utils/constants.dart';
+import 'package:proplay/utils/district_utils.dart';
 
 /// Data class for location selection result
 class LocationResult {
@@ -11,7 +11,15 @@ class LocationResult {
   final double lng;
   final String? address;
 
-  const LocationResult({required this.lat, required this.lng, this.address});
+  /// District (e.g. "Miraflores"), when the geocoder provides one.
+  final String? district;
+
+  const LocationResult({
+    required this.lat,
+    required this.lng,
+    this.address,
+    this.district,
+  });
 }
 
 /// A reusable location picker widget that uses the user's current location
@@ -111,6 +119,13 @@ class _LocationPickerState extends State<LocationPicker> {
                     lat: result.geometry!.location.lat,
                     lng: result.geometry!.location.lng,
                     address: result.formattedAddress,
+                    district: districtFromComponents([
+                      for (final c in result.addressComponents ?? [])
+                        (
+                          name: c.longName ?? '',
+                          types: List<String>.from(c.types),
+                        ),
+                    ]),
                   ),
                 );
               }

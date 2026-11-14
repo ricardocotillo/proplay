@@ -21,6 +21,8 @@ class SessionTemplateModel extends Equatable {
   final double? locationLat;
   final double? locationLng;
   final String? locationAddress;
+  final String? district;
+  final String? format;
 
   const SessionTemplateModel({
     this.id,
@@ -41,6 +43,8 @@ class SessionTemplateModel extends Equatable {
     this.locationLat,
     this.locationLng,
     this.locationAddress,
+    this.district,
+    this.format,
   });
 
   @override
@@ -63,6 +67,8 @@ class SessionTemplateModel extends Equatable {
     locationLat,
     locationLng,
     locationAddress,
+    district,
+    format,
   ];
 
   SessionTemplateModel copyWith({
@@ -84,6 +90,8 @@ class SessionTemplateModel extends Equatable {
     double? locationLat,
     double? locationLng,
     String? locationAddress,
+    String? district,
+    String? format,
   }) {
     return SessionTemplateModel(
       id: id ?? this.id,
@@ -104,6 +112,8 @@ class SessionTemplateModel extends Equatable {
       locationLat: locationLat ?? this.locationLat,
       locationLng: locationLng ?? this.locationLng,
       locationAddress: locationAddress ?? this.locationAddress,
+      district: district ?? this.district,
+      format: format ?? this.format,
     );
   }
 
@@ -126,6 +136,8 @@ class SessionTemplateModel extends Equatable {
       'locationLat': locationLat,
       'locationLng': locationLng,
       'locationAddress': locationAddress,
+      if (district != null) 'district': district,
+      if (format != null) 'format': format,
       // GeoFirestore fields for efficient location queries
       if (locationLat != null && locationLng != null) ...{
         'g': GeohashUtils.encode(locationLat!, locationLng!),
@@ -154,6 +166,8 @@ class SessionTemplateModel extends Equatable {
       locationLat: (map['locationLat'] as num?)?.toDouble(),
       locationLng: (map['locationLng'] as num?)?.toDouble(),
       locationAddress: map['locationAddress'] as String?,
+      district: map['district'] as String?,
+      format: map['format'] as String?,
     );
   }
 }

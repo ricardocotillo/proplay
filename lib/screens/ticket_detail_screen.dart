@@ -37,9 +37,8 @@ class TicketDetailScreen extends StatelessWidget {
               children: [
                 Text(
                   ticket.eventTitle,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
@@ -87,7 +86,9 @@ class TicketDetailScreen extends StatelessWidget {
                             ticket.eventLocationAddress!,
                             style: ticket.eventLocationLat != null
                                 ? TextStyle(
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary,
                                     decoration: TextDecoration.underline,
                                   )
                                 : null,

@@ -11,6 +11,9 @@ class TicketModel {
   final DateTime? usedAt;
   final String? validatedBy;
 
+  /// Amount debited at join time (S/). Optional: legacy tickets lack it.
+  final double? pricePaid;
+
   // Denormalized event snapshot
   final String eventTitle;
   final DateTime eventDate;
@@ -35,6 +38,7 @@ class TicketModel {
     required this.createdAt,
     this.usedAt,
     this.validatedBy,
+    this.pricePaid,
     required this.eventTitle,
     required this.eventDate,
     required this.eventEndDate,
@@ -66,6 +70,7 @@ class TicketModel {
       createdAt: createdAt,
       usedAt: usedAt ?? this.usedAt,
       validatedBy: validatedBy ?? this.validatedBy,
+      pricePaid: pricePaid,
       eventTitle: eventTitle,
       eventDate: eventDate,
       eventEndDate: eventEndDate,
@@ -89,6 +94,7 @@ class TicketModel {
       'createdAt': Timestamp.fromDate(createdAt),
       'usedAt': usedAt != null ? Timestamp.fromDate(usedAt!) : null,
       'validatedBy': validatedBy,
+      if (pricePaid != null) 'pricePaid': pricePaid,
       'eventTitle': eventTitle,
       'eventDate': Timestamp.fromDate(eventDate),
       'eventEndDate': Timestamp.fromDate(eventEndDate),
@@ -113,6 +119,7 @@ class TicketModel {
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       usedAt: (map['usedAt'] as Timestamp?)?.toDate(),
       validatedBy: map['validatedBy'] as String?,
+      pricePaid: (map['pricePaid'] as num?)?.toDouble(),
       eventTitle: map['eventTitle'] as String? ?? '',
       eventDate: (map['eventDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       eventEndDate:

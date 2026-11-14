@@ -99,12 +99,14 @@ class _TicketCard extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Theme.of(
-              context,
-            ).colorScheme.primaryContainer.withValues(alpha: 0.5),
+            color: Theme.of(context).colorScheme.primaryContainer
+                .withValues(alpha: 0.5),
             shape: BoxShape.circle,
           ),
-          child: Icon(Icons.qr_code, color: Theme.of(context).colorScheme.primary),
+          child: Icon(
+            Icons.qr_code,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
         title: Text(
           ticket.eventTitle,

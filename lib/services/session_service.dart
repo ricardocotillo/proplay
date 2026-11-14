@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
+import 'package:proplay/models/cancel_result_model.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/session_template_model.dart';
 import 'package:proplay/models/user_model.dart';
@@ -84,6 +86,8 @@ class SessionService {
       locationLat: template.locationLat,
       locationLng: template.locationLng,
       locationAddress: template.locationAddress,
+      district: template.district,
+      format: template.format,
     );
 
     await _firestore.collection('liveSessions').add(liveSession.toMap());
@@ -694,36 +698,48 @@ class SessionService {
     }
   }
 
-  /// Leave a session - removes user from either players or waiting list
-  Future<void> leaveSession(String sessionId, String userId) async {
+  /// Cancels the signed-in user's spot via the `cancelParticipation` Cloud
+  /// Function (full refund when the event is 24 h or more away). The server
+  /// decides the refund; the client never sends an amount.
+  Future<CancelResultModel> cancelParticipation(String sessionId) async {
     try {
-      await _firestore.runTransaction((transaction) async {
-        final sessionRef = _firestore.collection('liveSessions').doc(sessionId);
-        final sessionDoc = await transaction.get(sessionRef);
-
-        if (!sessionDoc.exists) {
-          throw Exception('Session not found');
-        }
-
-        final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
-
-        final players = session.players ?? [];
-
-        // Check if user is in the main player list
-        if (players.any((p) => p.uid == userId)) {
-          var updatedPlayers = players.where((p) => p.uid != userId).toList();
-
-          transaction.update(sessionRef, {
-            'players': updatedPlayers.map((p) => p.toMap()).toList(),
-            'playerCount': updatedPlayers.length,
-          });
-        } else {
-          throw Exception('You are not part of this session');
-        }
-      });
-    } catch (e) {
-      rethrow;
+      final result = await FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      ).httpsCallable('cancelParticipation').call({'sessionId': sessionId});
+      return CancelResultModel.fromMap(result.data as Map);
+    } on FirebaseFunctionsException catch (e) {
+      throw Exception(e.message ?? 'No se pudo cancelar tu cupo');
     }
+  }
+
+  /// Public events feed (read-only projection, safe for guests).
+  /// Range on a single field (`eventDate`) so no composite index is needed.
+  Future<List<SessionModel>> getPublicEvents({int windowDays = 30}) async {
+    final now = DateTime.now();
+    final snapshot = await _firestore
+        .collection('publicEvents')
+        .where('eventDate', isGreaterThanOrEqualTo: Timestamp.fromDate(now))
+        .where(
+          'eventDate',
+          isLessThanOrEqualTo: Timestamp.fromDate(
+            now.add(Duration(days: windowDays)),
+          ),
+        )
+        .orderBy('eventDate')
+        .get();
+    return snapshot.docs
+        .map((doc) => SessionModel.fromMap(doc.id, doc.data()))
+        .toList();
+  }
+
+  /// Stream one public event (no `players` list).
+  Stream<SessionModel> streamPublicEvent(String id) {
+    return _firestore.collection('publicEvents').doc(id).snapshots().map((doc) {
+      if (!doc.exists) {
+        throw Exception('Evento no encontrado');
+      }
+      return SessionModel.fromMap(doc.id, doc.data()!);
+    });
   }
 
   /// Upload receipt and update user's confirmation status

@@ -1,5 +1,7 @@
 # ProPlay - Sistema de Matchmaking (Emparejamiento)
 
+> **Nota (2026-11):** `SessionsScreen` (`sessions_screen.dart`) y el carrusel de Home fueron reemplazados por el feed público de eventos (`EventsFeedView`, `/events`); ver `docs/ARCHITECTURE.md`. Las referencias a esas pantallas abajo son históricas.
+
 ## Descripción General
 
 ProPlay implementa un sistema de matchmaking inteligente que conecta a los usuarios con sesiones y eventos deportivos relevantes basándose en múltiples criterios de preferencia. El sistema filtra y ordena las sesiones disponibles para mostrar a cada usuario únicamente las actividades más relevantes según su perfil.

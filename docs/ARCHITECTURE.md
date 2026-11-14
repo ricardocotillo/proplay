@@ -2,7 +2,7 @@
 
 Living document. Update this file in the same PR whenever you change architecture, Firestore shape, routes, providers, or a user-facing flow.
 
-Last reviewed against the codebase: 2026-08-14. App version in `pubspec.yaml`: **1.0.7+10**.
+Last reviewed against the codebase: 2026-11-13. App version in `pubspec.yaml`: **1.0.7+10**.
 
 ---
 
@@ -118,7 +118,9 @@ While `AuthBloc` is still `AuthInitial`, a spinner `MaterialApp` is shown (no ro
 | Path | Name | Screen |
 | --- | --- | --- |
 | `/` | `home` | `HomeScreen` |
-| `/sessions` | `sessions` | `SessionsScreen` |
+| `/sessions` | `sessions` | `EventsFeedScreen` (same feed as `/events`) |
+| `/events` | `events` | `EventsFeedScreen` — public feed, **open to guests** |
+| `/events/:id` | `event-detail` | `PublicEventScreen` — read-only `publicEvents` detail, **open to guests** |
 | `/create-group` | `create-group` | `CreateGroupScreen` |
 | `/edit-profile` | `edit-profile` | `EditProfileScreen` |
 | `/purchase-credits` | `purchase-credits` | `PurchaseCreditsScreen` |
@@ -294,6 +296,8 @@ Same scheduling / matchmaking / location fields, plus:
 | `players` | `SessionUserModel[]` | Embedded, not a subcollection |
 | `g` | string | Geohash |
 | `l` | `[lat, lng]` | GeoFirestore pair |
+| `district` | string? | From the map picker (`locality` → `sublocality` → `administrative_area_level_3`); absent on old events |
+| `format` | string? | Optional free text (e.g. "7 vs 7"); absent on old events |
 
 `SessionUserModel`: `uid`, `firstName`, `lastName`, `profileImageUrl`, `joinedAt`, `receiptUrl?`, `isConfirmed`.
 
@@ -303,9 +307,15 @@ List queries deliberately drop `players` to keep payloads small. Detail views st
 
 ### `tickets/{sessionId}_{userId}` — `TicketModel`
 
-Created **inside** the join transaction. Status: `valid` | `used`. Includes a denormalized snapshot of event + user so the ticket screen works if the live session later changes.
+Created **inside** the join transaction. Status: `valid` | `used`. A cancelled ticket is **deleted** by `cancelParticipation`. Includes a denormalized snapshot of event + user so the ticket screen works if the live session later changes.
+
+Extra fields: `pricePaid` (number, written by the client at join; optional on legacy tickets), which the rule caps at the session's `costPerPlayer` and which the server caps again at refund time. Only the holder of a still-`valid` ticket can re-issue it (rule); a used ticket cannot be revived. Rejoining after a cancel is a plain create. Keeping `cancelled` tickets for history is a planned follow-up (own plan).
 
 Lookups: by `userId` (client-sorted by `eventDate`), or by `validationToken`.
+
+### `publicEvents/{sessionId}` — projection
+
+Written **only** by the `mirrorPublicEvent` Cloud Function (rules: `read: true`, `write: false`). One document per `liveSessions` doc with `isPrivate == false`; deleted when the event becomes private or is deleted. Copies scheduling, price, seats (`playerCount`/`maxPlayers`), sport, age/gender, location (incl. `g`/`l`), `district`, `format`, plus `groupName` (organizer). It **never** contains `players`. The public feed and `/events/:id` read this collection only. Existing events are copied once by `functions/scripts/backfillPublicEvents.ts`.
 
 ### `creditHistory/{id}` — `CreditHistoryModel`
 
@@ -322,10 +332,10 @@ Ledger. Amounts are doubles. User **balance** remains a 2-decimal string.
 | --- | --- | --- |
 | `purchase` | `credit` | `payment` |
 | `spend` | `debit` | `session` (join) |
-| `refund` | `credit` | session cancel (not fully wired) |
+| `refund` | `credit` | session cancel (`cancelParticipation`; doc id `refund_{sessionId}_{uid}_{ticketToken}`) |
 | `adjustment` | either | `admin` |
 
-Leave / remove-player paths do **not** currently refund credits or delete the ticket. Call that out if you implement leave/cancel.
+Player cancel goes through `cancelParticipation` and refunds. The admin remove-player path (`removeUserFromSession`) still does **not** refund credits or void the ticket.
 
 ### `yape`
 
@@ -402,7 +412,38 @@ SessionDetailBloc.JoinSession
       5. write tickets/{sessionId}_{uid}
 ```
 
-Leave / admin remove only update `players` / `playerCount`. They do not refund or void the ticket.
+Admin remove only updates `players` / `playerCount`. It does not refund or void the ticket.
+
+Cancel (player):
+
+```
+SessionDetailBloc.CancelParticipation
+  → SessionService.cancelParticipation → callable `cancelParticipation` (southamerica-east1)
+      one transaction, all reads before writes; uid comes from request.auth only:
+      1. reject unless the uid is in players[], the ticket (if any) is `valid`, and the event has not started
+         (`eventDate` missing/invalid or in the past → `failed-precondition`)
+      2. refundable = eventDate - now >= 24 h (server time)
+      3. refund source = latest `spend` creditHistory row for (uid, session) without `refundedAt`;
+         amount = min(spend.creditAmount, session.costPerPlayer). `ticket.pricePaid` is informational only
+      4. players[] filtered, playerCount updated; ticket deleted
+      5. if refundable and amount > 0: users/{uid}.credits += amount, spend row gets `refundedAt`,
+         creditHistory `refund` row with id `refund_{spendId}` (one refund per spend row)
+  → SessionDetailCancelled → AuthRefreshUserRequested + snackbar
+```
+
+Public feed:
+
+```
+EventsFeedBloc.EventsFeedStarted → SessionService.getPublicEvents (publicEvents, next 30 days)
+  → applyFeedFilters (sport, district, day part [Lima time], max price, format;
+    gender/age only for signed-in users) → sortFeed (distance if GPS, else date)
+```
+
+Guests tap a card → `/events/:id` (`PublicEventScreen`, "Regístrate para unirte"). Signed-in users open `SessionDetailScreen` via `Navigator.push`. Home leads with the same `EventsFeedView`; "Mis grupos" sits below it.
+
+### Cloud Functions (`functions/`)
+
+TypeScript, Node 20, v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation` (callable) and `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel` (callable logic), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
 
 ### Matchmaking
 
@@ -458,7 +499,7 @@ CreditApprovalScreen (superUser, queries Firestore directly)
 | `AuthService` | Email/password, Google, reset, `authStateChanges` |
 | `UserService` | User CRUD, profile image URL, user↔group links |
 | `GroupService` | Group CRUD, codes, members, roles |
-| `SessionService` | Templates, live sessions, matchmaking, join/leave |
+| `SessionService` | Templates, live sessions, matchmaking, join, `cancelParticipation` (callable), public events feed |
 | `TicketService` | Ticket ids, streams, token lookup, validate |
 | `CreditHistoryService` | Instant purchase transaction + pending Yape row |
 | `YapeService` | Admin Yape config |
@@ -475,13 +516,15 @@ Join uses a transaction so seat + debit + ticket stay atomic. Approval of credit
 | Screen | Role |
 | --- | --- |
 | `LoginScreen` / `RegistrationScreen` | Auth + optional group code |
-| `HomeScreen` | Groups, wallet, upcoming carousel, profile-setup dialog, GPS |
-| `SessionsScreen` | Full matched upcoming list |
+| `HomeScreen` | Public events feed (`EventsFeedView`), groups, wallet, profile-setup dialog, GPS |
+| `EventsFeedScreen` / `PublicEventScreen` | `/events` feed and `/events/:id` (guests allowed; `publicEvents` only) |
 | `CreateGroupScreen` | Name + one sport |
 | `GroupDetailScreen` (+ loader) | Members, create session, info/edit |
 | `GroupEditScreen` / `GroupInfoScreen` | Edit image/name/sport; public info |
 | `CreateSessionScreen` | 3-step wizard |
-| `SessionDetailScreen` | Join/leave, players, ticket, map |
+| `SessionDetailScreen` | Join / cancel (refund dialog), players, ticket, map |
+| `EventsFeedScreen` / `EventsFeedView` | Public feed with filters (also embedded at the top of Home) |
+| `PublicEventScreen` | Read-only public event for guests |
 | `SessionMapScreen` | Google Map pin |
 | `EditProfileScreen` | Name + photo |
 | `PurchaseCreditsScreen` | Yape wizard |
@@ -575,12 +618,12 @@ Intended direction (from project guidelines):
 ## 14. Known pitfalls (read before you change money or seats)
 
 1. **Credits are a string on the user**, a double on the ledger. Always go through `UserModel.formatCredits` / `creditsValue`.
-2. **Join is transactional; leave/remove is not a full inverse.** No refund, no ticket delete.
+2. **Join is transactional on the client; cancel is server-side.** There is no client `leaveSession` anymore. Admin remove still does not refund or void the ticket.
 3. **Players live on the live session document.** Large games will hit document size / contention. A players subcollection (as in `docs/sessions.md`) is the eventual fix.
 4. **Two membership models.** Subcollections are source of truth. Do not revive `streamUserGroups` without writing `groups.members[]`.
 5. **Duplicate sport lists** in `HomeScreen`, `CreateGroupScreen`, `GroupEditScreen`. Extract a constant before adding a sport.
 6. **Owner checks disagree** across session detail vs ticket validation.
-7. **No Cloud Functions / no checked-in rules.** Client writes can be abused if rules are loose. Moving join + credit approval server-side is the durable fix.
+7. **Rules and functions are in git but deployed by hand** (`firestore.rules`, `functions/`). Deploy order: rules → functions → backfill → hosting (see README). The `mirrorPublicEvent` trigger region must equal the Firestore location (`southamerica-east1`). The rules still let a client edit its own `users.credits` and any `liveSessions` doc, and overwrite its own ticket even when `used`; moving join + credit approval server-side and tightening those rules is the durable fix.
 8. **`PaymentService` is a stub.** Do not hook a real card form to `CardDetails` (PCI). Use a gateway SDK / redirect.
 9. **Mixed navigation.** Deep links only work for GoRouter paths.
 10. **API keys in client files** (`AppConstants`, manifests, `web/index.html`) are expected for Maps but should be restricted by bundle id / HTTP referrer in Google Cloud.
@@ -601,6 +644,7 @@ Intended direction (from project guidelines):
 - Yape credit purchase + super-user approval
 - Credit spend on join + ledger
 - Tickets + QR validation URL
+- Public events feed (guests) + cancel with full refund 24 h or more before kickoff (Cloud Function)
 - Responsive mobile / desktop chrome
 - Web hosting SPA
 
@@ -608,9 +652,9 @@ Intended direction (from project guidelines):
 
 - Automated payment gateway (interface + stub + MP sample prefs + payment result routes)
 - Recurring sessions / waitlist (`docs/sessions.md`)
-- Refunds when leaving or deleting a session
+- Refunds when an organizer deletes a session or an admin removes a player
 - Email verification
-- Firestore rules + indexes in the repo
+- Locking down `users.credits` / `liveSessions` update rules
 - Real test suite
 - Aligning all navigation on GoRouter
 - Extracting admin screens off raw Firestore

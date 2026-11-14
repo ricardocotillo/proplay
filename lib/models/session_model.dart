@@ -23,6 +23,12 @@ class SessionModel extends Equatable {
   final double? locationLat;
   final double? locationLng;
   final String? locationAddress;
+  final String? district;
+  final String? format;
+
+  /// Organizer group name. Only present on the public projection
+  /// (`publicEvents`), written by the Cloud Function — never by the client.
+  final String? groupName;
 
   const SessionModel({
     required this.id,
@@ -44,6 +50,9 @@ class SessionModel extends Equatable {
     this.locationLat,
     this.locationLng,
     this.locationAddress,
+    this.district,
+    this.format,
+    this.groupName,
   });
 
   @override
@@ -67,6 +76,9 @@ class SessionModel extends Equatable {
     locationLat,
     locationLng,
     locationAddress,
+    district,
+    format,
+    groupName,
   ];
 
   SessionModel copyWith({
@@ -89,6 +101,9 @@ class SessionModel extends Equatable {
     double? locationLat,
     double? locationLng,
     String? locationAddress,
+    String? district,
+    String? format,
+    String? groupName,
   }) {
     return SessionModel(
       id: id ?? this.id,
@@ -110,6 +125,9 @@ class SessionModel extends Equatable {
       locationLat: locationLat ?? this.locationLat,
       locationLng: locationLng ?? this.locationLng,
       locationAddress: locationAddress ?? this.locationAddress,
+      district: district ?? this.district,
+      format: format ?? this.format,
+      groupName: groupName ?? this.groupName,
     );
   }
 
@@ -133,6 +151,8 @@ class SessionModel extends Equatable {
       'locationLat': locationLat,
       'locationLng': locationLng,
       'locationAddress': locationAddress,
+      if (district != null) 'district': district,
+      if (format != null) 'format': format,
       // GeoFirestore fields for efficient location queries
       if (locationLat != null && locationLng != null) ...{
         'g': GeohashUtils.encode(locationLat!, locationLng!),
@@ -167,6 +187,9 @@ class SessionModel extends Equatable {
       locationLat: (map['locationLat'] as num?)?.toDouble(),
       locationLng: (map['locationLng'] as num?)?.toDouble(),
       locationAddress: map['locationAddress'] as String?,
+      district: map['district'] as String?,
+      format: map['format'] as String?,
+      groupName: map['groupName'] as String?,
     );
   }
 }
