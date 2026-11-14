@@ -57,6 +57,7 @@ dependencies:
   uuid: ^4.6.0
   google_maps_flutter: ^2.18.0
   cloud_functions: ^7.0.1
+  material_ui: ^1.11.0
 
 dev_dependencies:
   flutter_test:

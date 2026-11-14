@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 /// A responsive layout widget that renders different widgets based on screen size.
