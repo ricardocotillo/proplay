@@ -1,45 +1,15 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:proplay/bloc/events_feed/events_feed_bloc.dart';
+import 'package:proplay/bloc/events_feed/events_feed_event.dart';
+import 'package:proplay/bloc/events_feed/events_feed_state.dart';
+import 'package:proplay/models/session_model.dart';
+import 'package:proplay/models/user_model.dart';
+import 'package:proplay/services/session_service.dart';
 import 'package:proplay/utils/sports.dart';
 import 'package:proplay/widgets/responsive_layout.dart';
-
-// Placeholder content: no real people, venues or prices.
-const _fakeEvents =
-    <
-      ({
-        String sport,
-        String image,
-        String place,
-        String when,
-        int price,
-        int seats,
-      })
-    >[
-      (
-        sport: 'Fútbol',
-        image: 'event-1-futbol',
-        place: 'Cancha sintética, Miraflores',
-        when: 'Mar 19:00',
-        price: 8,
-        seats: 4,
-      ),
-      (
-        sport: 'Voleibol',
-        image: 'event-3-voleibol',
-        place: 'Losa deportiva, Surco',
-        when: 'Jue 18:00',
-        price: 6,
-        seats: 6,
-      ),
-      (
-        sport: 'Baloncesto',
-        image: 'event-4-baloncesto',
-        place: 'Polideportivo, La Molina',
-        when: 'Vie 19:30',
-        price: 7,
-        seats: 3,
-      ),
-    ];
 
 const _steps = <({String title, String body})>[
   (
@@ -68,7 +38,7 @@ class LandingScreen extends StatelessWidget {
             _Section(child: _NavBar()),
             _Hero(),
             _Section(title: 'Deportes', child: _SportsWrap()),
-            _Section(title: 'Próximos eventos (ejemplo)', child: _EventsGrid()),
+            _Section(title: 'Próximos eventos', child: _EventsGrid()),
             _Section(title: 'Cómo funciona', child: _Steps()),
             _Footer(),
           ],
@@ -317,11 +287,37 @@ class _SportsWrap extends StatelessWidget {
   }
 }
 
+// Landing images per sport; no per-event photo exists.
+const _sportImages = {
+  'fútbol': 'event-1-futbol',
+  'voleibol': 'event-3-voleibol',
+  'baloncesto': 'event-4-baloncesto',
+};
+
 class _EventsGrid extends StatelessWidget {
   const _EventsGrid();
 
   @override
   Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) =>
+          EventsFeedBloc(sessionService: SessionService())
+            ..add(const EventsFeedStarted()),
+      child: BlocBuilder<EventsFeedBloc, EventsFeedState>(
+        builder: (context, state) {
+          if (state is EventsFeedLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state is! EventsFeedLoaded || state.visible.isEmpty) {
+            return const Text('Pronto habrá nuevos eventos.');
+          }
+          return _cards(context, state.visible.take(6).toList());
+        },
+      ),
+    );
+  }
+
+  Widget _cards(BuildContext context, List<SessionModel> events) {
     final theme = Theme.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -333,47 +329,49 @@ class _EventsGrid extends StatelessWidget {
           spacing: gap,
           runSpacing: gap,
           children: [
-            for (final e in _fakeEvents)
+            for (final e in events)
               SizedBox(
                 width: cardWidth,
                 child: Card(
                   margin: EdgeInsets.zero,
                   clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: Image.asset(
-                          'assets/images/landing/${e.image}.webp',
-                          fit: BoxFit.cover,
-                          excludeFromSemantics: true,
+                  child: InkWell(
+                    onTap: () => context.go('/events/${e.id}'),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AspectRatio(
+                          aspectRatio: 16 / 9,
+                          child: Image.asset(
+                            'assets/images/landing/${_sportImages[e.sport] ?? 'event-1-futbol'}.webp',
+                            fit: BoxFit.cover,
+                            excludeFromSemantics: true,
+                          ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(e.sport, style: theme.textTheme.titleMedium),
-                            const SizedBox(height: 8),
-                            Text(e.place),
-                            Text(e.when),
-                            const SizedBox(height: 8),
-                            Text('${e.price} coins · ${e.seats} cupos'),
-                            const SizedBox(height: 8),
-                            Semantics(
-                              label: 'Crear cuenta para unirte a ${e.sport}',
-                              excludeSemantics: true,
-                              child: TextButton(
-                                onPressed: () => context.go('/registration'),
-                                child: const Text('Crear cuenta para unirte'),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(e.title, style: theme.textTheme.titleMedium),
+                              const SizedBox(height: 8),
+                              if (e.district != null) Text(e.district!),
+                              Text(
+                                DateFormat(
+                                  'EEE d MMM, HH:mm',
+                                  'es',
+                                ).format(e.eventDate),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 8),
+                              Text(
+                                '${e.costPerPlayer > 0 ? '${UserModel.formatCredits(e.costPerPlayer)} coins' : 'Gratis'}'
+                                ' · ${e.maxPlayers - e.playerCount} cupos',
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
