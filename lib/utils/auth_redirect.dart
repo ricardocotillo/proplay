@@ -14,3 +14,9 @@ String? authRedirect({required bool loggedIn, required String location}) {
   if (loggedIn && isPublic) return '/';
   return null;
 }
+
+/// Routes only super users may open (money safety stays in Firestore rules).
+String? adminRedirect({required bool superUser, required String location}) {
+  if (location == '/credit-approval' && !superUser) return '/';
+  return null;
+}

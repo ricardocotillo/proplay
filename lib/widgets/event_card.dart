@@ -70,6 +70,7 @@ class _EventCardState extends State<EventCard> {
                       EventImage(
                         bannerUrl: session.bannerUrl,
                         sport: session.sport,
+                        seed: session.id,
                       ),
                       DecoratedBox(
                         decoration: BoxDecoration(

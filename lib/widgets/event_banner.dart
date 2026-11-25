@@ -7,7 +7,15 @@ import 'package:proplay/widgets/cached_image.dart';
 class EventImage extends StatelessWidget {
   final String? bannerUrl;
   final String sport;
-  const EventImage({super.key, required this.bannerUrl, required this.sport});
+
+  /// Picks the photo variant (use the event id).
+  final String seed;
+  const EventImage({
+    super.key,
+    required this.bannerUrl,
+    required this.sport,
+    required this.seed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +24,7 @@ class EventImage extends StatelessWidget {
       return EventBanner(url: url, height: double.infinity);
     }
     return Image.asset(
-      sportImage(sport),
+      sportPhoto(sport, seed),
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,

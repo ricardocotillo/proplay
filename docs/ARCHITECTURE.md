@@ -126,6 +126,8 @@ While `AuthBloc` is still `AuthInitial`, a spinner `MaterialApp` is shown (no ro
 | `/create-group` | `create-group` | `CreateGroupScreen` |
 | `/edit-profile` | `edit-profile` | `EditProfileScreen` |
 | `/purchase-credits` | `purchase-credits` | `PurchaseCreditsScreen` |
+| `/credit-history` | `credit-history` | `CreditHistoryScreen` |
+| `/credit-approval` | `credit-approval` | `CreditApprovalScreen` — super user only (`adminRedirect` sends others to `/`) |
 | `/payment/success` | `payment-success` | `PaymentSuccessScreen` |
 | `/payment/pending` | `payment-pending` | `PaymentPendingScreen` |
 | `/payment/failure` | `payment-failure` | `PaymentFailureScreen` |
@@ -138,6 +140,8 @@ While `AuthBloc` is still `AuthInitial`, a spinner `MaterialApp` is shown (no ro
 | `/login` | `login` | `LoginScreen` |
 | `/registration` | `registration` | `RegistrationScreen` |
 
+`/` (with its children) and `/events*` live inside a `ShellRoute` (`AppShell`, `lib/widgets/app_shell.dart`). `/welcome`, `/login` and `/registration` stay outside it. Active nav item logic: `lib/utils/shell_nav.dart`.
+
 Loaders exist so a deep link with only an id can stream the document, then hand a fully built model to the real screen.
 
 ### Still using `Navigator.push`
@@ -148,8 +152,6 @@ These screens are **not** in the route table. Deep links will not open them.
 - `SessionDetailScreen`
 - `SessionMapScreen`
 - `TicketDetailScreen`
-- `CreditHistoryScreen`
-- `CreditApprovalScreen`
 
 When you add a new primary destination, register it in `GoRouter` and navigate with `context.go` / `context.push`. Keep `Navigator.push` only for true one-off sheets if you must.
 
@@ -219,7 +221,8 @@ Defined in `lib/utils/auth_helper.dart`. After a write that changes the user doc
 `responsive_framework` breakpoints in `main.dart` (Tailwind-ish): mobile `<640`, SM, tablet, desktop `>=1024`, XL, 2XL, 4K.
 
 - Mobile: `AppDrawer` (end drawer).
-- Desktop: `AppSidebar`.
+- Desktop (above tablet): `AppShell` renders `AppTopBar` (brand, Inicio / Eventos / Mis tickets, wallet, avatar menu; guests get Ingresar / Crear cuenta) above every page of the `ShellRoute`; pages keep their own app bar, flattened by the shell. Below desktop the shell renders the page unchanged.
+- Sport photos: `assets/images/sports/{sport}-{1..3}.webp` (sources in `CREDITS.md` there); `sportPhoto(sport, seed)` in `lib/utils/sports.dart` picks a stable variant per event id for events without a banner.
 - Helpers: `ResponsiveLayout`, `ResponsiveConstrainedBox` in `lib/widgets/responsive_layout.dart`.
 
 Theme: primary `#BA1B1D`, light surfaces. Set in `MaterialApp.router`.
@@ -549,7 +552,7 @@ Join uses a transaction so seat + debit + ticket stay atomic. Approval of credit
 | `CreditHistoryScreen` | User ledger (direct Firestore) |
 | `CreditApprovalScreen` | Super-user queue (direct Firestore) |
 
-Shared widgets: `AppDrawer`, `AppSidebar`, `WalletIndicator`, `UpcomingEvents`, `CachedImage` (`PlatformCachedImage`), `LocationPicker`, `StepIndicator`.
+Shared widgets: `AppDrawer`, `AppShell`, `AppTopBar`, `Brand`, `WalletIndicator`, `UpcomingEvents`, `CachedImage` (`PlatformCachedImage`), `LocationPicker`, `StepIndicator`.
 
 ---
 

@@ -29,4 +29,16 @@ void main() {
   test('signed-in user on protected route stays', () {
     expect(authRedirect(loggedIn: true, location: '/tickets'), isNull);
   });
+
+  test('credit approval is hidden from non super users', () {
+    expect(adminRedirect(superUser: false, location: '/credit-approval'), '/');
+    expect(
+      adminRedirect(superUser: true, location: '/credit-approval'),
+      isNull,
+    );
+    expect(
+      adminRedirect(superUser: false, location: '/credit-history'),
+      isNull,
+    );
+  });
 }

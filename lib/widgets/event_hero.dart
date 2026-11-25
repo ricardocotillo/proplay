@@ -26,7 +26,11 @@ class EventHero extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          EventImage(bannerUrl: session.bannerUrl, sport: session.sport),
+          EventImage(
+            bannerUrl: session.bannerUrl,
+            sport: session.sport,
+            seed: session.id,
+          ),
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(

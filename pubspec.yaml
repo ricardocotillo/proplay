@@ -86,6 +86,7 @@ flutter:
     - assets/google.png
     - assets/thumbnail.png
     - assets/images/landing/
+    - assets/images/sports/
 
   fonts:
     - family: BarlowCondensed

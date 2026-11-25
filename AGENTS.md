@@ -84,9 +84,11 @@ Full field lists: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#7-firestore-data-m
 
 `go_router` in `lib/main.dart` is auth-gated. Unauthenticated users only see `/welcome` (landing), `/login`, `/registration` and the public feed `/events` + `/events/:id` (read-only, `publicEvents` only).
 
-Primary routes: `/welcome`, `/`, `/events`, `/events/:id`, `/sessions` (same feed), `/create-group`, `/edit-profile`, `/purchase-credits`, `/tickets`, `/validate-ticket`, `/group/:id`, `/group/:id/edit`, `/group/:id/info`, `/payment/{success,pending,failure}`.
+Primary routes: `/welcome`, `/`, `/events`, `/events/:id`, `/sessions` (same feed), `/create-group`, `/edit-profile`, `/purchase-credits`, `/credit-history`, `/credit-approval` (super user), `/tickets`, `/validate-ticket`, `/group/:id`, `/group/:id/edit`, `/group/:id/info`, `/payment/{success,pending,failure}`.
 
-These screens are still `Navigator.push` only (no deep link): session create/detail/map, ticket detail, credit history, credit approval.
+These screens are still `Navigator.push` only (no deep link): session create/detail/map, ticket detail.
+
+On desktop `/` and `/events*` render inside a `ShellRoute` (`AppShell` + `AppTopBar`); mobile keeps the drawer and per-screen app bars.
 
 New primary destinations go in `GoRouter`. Update the table in `docs/ARCHITECTURE.md`.
 
@@ -130,7 +132,7 @@ Flutter → package imports → `package:proplay/...`
 
 - `BlocBuilder` for rebuilds, `BlocListener` for snackbars/navigation, `BlocConsumer` when both.
 - Product copy is Spanish. Developer docs are English.
-- Theme primary: `#BA1B1D`. Responsive via `responsive_framework` (`ResponsiveLayout`, drawer vs `AppSidebar`).
+- Theme primary: `#BA1B1D`. Responsive via `responsive_framework` (`ResponsiveLayout`, drawer on mobile vs `AppTopBar` on desktop).
 
 ### Adding work
 
