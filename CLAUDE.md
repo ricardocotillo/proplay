@@ -1,6 +1,6 @@
 # ProPlay — Agent Working Guide
 
-Same contract as [AGENTS.md](AGENTS.md) (keep the two in sync; `GEMINI.md` / `QWEN.md` are pointers). The living human/dev architecture doc is [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Onboarding is [README.md](README.md).
+Same contract as [AGENTS.md](AGENTS.md) (keep the two in sync; `GEMINI.md` / `QWEN.md` are pointers). The living human/dev architecture doc is [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). UI rules (tokens, layout, components, imagery) are in [docs/DESIGN.md](docs/DESIGN.md). Onboarding is [README.md](README.md).
 
 If anything here drifts, treat **docs/ARCHITECTURE.md** as source of truth for how the app actually works.
 
@@ -133,7 +133,8 @@ Flutter → package imports → `package:proplay/...`
 
 - `BlocBuilder` for rebuilds, `BlocListener` for snackbars/navigation, `BlocConsumer` when both.
 - Product copy is Spanish. Developer docs are English.
-- Theme primary: `#BA1B1D`. Responsive via `responsive_framework` (`ResponsiveLayout`, drawer on mobile vs `AppTopBar` on desktop).
+- Theme primary: `#BA1B1D`. Dark theme only (`AppTheme.dark`). Responsive via `responsive_framework` (`ResponsiveLayout`, drawer on mobile vs `AppTopBar` on desktop).
+- Before building or restyling UI read [docs/DESIGN.md](docs/DESIGN.md): colors and text come from the theme, headings use the bundled display font, event cards and skeletons share size constants.
 
 ### Adding work
 
@@ -173,6 +174,11 @@ Version: `1.0.7+10` (`pubspec.yaml`). Dart SDK `^3.13.0`.
 - Do not treat `GroupService.streamUserGroups` as correct membership (it queries a `members` array that create/join do not write).
 - Do not implement card collection against `CardDetails` (PCI). Gateway SDK / redirect only.
 - Do not hand-roll another credit write outside a transaction if a race is possible.
+- Do not hard-code `Colors.white` / `Colors.green` / `Colors.red` or inline `TextStyle` colors in screens: use `Theme.of(context)` or `AppColors` (`lib/theme/`). Errors use `AppColors.error`, never the brand red.
+- Headings use the theme's display styles (`headlineMedium`, `headlineSmall`, `titleLarge`, bundled Barlow Condensed via `kDisplayFont`); do not add fonts or `google_fonts`.
+- Event card size lives in `kEventCardHeight` / `eventCardImageWidth` (`lib/widgets/event_card.dart`) and is shared with `EventCardSkeleton`; never hard-code a second copy.
+- Every photo in `assets/images/` needs a source and license in the `CREDITS.md` next to it. Seed photo variants with `stableHash`, never `String.hashCode`.
+- Overlays on images or text go in a `Stack` behind the content, not in `foregroundDecoration` (it paints over the text).
 
 ---
 
