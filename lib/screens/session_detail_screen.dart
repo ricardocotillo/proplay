@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:proplay/widgets/cached_image.dart';
+import 'package:proplay/widgets/event_banner.dart';
 import 'package:proplay/bloc/session_detail/session_detail_bloc.dart';
 import 'package:proplay/bloc/session_detail/session_detail_event.dart';
 import 'package:proplay/bloc/session_detail/session_detail_state.dart';
@@ -143,6 +144,8 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
 
             return Column(
               children: [
+                if (session.bannerUrl != null)
+                  EventBanner(url: session.bannerUrl!, height: 120),
                 // Session Info Card
                 Container(
                   width: double.infinity,

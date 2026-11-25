@@ -9,6 +9,7 @@ import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/utils/sports.dart';
+import 'package:proplay/widgets/cached_image.dart';
 import 'package:proplay/widgets/responsive_layout.dart';
 
 const _steps = <({String title, String body})>[
@@ -342,11 +343,16 @@ class _EventsGrid extends StatelessWidget {
                       children: [
                         AspectRatio(
                           aspectRatio: 16 / 9,
-                          child: Image.asset(
-                            'assets/images/landing/${_sportImages[e.sport] ?? 'event-1-futbol'}.webp',
-                            fit: BoxFit.cover,
-                            excludeFromSemantics: true,
-                          ),
+                          child: e.bannerUrl != null
+                              ? PlatformCachedImage(
+                                  imageUrl: e.bannerUrl!,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.asset(
+                                  'assets/images/landing/${_sportImages[e.sport] ?? 'event-1-futbol'}.webp',
+                                  fit: BoxFit.cover,
+                                  excludeFromSemantics: true,
+                                ),
                         ),
                         Padding(
                           padding: const EdgeInsets.all(16),

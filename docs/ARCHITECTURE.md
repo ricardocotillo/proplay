@@ -285,7 +285,7 @@ Join/create also writes the reciprocal `users/{uid}/groups/{groupId}` doc. Role 
 
 ### `sessionTemplates/{id}` — `SessionTemplateModel`
 
-Written by `SessionService.createSessionTemplate`, which also inserts the first `liveSessions` doc. Fields: `groupId`, `creatorId`, `title`, `eventDate`, `eventEndDate`, `durationInMinutes` (computed), `maxPlayers`, `totalCost`, `costPerPlayer` (`totalCost / maxPlayers`), `isPrivate`, `sport`, `minAge`, `maxAge`, `desiredGender`, location + GeoFirestore `g` / `l`.
+Written by `SessionService.createSessionTemplate`, which also inserts the first `liveSessions` doc. Fields: `groupId`, `creatorId`, `title`, `eventDate`, `eventEndDate`, `durationInMinutes` (computed), `maxPlayers`, `totalCost`, `costPerPlayer` (`totalCost / maxPlayers`), `isPrivate`, `sport`, `minAge`, `maxAge`, `desiredGender`, location + GeoFirestore `g` / `l`, optional `district`, `format`, `bannerUrl`.
 
 Recurring `rrule` from `docs/sessions.md` is **not** implemented in the app. Ops script `functions/scripts/createRecurringEvents.ts` creates weekly events from a local CSV with deterministic ids: template `rec_{key}`, live session `rec_{key}_{YYYY-MM-DD}` (see README).
 
@@ -303,6 +303,7 @@ Same scheduling / matchmaking / location fields, plus:
 | `l` | `[lat, lng]` | GeoFirestore pair |
 | `district` | string? | From the map picker (`locality` → `sublocality` → `administrative_area_level_3`); absent on old events |
 | `format` | string? | Optional free text (e.g. "7 vs 7"); absent on old events |
+| `bannerUrl` | string? | Optional banner image download URL (Storage `event_banners/{groupId}/{ts}.jpg`). Set on `sessionTemplates` at creation and copied to the first live session; absent on old events |
 
 `SessionUserModel`: `uid`, `firstName`, `lastName`, `profileImageUrl`, `joinedAt`, `receiptUrl?`, `isConfirmed`.
 
@@ -326,7 +327,7 @@ Uniqueness lock, e.g. `dni_12345678`. Fields: `uid`, `createdAt`. Written in the
 
 ### `publicEvents/{sessionId}` — projection
 
-Written **only** by the `mirrorPublicEvent` Cloud Function (rules: `read: true`, `write: false`). One document per `liveSessions` doc with `isPrivate == false`; deleted when the event becomes private or is deleted. Copies scheduling, price, seats (`playerCount`/`maxPlayers`), sport, age/gender, location (incl. `g`/`l`), `district`, `format`, plus `groupName` (organizer). It **never** contains `players`. The public feed and `/events/:id` read this collection only. Existing events are copied once by `functions/scripts/backfillPublicEvents.ts`.
+Written **only** by the `mirrorPublicEvent` Cloud Function (rules: `read: true`, `write: false`). One document per `liveSessions` doc with `isPrivate == false`; deleted when the event becomes private or is deleted. Copies scheduling, price, seats (`playerCount`/`maxPlayers`), sport, age/gender, location (incl. `g`/`l`), `district`, `format`, `bannerUrl`, plus `groupName` (organizer). It **never** contains `players`. The public feed and `/events/:id` read this collection only. Existing events are copied once by `functions/scripts/backfillPublicEvents.ts`.
 
 ### `creditHistory/{id}` — `CreditHistoryModel`
 
@@ -518,7 +519,7 @@ CreditApprovalScreen (superUser, queries Firestore directly)
 | `CreditHistoryService` | Instant purchase transaction + pending Yape row |
 | `YapeService` | Admin Yape config |
 | `PaymentService` / `StubPaymentService` | Gateway interface / always-OK stub |
-| `StorageService` | `profile_images/`, `group_images/` |
+| `StorageService` | `profile_images/`, `group_images/`, `event_banners/` |
 | `ReceiptUploadService` | Pick image + `session_receipts/{sessionId}/` |
 
 Join uses a transaction so seat + debit + ticket stay atomic. Approval of credits in `CreditApprovalScreen` is **not** currently a single transaction — be careful if you extract it.
@@ -567,6 +568,7 @@ Storage layout:
 ```
 profile_images/profile_{uid}.jpg
 group_images/group_{groupId}.jpg
+event_banners/{groupId}/{timestamp}.jpg   # optional event banner (bytes upload, works on web)
 session_receipts/{sessionId}/receipt_{uid}_{ts}.jpg
 ```
 

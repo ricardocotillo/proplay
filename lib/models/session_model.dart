@@ -26,6 +26,9 @@ class SessionModel extends Equatable {
   final String? district;
   final String? format;
 
+  /// Optional banner image download URL (Firebase Storage).
+  final String? bannerUrl;
+
   /// Organizer group name. Only present on the public projection
   /// (`publicEvents`), written by the Cloud Function — never by the client.
   final String? groupName;
@@ -52,6 +55,7 @@ class SessionModel extends Equatable {
     this.locationAddress,
     this.district,
     this.format,
+    this.bannerUrl,
     this.groupName,
   });
 
@@ -78,6 +82,7 @@ class SessionModel extends Equatable {
     locationAddress,
     district,
     format,
+    bannerUrl,
     groupName,
   ];
 
@@ -103,6 +108,7 @@ class SessionModel extends Equatable {
     String? locationAddress,
     String? district,
     String? format,
+    String? bannerUrl,
     String? groupName,
   }) {
     return SessionModel(
@@ -127,6 +133,7 @@ class SessionModel extends Equatable {
       locationAddress: locationAddress ?? this.locationAddress,
       district: district ?? this.district,
       format: format ?? this.format,
+      bannerUrl: bannerUrl ?? this.bannerUrl,
       groupName: groupName ?? this.groupName,
     );
   }
@@ -153,6 +160,7 @@ class SessionModel extends Equatable {
       'locationAddress': locationAddress,
       if (district != null) 'district': district,
       if (format != null) 'format': format,
+      if (bannerUrl != null) 'bannerUrl': bannerUrl,
       // GeoFirestore fields for efficient location queries
       if (locationLat != null && locationLng != null) ...{
         'g': GeohashUtils.encode(locationLat!, locationLng!),
@@ -189,6 +197,7 @@ class SessionModel extends Equatable {
       locationAddress: map['locationAddress'] as String?,
       district: map['district'] as String?,
       format: map['format'] as String?,
+      bannerUrl: map['bannerUrl'] as String?,
       groupName: map['groupName'] as String?,
     );
   }

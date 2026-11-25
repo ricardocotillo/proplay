@@ -12,6 +12,7 @@ import 'package:proplay/services/session_service.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/utils/feed_filters.dart';
 import 'package:proplay/utils/sports.dart';
+import 'package:proplay/widgets/event_banner.dart';
 
 /// Public events feed body (filters + cards). Non-scrolling: the host
 /// (Home or `/events`) provides the scroll view. Works for guests.
@@ -244,51 +245,63 @@ class _EventCard extends StatelessWidget {
       if (session.district != null) session.district!,
     ].join(' · ');
 
+    void open() {
+      if (context.isAuthenticated) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SessionDetailScreen(sessionId: session.id),
+          ),
+        );
+      } else {
+        context.go('/events/${session.id}');
+      }
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
-        leading: CircleAvatar(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          child: Icon(sport.icon, color: Colors.white),
-        ),
-        title: Text(
-          session.title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          '$where\n${DateFormat('EEE d MMM, HH:mm', 'es').format(session.eventDate)}',
-        ),
-        isThreeLine: true,
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              session.costPerPlayer > 0
-                  ? 'S/ ${UserModel.formatCredits(session.costPerPlayer)}'
-                  : 'Gratis',
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          if (session.bannerUrl != null)
+            InkWell(
+              onTap: open,
+              child: EventBanner(url: session.bannerUrl!),
+            ),
+          ListTile(
+            contentPadding: const EdgeInsets.all(12),
+            leading: CircleAvatar(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              child: Icon(sport.icon, color: Colors.white),
+            ),
+            title: Text(
+              session.title,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            Text(
-              session.playerCount >= session.maxPlayers
-                  ? 'Lleno'
-                  : '${session.playerCount}/${session.maxPlayers} cupos',
+            subtitle: Text(
+              '$where\n${DateFormat('EEE d MMM, HH:mm', 'es').format(session.eventDate)}',
             ),
-          ],
-        ),
-        onTap: () {
-          if (context.isAuthenticated) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => SessionDetailScreen(sessionId: session.id),
-              ),
-            );
-          } else {
-            context.go('/events/${session.id}');
-          }
-        },
+            isThreeLine: true,
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  session.costPerPlayer > 0
+                      ? 'S/ ${UserModel.formatCredits(session.costPerPlayer)}'
+                      : 'Gratis',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  session.playerCount >= session.maxPlayers
+                      ? 'Lleno'
+                      : '${session.playerCount}/${session.maxPlayers} cupos',
+                ),
+              ],
+            ),
+            onTap: open,
+          ),
+        ],
       ),
     );
   }

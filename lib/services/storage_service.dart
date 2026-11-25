@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 
 class StorageService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
@@ -47,6 +48,23 @@ class StorageService {
       return downloadUrl;
     } catch (e) {
       throw Exception('Failed to upload group image: $e');
+    }
+  }
+
+  /// Upload an event banner. Uses bytes (not dart:io File) so it works on web.
+  /// Returns the download URL of the uploaded image.
+  Future<String> uploadEventBanner(String groupId, XFile file) async {
+    try {
+      final ts = DateTime.now().millisecondsSinceEpoch;
+      final ref = _storage.ref().child('event_banners/$groupId/$ts.jpg');
+      final bytes = await file.readAsBytes();
+      final snapshot = await ref.putData(
+        bytes,
+        SettableMetadata(contentType: 'image/jpeg'),
+      );
+      return await snapshot.ref.getDownloadURL();
+    } catch (e) {
+      throw Exception('Failed to upload event banner: $e');
     }
   }
 

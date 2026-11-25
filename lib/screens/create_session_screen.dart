@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import 'package:proplay/bloc/create_session/create_session_bloc.dart';
@@ -8,6 +11,7 @@ import 'package:proplay/models/group_model.dart';
 import 'package:proplay/models/session_template_model.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/session_service.dart';
+import 'package:proplay/services/storage_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/location_picker.dart';
@@ -20,7 +24,10 @@ class CreateSessionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => CreateSessionBloc(sessionService: SessionService()),
+      create: (context) => CreateSessionBloc(
+        sessionService: SessionService(),
+        storageService: StorageService(),
+      ),
       child: _CreateSessionContent(groupId: groupId),
     );
   }
@@ -59,6 +66,8 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   String? _desiredGender;
   RangeValues _ageRange = const RangeValues(18, 80);
   bool _isPrivate = false;
+  XFile? _banner;
+  Uint8List? _bannerBytes;
 
   // Group data
   GroupModel? _group;
@@ -70,6 +79,28 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   void initState() {
     super.initState();
     _loadGroup();
+  }
+
+  Future<void> _pickBanner() async {
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1600,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        _banner = picked;
+        _bannerBytes = bytes;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo cargar la imagen')),
+      );
+    }
   }
 
   Future<void> _loadGroup() async {
@@ -241,7 +272,9 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
           : _formatController.text.trim(),
     );
 
-    context.read<CreateSessionBloc>().add(CreateSessionTemplate(template));
+    context.read<CreateSessionBloc>().add(
+      CreateSessionTemplate(template, banner: _banner),
+    );
   }
 
   @override
@@ -527,6 +560,36 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                   ? 'Por favor, selecciona una opción'
                   : null,
             ),
+            const SizedBox(height: 16),
+
+            // Banner (optional)
+            if (_bannerBytes != null) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Image.memory(_bannerBytes!, fit: BoxFit.cover),
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => setState(() {
+                    _banner = null;
+                    _bannerBytes = null;
+                  }),
+                  child: const Text('Quitar'),
+                ),
+              ),
+            ] else
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: _pickBanner,
+                  icon: const Icon(Icons.image_outlined),
+                  label: const Text('Banner (opcional): elegir imagen'),
+                ),
+              ),
             const SizedBox(height: 16),
 
             // Format (optional), e.g. "7 vs 7"
