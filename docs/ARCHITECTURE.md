@@ -287,7 +287,7 @@ Join/create also writes the reciprocal `users/{uid}/groups/{groupId}` doc. Role 
 
 Written by `SessionService.createSessionTemplate`, which also inserts the first `liveSessions` doc. Fields: `groupId`, `creatorId`, `title`, `eventDate`, `eventEndDate`, `durationInMinutes` (computed), `maxPlayers`, `totalCost`, `costPerPlayer` (`totalCost / maxPlayers`), `isPrivate`, `sport`, `minAge`, `maxAge`, `desiredGender`, location + GeoFirestore `g` / `l`.
 
-Recurring `rrule` from `docs/sessions.md` is **not** implemented.
+Recurring `rrule` from `docs/sessions.md` is **not** implemented in the app. Ops script `functions/scripts/createRecurringEvents.ts` creates weekly events from a local CSV with deterministic ids: template `rec_{key}`, live session `rec_{key}_{YYYY-MM-DD}` (see README).
 
 ### `liveSessions/{id}` — `SessionModel`
 
