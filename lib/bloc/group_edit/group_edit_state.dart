@@ -1,4 +1,3 @@
-
 part of 'group_edit_bloc.dart';
 
 abstract class GroupEditState extends Equatable {

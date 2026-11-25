@@ -4,6 +4,7 @@ import 'package:proplay/widgets/cached_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/screens/credit_history_screen.dart';
 import 'package:proplay/screens/credit_approval_screen.dart';
@@ -21,9 +22,7 @@ class AppDrawer extends StatelessWidget {
         children: [
           // Drawer Header with User Info
           UserAccountsDrawerHeader(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-            ),
+            decoration: const BoxDecoration(gradient: AppColors.heroGradient),
             currentAccountPicture: user?.profileImageUrl != null
                 ? PlatformCachedImage(
                     imageUrl: user!.profileImageUrl!,
@@ -116,12 +115,12 @@ class AppDrawer extends StatelessWidget {
                   ListTile(
                     leading: Icon(
                       Icons.admin_panel_settings,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: AppColors.selectedText,
                     ),
-                    title: Text(
+                    title: const Text(
                       'Aprobar Créditos',
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
+                        color: AppColors.selectedText,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -138,10 +137,15 @@ class AppDrawer extends StatelessWidget {
                 ],
                 const Divider(),
                 ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
-                  title: const Text(
+                  leading: Icon(
+                    Icons.logout,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  title: Text(
                     'Cerrar Sesión',
-                    style: TextStyle(color: Colors.red),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                   onTap: () {
                     final authBloc = context.read<AuthBloc>();
@@ -164,9 +168,11 @@ class AppDrawer extends StatelessWidget {
                               context.pop(); // Close the drawer
                               authBloc.add(AuthLogoutRequested());
                             },
-                            child: const Text(
+                            child: Text(
                               'Cerrar Sesión',
-                              style: TextStyle(color: Colors.red),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
                             ),
                           ),
                         ],

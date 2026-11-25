@@ -26,10 +26,7 @@ class GroupJoinRequested extends GroupEvent {
   final String code;
   final String userId;
 
-  const GroupJoinRequested({
-    required this.code,
-    required this.userId,
-  });
+  const GroupJoinRequested({required this.code, required this.userId});
 
   @override
   List<Object?> get props => [code, userId];

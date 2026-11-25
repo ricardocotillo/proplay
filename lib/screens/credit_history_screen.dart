@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/models/credit_history_model.dart';
 import 'package:proplay/utils/auth_helper.dart';
 
@@ -184,11 +185,11 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.history, size: 64, color: Colors.grey[400]),
+                  Icon(Icons.history, size: 64, color: AppColors.muted),
                   const SizedBox(height: 16),
                   Text(
                     'No hay historial de créditos',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 16, color: AppColors.muted),
                   ),
                 ],
               ),
@@ -267,7 +268,7 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
                           Text(
                             dateFormat.format(history.createdAt),
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: AppColors.muted,
                               fontSize: 14,
                             ),
                           ),
@@ -280,9 +281,8 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: _getStatusColor(
-                                    history.status,
-                                  ).withValues(alpha: 0.2),
+                                  color: _getStatusColor(history.status)
+                                      .withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: _getStatusColor(history.status),
@@ -304,7 +304,7 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
                                   'Saldo: ${history.balanceAfter!.toStringAsFixed(2)}',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.grey[600],
+                                    color: AppColors.muted,
                                     fontStyle: FontStyle.italic,
                                   ),
                                 ),

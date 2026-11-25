@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
@@ -17,10 +18,10 @@ class WalletIndicator extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(right: 12.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.selectedTint,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+          color: AppColors.brand.withValues(alpha: 0.6),
           width: 1,
         ),
       ),
@@ -37,13 +38,13 @@ class WalletIndicator extends StatelessWidget {
                   Icon(
                     Icons.account_balance_wallet,
                     size: 18,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: AppColors.selectedText,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     user?.credits ?? '0.00',
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
+                      color: AppColors.selectedText,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -62,7 +63,7 @@ class WalletIndicator extends StatelessWidget {
               child: Icon(
                 Icons.refresh,
                 size: 18,
-                color: Theme.of(context).colorScheme.primary,
+                color: AppColors.selectedText,
               ),
             ),
           ),

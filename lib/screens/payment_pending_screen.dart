@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 
 class PaymentPendingScreen extends StatelessWidget {
@@ -16,7 +17,11 @@ class PaymentPendingScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.hourglass_bottom, size: 80, color: colorScheme.secondary),
+              Icon(
+                Icons.hourglass_bottom,
+                size: 80,
+                color: colorScheme.secondary,
+              ),
               const SizedBox(height: 16),
               const Text(
                 'Tu pago está pendiente.',
@@ -27,7 +32,7 @@ class PaymentPendingScreen extends StatelessWidget {
               Text(
                 'Cuando se confirme, tus créditos aparecerán automáticamente en tu cuenta.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: AppColors.muted),
               ),
               const SizedBox(height: 24),
               SizedBox(

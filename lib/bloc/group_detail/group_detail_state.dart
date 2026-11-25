@@ -16,10 +16,7 @@ class GroupDetailLoaded extends GroupDetailState {
   final List<GroupMemberModel> members;
   final String? currentUserRole;
 
-  const GroupDetailLoaded({
-    required this.members,
-    this.currentUserRole,
-  });
+  const GroupDetailLoaded({required this.members, this.currentUserRole});
 
   @override
   List<Object?> get props => [members, currentUserRole];

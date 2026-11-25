@@ -8,7 +8,11 @@ class GeohashUtils {
 
   /// Encode latitude/longitude to geohash string.
   /// Precision 6 gives ~1.2km x 0.6km cells, suitable for 5km radius queries.
-  static String encode(double lat, double lng, {int precision = defaultPrecision}) {
+  static String encode(
+    double lat,
+    double lng, {
+    int precision = defaultPrecision,
+  }) {
     return _geoHasher.encode(lng, lat, precision: precision);
   }
 
@@ -77,7 +81,12 @@ class GeohashUtils {
     double radiusKm, {
     int precision = defaultPrecision,
   }) {
-    final hashes = getGeohashesForRadius(lat, lng, radiusKm, precision: precision);
+    final hashes = getGeohashesForRadius(
+      lat,
+      lng,
+      radiusKm,
+      precision: precision,
+    );
     final sortedHashes = hashes.toList()..sort();
 
     if (sortedHashes.isEmpty) return [];
@@ -91,20 +100,16 @@ class GeohashUtils {
 
       // Check if hashes share the same prefix (can be grouped)
       if (!_canGroupHashes(prevHash, hash)) {
-        ranges.add(GeohashRange(
-          start: rangeStart,
-          end: _getUpperBound(prevHash),
-        ));
+        ranges.add(
+          GeohashRange(start: rangeStart, end: _getUpperBound(prevHash)),
+        );
         rangeStart = hash;
       }
       prevHash = hash;
     }
 
     // Add the last range
-    ranges.add(GeohashRange(
-      start: rangeStart,
-      end: _getUpperBound(prevHash),
-    ));
+    ranges.add(GeohashRange(start: rangeStart, end: _getUpperBound(prevHash)));
 
     return ranges;
   }

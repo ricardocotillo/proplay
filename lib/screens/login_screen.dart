@@ -73,9 +73,8 @@ class _LoginScreenState extends State<LoginScreen> {
             );
           }
           if (state is AuthPasswordResetEmailSent) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.message)));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.message)));
           }
         },
         builder: (context, state) {

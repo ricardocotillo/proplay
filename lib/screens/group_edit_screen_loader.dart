@@ -10,8 +10,7 @@ class GroupEditScreenLoader extends StatefulWidget {
   const GroupEditScreenLoader({super.key, required this.groupId});
 
   @override
-  State<GroupEditScreenLoader> createState() =>
-      _GroupEditScreenLoaderState();
+  State<GroupEditScreenLoader> createState() => _GroupEditScreenLoaderState();
 }
 
 class _GroupEditScreenLoaderState extends State<GroupEditScreenLoader> {
@@ -34,7 +33,9 @@ class _GroupEditScreenLoaderState extends State<GroupEditScreenLoader> {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
-        } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+        } else if (snapshot.hasError ||
+            !snapshot.hasData ||
+            snapshot.data == null) {
           return const Scaffold(
             body: Center(child: Text('Group not found or failed to load.')),
           );

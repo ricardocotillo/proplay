@@ -20,7 +20,9 @@ class GroupDetailScreenLoader extends StatelessWidget {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
-        } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+        } else if (snapshot.hasError ||
+            !snapshot.hasData ||
+            snapshot.data == null) {
           return const Scaffold(
             body: Center(child: Text('Group not found or failed to load.')),
           );

@@ -9,6 +9,7 @@ import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/screens/session_detail_screen.dart';
 import 'package:proplay/services/session_service.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/utils/feed_filters.dart';
 import 'package:proplay/utils/sports.dart';
@@ -72,7 +73,11 @@ class _EventsFeedViewState extends State<EventsFeedView> {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  const Icon(Icons.error_outline, size: 40, color: Colors.red),
+                  Icon(
+                    Icons.error_outline,
+                    size: 40,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   const SizedBox(height: 8),
                   const Text('No pudimos cargar los eventos'),
                   TextButton(
@@ -89,21 +94,29 @@ class _EventsFeedViewState extends State<EventsFeedView> {
             );
           }
           final loaded = state as EventsFeedLoaded;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _FiltersBar(state: loaded),
-              const SizedBox(height: 8),
-              if (loaded.visible.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(
-                    child: Text('No hay eventos con estos filtros por ahora.'),
-                  ),
-                )
-              else
-                for (final s in loaded.visible) _EventCard(session: s),
-            ],
+          return Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _FiltersBar(state: loaded),
+                  const SizedBox(height: 8),
+                  if (loaded.visible.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Center(
+                        child: Text(
+                          'No hay eventos con estos filtros por ahora.',
+                        ),
+                      ),
+                    )
+                  else
+                    for (final s in loaded.visible) _EventCard(session: s),
+                ],
+              ),
+            ),
           );
         },
       ),
@@ -290,7 +303,7 @@ class _EventCard extends StatelessWidget {
                     ? null
                     : CircleAvatar(
                         backgroundColor: Theme.of(context).colorScheme.primary,
-                        child: Icon(sport.icon, color: Colors.white),
+                        child: Icon(sport.icon),
                       ),
                 title: Text(
                   session.title,
@@ -308,7 +321,10 @@ class _EventCard extends StatelessWidget {
                       session.costPerPlayer > 0
                           ? 'S/ ${UserModel.formatCredits(session.costPerPlayer)}'
                           : 'Gratis',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.selectedText,
+                      ),
                     ),
                     Text(
                       session.playerCount >= session.maxPlayers

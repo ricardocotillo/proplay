@@ -50,9 +50,8 @@ class GroupInfoScreen extends StatelessWidget {
           // Group Name
           Text(
             group.name,
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 32),
           // Options

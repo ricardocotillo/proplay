@@ -100,7 +100,9 @@ class GroupsSessionsScreen extends StatelessWidget {
                                     onPressed: () =>
                                         Navigator.of(dialogContext).pop(true),
                                     style: TextButton.styleFrom(
-                                      foregroundColor: Colors.red,
+                                      foregroundColor: Theme.of(dialogContext)
+                                          .colorScheme
+                                          .error,
                                     ),
                                     child: const Text('Eliminar'),
                                   ),

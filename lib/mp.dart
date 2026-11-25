@@ -19,8 +19,7 @@ List<Map<String, dynamic>> preferences = [
     "expires": false,
     "external_reference": "",
     "id": "127411672-7eba68ac-0027-41ec-9633-fa0bf2d04472",
-    "init_point":
-        "https://www.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-7eba68ac-0027-41ec-9633-fa0bf2d04472",
+    "init_point": "https://www.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-7eba68ac-0027-41ec-9633-fa0bf2d04472",
     "internal_metadata": null,
     "items": [
       {
@@ -64,8 +63,7 @@ List<Map<String, dynamic>> preferences = [
     "product_id": null,
     "preference_expired": false,
     "redirect_urls": {"failure": "", "pending": "", "success": ""},
-    "sandbox_init_point":
-        "https://sandbox.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-7eba68ac-0027-41ec-9633-fa0bf2d04472",
+    "sandbox_init_point": "https://sandbox.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-7eba68ac-0027-41ec-9633-fa0bf2d04472",
     "site_id": "MPE",
     "shipments": {
       "default_shipping_method": null,
@@ -105,8 +103,7 @@ List<Map<String, dynamic>> preferences = [
     "expires": false,
     "external_reference": "",
     "id": "127411672-2c999aef-2af4-446b-bebb-1c330377d08f",
-    "init_point":
-        "https://www.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-2c999aef-2af4-446b-bebb-1c330377d08f",
+    "init_point": "https://www.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-2c999aef-2af4-446b-bebb-1c330377d08f",
     "internal_metadata": null,
     "items": [
       {
@@ -150,8 +147,7 @@ List<Map<String, dynamic>> preferences = [
     "product_id": null,
     "preference_expired": false,
     "redirect_urls": {"failure": "", "pending": "", "success": ""},
-    "sandbox_init_point":
-        "https://sandbox.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-2c999aef-2af4-446b-bebb-1c330377d08f",
+    "sandbox_init_point": "https://sandbox.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-2c999aef-2af4-446b-bebb-1c330377d08f",
     "site_id": "MPE",
     "shipments": {
       "default_shipping_method": null,
@@ -191,8 +187,7 @@ List<Map<String, dynamic>> preferences = [
     "expires": false,
     "external_reference": "",
     "id": "127411672-7ea3441b-edf9-4db6-b00e-af3e77e611aa",
-    "init_point":
-        "https://www.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-7ea3441b-edf9-4db6-b00e-af3e77e611aa",
+    "init_point": "https://www.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-7ea3441b-edf9-4db6-b00e-af3e77e611aa",
     "internal_metadata": null,
     "items": [
       {
@@ -236,8 +231,7 @@ List<Map<String, dynamic>> preferences = [
     "product_id": null,
     "preference_expired": false,
     "redirect_urls": {"failure": "", "pending": "", "success": ""},
-    "sandbox_init_point":
-        "https://sandbox.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-7ea3441b-edf9-4db6-b00e-af3e77e611aa",
+    "sandbox_init_point": "https://sandbox.mercadopago.com.pe/checkout/v1/redirect?pref_id=127411672-7ea3441b-edf9-4db6-b00e-af3e77e611aa",
     "site_id": "MPE",
     "shipments": {
       "default_shipping_method": null,

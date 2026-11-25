@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -226,9 +227,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   errorWidget: (context, url, error) =>
                                       CircleAvatar(
                                         radius: 60,
-                                        backgroundColor: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
+                                        backgroundColor: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
                                         child: Text(
                                           user.firstName.isNotEmpty &&
                                                   user.lastName.isNotEmpty
@@ -236,9 +237,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                                     .toUpperCase()
                                               : 'U',
                                           style: TextStyle(
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.onPrimary,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
                                             fontSize: 48,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -247,18 +248,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 )
                               : CircleAvatar(
                                   radius: 60,
-                                  backgroundColor: Theme.of(
-                                    context,
-                                  ).colorScheme.primary,
+                                  backgroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .primary,
                                   child: Text(
                                     user != null
                                         ? '${user.firstName[0]}${user.lastName[0]}'
                                               .toUpperCase()
                                         : 'U',
                                     style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onPrimary,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                       fontSize: 48,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -269,16 +270,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             right: 0,
                             child: CircleAvatar(
                               radius: 20,
-                              backgroundColor: Theme.of(
-                                context,
-                              ).colorScheme.secondary,
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .secondary,
                               child: IconButton(
                                 icon: Icon(
                                   Icons.camera_alt,
                                   size: 20,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSecondary,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSecondary,
                                 ),
                                 onPressed: isLoading || _isUploadingImage
                                     ? null
