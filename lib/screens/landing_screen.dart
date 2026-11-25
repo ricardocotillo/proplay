@@ -10,6 +10,7 @@ import 'package:proplay/services/session_service.dart';
 import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/theme/app_theme.dart' show kDisplayFont;
 import 'package:proplay/utils/sports.dart';
+import 'package:proplay/widgets/brand.dart';
 import 'package:proplay/widgets/event_card.dart';
 import 'package:proplay/widgets/responsive_layout.dart';
 import 'package:proplay/widgets/skeleton.dart';
@@ -111,42 +112,6 @@ class _Section extends StatelessWidget {
   }
 }
 
-class _Brand extends StatelessWidget {
-  const _Brand();
-
-  @override
-  Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.titleLarge
-        ?.copyWith(fontSize: 24, fontWeight: FontWeight.w800);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: Image.asset(
-            'assets/images/landing/logo.webp',
-            height: 36,
-            semanticLabel: 'Logo de ProPlay',
-          ),
-        ),
-        const SizedBox(width: 10),
-        Text.rich(
-          TextSpan(
-            style: style,
-            children: const [
-              TextSpan(text: 'Pro'),
-              TextSpan(
-                text: 'Play',
-                style: TextStyle(color: AppColors.selectedText),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _NavBar extends StatelessWidget {
   const _NavBar();
 
@@ -166,7 +131,7 @@ class _NavBar extends StatelessWidget {
             const Expanded(
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: FittedBox(fit: BoxFit.scaleDown, child: _Brand()),
+                child: FittedBox(fit: BoxFit.scaleDown, child: Brand()),
               ),
             ),
             if (wide)
@@ -377,7 +342,6 @@ class _SportTile extends StatelessWidget {
     return SizedBox(
       width: width,
       child: AspectRatio(
-        // The artwork already carries the sport name; keep its bottom edge.
         aspectRatio: 1.15,
         child: ClipRRect(
           borderRadius: BorderRadius.circular(14),
@@ -385,12 +349,39 @@ class _SportTile extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               Image.asset(
-                sportImage(sport.value),
+                sportPhoto(sport.value, sport.value),
                 fit: BoxFit.cover,
-                alignment: Alignment.bottomCenter,
                 semanticLabel: sport.display,
                 errorBuilder: (_, _, _) =>
                     const ColoredBox(color: AppColors.card),
+              ),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.center,
+                    colors: [Color(0xCC000000), Color(0x00000000)],
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 16,
+                bottom: 14,
+                child: Row(
+                  children: [
+                    Icon(sport.icon, color: Colors.white, size: 22),
+                    const SizedBox(width: 8),
+                    Text(
+                      sport.display.toUpperCase(),
+                      style: const TextStyle(
+                        fontFamily: kDisplayFont,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               Positioned.fill(
                 child: Material(
@@ -539,7 +530,7 @@ class _Footer extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _Brand(),
+            const Brand(),
             const SizedBox(height: 8),
             Text(
               'Organiza y descubre deporte en Perú.',
