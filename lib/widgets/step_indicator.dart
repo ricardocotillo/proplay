@@ -79,12 +79,13 @@ class StepIndicator extends StatelessWidget {
                   Text(
                     stepLabels![stepIndex],
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: isActive || isCompleted
-                              ? colorScheme.primary
-                              : colorScheme.onSurfaceVariant,
-                          fontWeight:
-                              isActive ? FontWeight.bold : FontWeight.normal,
-                        ),
+                      color: isActive || isCompleted
+                          ? colorScheme.primary
+                          : colorScheme.onSurfaceVariant,
+                      fontWeight: isActive
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
                   ),
                 ],
               ],

@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/models/ticket_model.dart';
 import 'package:proplay/screens/session_map_screen.dart';
 import 'package:proplay/services/ticket_service.dart';
@@ -112,9 +113,9 @@ class TicketDetailScreen extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Colors.white, // QR needs a light background to stay scannable
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: AppColors.border),
                         ),
                         child: QrImageView(
                           data: url,
@@ -148,7 +149,7 @@ class TicketDetailScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   url,
-                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  style: TextStyle(fontSize: 11, color: AppColors.muted),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -156,7 +157,7 @@ class TicketDetailScreen extends StatelessWidget {
                   ticket.isUsed
                       ? 'Este ticket ya fue utilizado.'
                       : 'Muestra este código QR al llegar al evento.',
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(color: AppColors.muted),
                   textAlign: TextAlign.center,
                 ),
               ],

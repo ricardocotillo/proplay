@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
 
 class PaymentFailureScreen extends StatelessWidget {
@@ -27,7 +28,7 @@ class PaymentFailureScreen extends StatelessWidget {
               Text(
                 'Puedes intentarlo nuevamente o volver al inicio.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: AppColors.muted),
               ),
               const SizedBox(height: 24),
               SizedBox(

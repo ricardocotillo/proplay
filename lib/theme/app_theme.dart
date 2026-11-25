@@ -66,10 +66,11 @@ class AppTheme {
       borderRadius: BorderRadius.circular(12),
     );
     const buttonPadding = EdgeInsets.symmetric(horizontal: 20, vertical: 14);
-    OutlineInputBorder inputBorder(Color c, [double w = 1]) => OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: c, width: w),
-    );
+    OutlineInputBorder inputBorder(Color c, [double w = 1]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: c, width: w),
+        );
 
     return base.copyWith(
       textTheme: text,
@@ -182,10 +183,13 @@ class AppTheme {
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? Colors.white : AppColors.muted,
+          (s) =>
+              s.contains(WidgetState.selected) ? Colors.white : AppColors.muted,
         ),
         trackColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? AppColors.brand : AppColors.field,
+          (s) => s.contains(WidgetState.selected)
+              ? AppColors.brand
+              : AppColors.field,
         ),
       ),
       checkboxTheme: CheckboxThemeData(
@@ -197,7 +201,9 @@ class AppTheme {
       ),
       radioTheme: RadioThemeData(
         fillColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected) ? AppColors.brand : AppColors.muted,
+          (s) => s.contains(WidgetState.selected)
+              ? AppColors.brand
+              : AppColors.muted,
         ),
       ),
       tabBarTheme: const TabBarThemeData(

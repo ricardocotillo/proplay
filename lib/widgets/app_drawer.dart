@@ -143,7 +143,9 @@ class AppDrawer extends StatelessWidget {
                   ),
                   title: Text(
                     'Cerrar Sesión',
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                   onTap: () {
                     final authBloc = context.read<AuthBloc>();

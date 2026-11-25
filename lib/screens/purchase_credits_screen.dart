@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/models/payment_result_model.dart';
 import 'package:proplay/bloc/credit/credit_bloc.dart';
 import 'package:proplay/bloc/credit/credit_event.dart';
@@ -228,7 +229,7 @@ class _YapePaymentFlowState extends State<_YapePaymentFlow> {
                     ? _nextStep
                     : _confirmPayment,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFBA1B1D),
+                  backgroundColor: AppColors.brand,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -259,7 +260,7 @@ class _StepIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = const Color(0xFFBA1B1D);
+    final primaryColor = AppColors.brand;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -269,7 +270,7 @@ class _StepIndicator extends StatelessWidget {
           height: 2,
           color: currentStep == _YapeStep.confirm
               ? primaryColor
-              : Colors.grey[300],
+              : AppColors.border,
         ),
         _buildCircle('2', currentStep == _YapeStep.confirm),
       ],
@@ -281,14 +282,14 @@ class _StepIndicator extends StatelessWidget {
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: active ? const Color(0xFFBA1B1D) : Colors.grey[300],
+        color: active ? AppColors.brand : AppColors.border,
         shape: BoxShape.circle,
       ),
       child: Center(
         child: Text(
           text,
           style: TextStyle(
-            color: active ? Colors.white : Colors.grey[600],
+            color: active ? Colors.white : AppColors.muted,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -314,7 +315,7 @@ class _YapeSendStep extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Copia el número y realiza el pago en tu app.',
-          style: TextStyle(color: Colors.grey[600], fontSize: 16),
+          style: TextStyle(color: AppColors.muted, fontSize: 16),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 32),
@@ -322,7 +323,7 @@ class _YapeSendStep extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFFBA1B1D), Color(0xFF8B1416)],
+              colors: [AppColors.brand, AppColors.heroEnd],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -372,7 +373,7 @@ class _YapeSendStep extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFFBA1B1D),
+                        color: AppColors.brand,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -380,7 +381,7 @@ class _YapeSendStep extends StatelessWidget {
                       icon: const Icon(
                         Icons.copy,
                         size: 20,
-                        color: Color(0xFFBA1B1D),
+                        color: AppColors.brand,
                       ),
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: config.phone));
@@ -399,23 +400,23 @@ class _YapeSendStep extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: AppColors.field,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: AppColors.border),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Monto a pagar:',
-                style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                style: TextStyle(color: AppColors.muted, fontSize: 16),
               ),
               Text(
                 'S/ ${package.price.toStringAsFixed(2)}',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2E7D32),
+                  color: AppColors.success,
                 ),
               ),
             ],
@@ -442,23 +443,23 @@ class _YapeConfirmStep extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Ingresa los últimos 3 dígitos del código de operación.',
-          style: TextStyle(color: Colors.grey[600], fontSize: 16),
+          style: TextStyle(color: AppColors.muted, fontSize: 16),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 48),
         Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: AppColors.field,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.grey[200]!),
+            border: Border.all(color: AppColors.border),
           ),
           child: Column(
             children: [
               Text(
                 'CÓDIGO DE OPERACIÓN',
                 style: TextStyle(
-                  color: const Color(0xFFBA1B1D).withValues(alpha: 0.7),
+                  color: AppColors.brand.withValues(alpha: 0.7),
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.2,
                 ),
@@ -479,7 +480,7 @@ class _YapeConfirmStep extends StatelessWidget {
                   decoration: const InputDecoration(
                     counterText: '',
                     hintText: '0 0 0',
-                    hintStyle: TextStyle(color: Colors.grey),
+                    hintStyle: TextStyle(color: AppColors.muted),
                     border: InputBorder.none,
                   ),
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -509,16 +510,14 @@ class _PackageSelectionView extends StatelessWidget {
         children: [
           Text(
             'Selecciona un paquete',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
             'Elige la cantidad de créditos que deseas comprar.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: AppColors.muted),
           ),
           const SizedBox(height: 24),
           ...CreditPackage.packages.map(

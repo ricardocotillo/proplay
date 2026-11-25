@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/bloc/validate_ticket/validate_ticket_bloc.dart';
 import 'package:proplay/bloc/validate_ticket/validate_ticket_event.dart';
 import 'package:proplay/bloc/validate_ticket/validate_ticket_state.dart';
@@ -178,7 +179,7 @@ class ValidateTicketScreen extends StatelessWidget {
                     child: Text(
                       ticket.isUsed ? 'Usado' : 'Válido',
                       style: TextStyle(
-                        color: ticket.isUsed ? Colors.grey[700] : Colors.green,
+                        color: ticket.isUsed ? AppColors.muted : Colors.green,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -240,18 +241,18 @@ class ValidateTicketScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.1),
+                color: AppColors.muted.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey),
+                border: Border.all(color: AppColors.muted),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.lock_outline, color: Colors.grey),
+                  Icon(Icons.lock_outline, color: AppColors.muted),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'No tienes permisos para validar este ticket',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: AppColors.muted),
                     ),
                   ),
                 ],

@@ -87,18 +87,16 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
       child: BlocListener<GroupEditBloc, GroupEditState>(
         listener: (context, state) {
           if (state is GroupEditSuccess) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.message)));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.message)));
             if (state.message.contains('deleted')) {
               context.go('/');
             } else {
               context.pop();
             }
           } else if (state is GroupEditFailure) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.error)));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.error)));
           }
         },
         child: BlocBuilder<GroupEditBloc, GroupEditState>(
@@ -156,15 +154,15 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                                 right: 0,
                                 child: CircleAvatar(
                                   radius: 18,
-                                  backgroundColor: Theme.of(
-                                    context,
-                                  ).colorScheme.primary,
+                                  backgroundColor: Theme.of(context)
+                                      .colorScheme
+                                      .primary,
                                   child: Icon(
                                     Icons.camera_alt,
                                     size: 18,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimary,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimary,
                                   ),
                                 ),
                               ),
@@ -212,9 +210,9 @@ class _GroupEditScreenState extends State<GroupEditScreen> {
                                           : null;
                                     });
                                   },
-                            selectedColor: Theme.of(
-                              context,
-                            ).colorScheme.primaryContainer,
+                            selectedColor: Theme.of(context)
+                                .colorScheme
+                                .primaryContainer,
                           );
                         }).toList(),
                       ),

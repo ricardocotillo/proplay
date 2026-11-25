@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/widgets/cached_image.dart';
 import 'package:proplay/widgets/event_banner.dart';
 import 'package:proplay/bloc/session_detail/session_detail_bloc.dart';
@@ -317,19 +318,19 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                               Icon(
                                 Icons.people_outline,
                                 size: 80,
-                                color: Colors.grey[400],
+                                color: AppColors.muted,
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 'No hay jugadores aún',
                                 style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(color: Colors.grey[600]),
+                                    ?.copyWith(color: AppColors.muted),
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 '¡Sé el primero en unirte!',
                                 style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(color: Colors.grey[500]),
+                                    ?.copyWith(color: AppColors.muted),
                               ),
                             ],
                           ),
@@ -533,7 +534,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
       ),
       subtitle: Text(
         _formatJoinTime(player.joinedAt),
-        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        style: TextStyle(fontSize: 12, color: AppColors.muted),
       ),
       trailing: isOwnerOrAdmin
           ? PopupMenuButton<String>(
@@ -558,7 +559,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                 ];
               },
             )
-          : Icon(Icons.check_circle, color: Colors.green[700], size: 20),
+          : Icon(Icons.check_circle, color: AppColors.success, size: 20),
     );
   }
 

@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -29,7 +30,8 @@ class ReceiptUploadService {
   }) async {
     try {
       final File file = File(imagePath);
-      final String fileName = 'receipt_${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final String fileName =
+          'receipt_${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final String path = 'session_receipts/$sessionId/$fileName';
 
       // Upload to Firebase Storage

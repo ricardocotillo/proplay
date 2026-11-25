@@ -46,9 +46,9 @@ class AppSidebar extends StatelessWidget {
                         ),
                         errorWidget: (context, url, error) => CircleAvatar(
                           radius: 40,
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.secondary,
+                          backgroundColor: Theme.of(context)
+                              .colorScheme
+                              .secondary,
                           child: Text(
                             user.firstName.isNotEmpty &&
                                     user.lastName.isNotEmpty
@@ -65,9 +65,9 @@ class AppSidebar extends StatelessWidget {
                       )
                     : CircleAvatar(
                         radius: 40,
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.secondary,
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .secondary,
                         child: Text(
                           user != null &&
                                   user.firstName.isNotEmpty &&
@@ -88,9 +88,8 @@ class AppSidebar extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onPrimary.withAlpha(204),
+                    color: Theme.of(context).colorScheme.onPrimary
+                        .withAlpha(204),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -98,9 +97,8 @@ class AppSidebar extends StatelessWidget {
                   user?.email ?? '',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onPrimary.withAlpha(204),
+                    color: Theme.of(context).colorScheme.onPrimary
+                        .withAlpha(204),
                   ),
                 ),
               ],
@@ -232,9 +230,8 @@ class _SidebarMenuItem extends StatelessWidget {
         style: TextStyle(color: color, fontWeight: fontWeight),
       ),
       onTap: onTap,
-      hoverColor: Theme.of(
-        context,
-      ).colorScheme.primaryContainer.withValues(alpha: 0.3),
+      hoverColor: Theme.of(context).colorScheme.primaryContainer
+          .withValues(alpha: 0.3),
     );
   }
 }

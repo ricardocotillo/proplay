@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/models/credit_history_model.dart';
 import 'package:proplay/models/user_model.dart';
 
@@ -349,12 +350,12 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
                   Icon(
                     Icons.check_circle_outline,
                     size: 64,
-                    color: Colors.grey[400],
+                    color: AppColors.muted,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No hay solicitudes pendientes',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 16, color: AppColors.muted),
                   ),
                 ],
               ),
@@ -391,16 +392,17 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
                           Row(
                             children: [
                               CircleAvatar(
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.primary.withValues(alpha: 0.2),
+                                backgroundColor: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.2),
                                 child: Text(
                                   '${user.firstName[0]}${user.lastName[0]}'
                                       .toUpperCase(),
                                   style: TextStyle(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -420,7 +422,7 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
                                     Text(
                                       user.email,
                                       style: TextStyle(
-                                        color: Colors.grey[600],
+                                        color: AppColors.muted,
                                         fontSize: 12,
                                       ),
                                     ),
@@ -463,13 +465,13 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
                               Icon(
                                 Icons.info_outline,
                                 size: 20,
-                                color: Colors.grey[600],
+                                color: AppColors.muted,
                               ),
                               const SizedBox(width: 12),
                               Text(
                                 'Estado:',
                                 style: TextStyle(
-                                  color: Colors.grey[600],
+                                  color: AppColors.muted,
                                   fontSize: 14,
                                 ),
                               ),
@@ -480,9 +482,8 @@ class _CreditApprovalScreenState extends State<CreditApprovalScreen> {
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: _getStatusColor(
-                                    creditHistory.status,
-                                  ).withValues(alpha: 0.2),
+                                  color: _getStatusColor(creditHistory.status)
+                                      .withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: _getStatusColor(
@@ -572,12 +573,9 @@ class _DetailRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: Colors.grey[600]),
+        Icon(icon, size: 20, color: AppColors.muted),
         const SizedBox(width: 12),
-        Text(
-          '$label:',
-          style: TextStyle(color: Colors.grey[600], fontSize: 14),
-        ),
+        Text('$label:', style: TextStyle(color: AppColors.muted, fontSize: 14)),
         const SizedBox(width: 8),
         Expanded(
           child: Text(

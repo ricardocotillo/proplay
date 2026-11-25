@@ -134,9 +134,9 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                                         : null;
                                   });
                                 },
-                          selectedColor: Theme.of(
-                            context,
-                          ).colorScheme.primaryContainer,
+                          selectedColor: Theme.of(context)
+                              .colorScheme
+                              .primaryContainer,
                         );
                       }).toList(),
                     ),
@@ -156,9 +156,9 @@ class _CreateGroupScreenState extends State<CreateGroupScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Column(

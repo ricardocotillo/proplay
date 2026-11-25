@@ -37,14 +37,14 @@ class LoadAllUserSessions extends SessionEvent {
 
   @override
   List<Object?> get props => [
-        groupIds,
-        userSports,
-        userGender,
-        userAge,
-        userLat,
-        userLng,
-        maxDistanceKm,
-      ];
+    groupIds,
+    userSports,
+    userGender,
+    userAge,
+    userLat,
+    userLng,
+    maxDistanceKm,
+  ];
 }
 
 class DeleteSession extends SessionEvent {

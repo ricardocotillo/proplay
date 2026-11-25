@@ -140,9 +140,8 @@ class GroupDetailScreen extends StatelessWidget {
         body: BlocConsumer<GroupDetailBloc, GroupDetailState>(
           listener: (context, state) {
             if (state is GroupDetailError) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(state.message)));
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(state.message)));
             }
           },
           builder: (context, state) {
@@ -165,9 +164,8 @@ class GroupDetailScreen extends StatelessWidget {
                   : (state as GroupDetailMemberRemoved).currentUserRole;
               final isOwner = currentUserRole == 'owner';
 
-              final isDesktop = ResponsiveBreakpoints.of(
-                context,
-              ).largerThan(TABLET);
+              final isDesktop = ResponsiveBreakpoints.of(context)
+                  .largerThan(TABLET);
 
               if (isDesktop) {
                 return _buildDesktopLayout(
@@ -269,25 +267,22 @@ class GroupDetailScreen extends StatelessWidget {
           // Group Name
           Text(
             'Nombre del Grupo',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: Theme.of(context).colorScheme.secondary),
           ),
           const SizedBox(height: 4),
           Text(
             group.name,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 24),
 
           // Sport
           Text(
             'Deporte',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: Theme.of(context).colorScheme.secondary),
           ),
           const SizedBox(height: 4),
           Text(
@@ -301,9 +296,8 @@ class GroupDetailScreen extends StatelessWidget {
           // Code
           Text(
             'Código de Invitación',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: Theme.of(context).colorScheme.secondary),
           ),
           const SizedBox(height: 4),
           Row(
@@ -392,9 +386,8 @@ class GroupDetailScreen extends StatelessWidget {
             children: [
               Text(
                 'Miembros',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(width: 8),
               Container(

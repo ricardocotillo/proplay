@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/bloc/my_tickets/my_tickets_bloc.dart';
 import 'package:proplay/bloc/my_tickets/my_tickets_event.dart';
 import 'package:proplay/bloc/my_tickets/my_tickets_state.dart';
@@ -56,11 +57,11 @@ class MyTicketsScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.qr_code, size: 64, color: Colors.grey[400]),
+                    Icon(Icons.qr_code, size: 64, color: AppColors.muted),
                     const SizedBox(height: 16),
                     Text(
                       'No tienes tickets todavía',
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                      style: TextStyle(fontSize: 16, color: AppColors.muted),
                     ),
                   ],
                 ),
@@ -118,7 +119,7 @@ class _TicketCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               DateFormat.yMMMd().add_jm().format(ticket.eventDate),
-              style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              style: TextStyle(color: AppColors.muted, fontSize: 14),
             ),
             const SizedBox(height: 8),
             Container(

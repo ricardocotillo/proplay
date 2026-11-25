@@ -73,7 +73,11 @@ class _EventsFeedViewState extends State<EventsFeedView> {
               padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
-                  Icon(Icons.error_outline, size: 40, color: Theme.of(context).colorScheme.error),
+                  Icon(
+                    Icons.error_outline,
+                    size: 40,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                   const SizedBox(height: 8),
                   const Text('No pudimos cargar los eventos'),
                   TextButton(
