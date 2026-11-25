@@ -558,6 +558,8 @@ Shared widgets: `AppDrawer`, `AppShell`, `AppTopBar`, `Brand`, `WalletIndicator`
 
 ### Theming
 
+Design rules (tokens, layout caps, components, imagery, do and don't) live in [DESIGN.md](DESIGN.md); this section only records how the pieces are wired.
+
 The app is dark only. `lib/theme/app_theme.dart` exposes `AppTheme.dark` (used by both `MaterialApp`s in `lib/main.dart`) and `lib/theme/app_colors.dart` holds palette values the `ColorScheme` cannot (hero gradient, muted text, success/warning). Screens read colors and text styles from `Theme.of(context)`; do not add hard-coded colors. Deliberate exception: the QR background on ticket screens stays white so it scans.
 
 Typography: headings (`headlineMedium`, `headlineSmall`, `titleLarge`) use the bundled Barlow Condensed family (`assets/fonts/`, SIL OFL, `kDisplayFont`); body, labels and buttons stay on the default font. No runtime font fetching.
