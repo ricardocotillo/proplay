@@ -30,7 +30,9 @@ class AppSidebar extends StatelessWidget {
           // Header with User Info
           Container(
             padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
-            decoration: const BoxDecoration(gradient: AppColors.heroGradient),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppColors.border)),
+            ),
             child: Column(
               children: [
                 user?.profileImageUrl != null
@@ -88,8 +90,7 @@ class AppSidebar extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onPrimary
-                        .withAlpha(204),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -97,8 +98,7 @@ class AppSidebar extends StatelessWidget {
                   user?.email ?? '',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Theme.of(context).colorScheme.onPrimary
-                        .withAlpha(204),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ],
