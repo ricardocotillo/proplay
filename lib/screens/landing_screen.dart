@@ -1,29 +1,38 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:proplay/bloc/events_feed/events_feed_bloc.dart';
 import 'package:proplay/bloc/events_feed/events_feed_event.dart';
 import 'package:proplay/bloc/events_feed/events_feed_state.dart';
 import 'package:proplay/models/session_model.dart';
-import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/session_service.dart';
+import 'package:proplay/theme/app_colors.dart';
+import 'package:proplay/theme/app_theme.dart' show kDisplayFont;
 import 'package:proplay/utils/sports.dart';
-import 'package:proplay/widgets/cached_image.dart';
+import 'package:proplay/widgets/event_card.dart';
 import 'package:proplay/widgets/responsive_layout.dart';
+import 'package:proplay/widgets/skeleton.dart';
 
-const _steps = <({String title, String body})>[
+/// Content width on wide screens. Matches the app shell (feed is capped at
+/// 1600) closely enough that guests see the same density as signed-in users.
+const _maxWidth = 1400.0;
+
+const _steps = <({String title, String body, IconData icon})>[
   (
     title: 'Crea tu cuenta',
     body: 'Regístrate gratis y elige tus deportes favoritos.',
+    icon: Icons.person_add_alt_1,
   ),
   (
     title: 'Recarga pro coins',
     body: 'Compra coins con Yape para reservar tu lugar.',
+    icon: Icons.account_balance_wallet_outlined,
   ),
   (
     title: 'Juega y haz check-in',
     body: 'Únete a una sesión y muestra tu ticket QR en la cancha.',
+    icon: Icons.qr_code_2,
   ),
 ];
 
@@ -36,10 +45,14 @@ class LandingScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _Section(child: _NavBar()),
+            _NavBar(),
             _Hero(),
             _Section(title: 'Deportes', child: _SportsWrap()),
-            _Section(title: 'Próximos eventos', child: _EventsGrid()),
+            _Section(
+              title: 'Próximos eventos',
+              action: _SeeAllEvents(),
+              child: _EventsGrid(),
+            ),
             _Section(title: 'Cómo funciona', child: _Steps()),
             _Footer(),
           ],
@@ -50,30 +63,48 @@ class LandingScreen extends StatelessWidget {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({required this.child, this.title});
+  const _Section({
+    required this.child,
+    this.title,
+    this.action,
+    this.vertical = 32,
+  });
 
   final Widget child;
   final String? title;
+  final Widget? action;
+  final double vertical;
 
   @override
   Widget build(BuildContext context) {
     return ResponsiveConstrainedBox(
-      maxWidth: 1100,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (title != null) ...[
-              Text(
-                title!,
-                style: Theme.of(context).textTheme.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
+      maxWidth: _maxWidth,
+      // Full width up to the cap; without it the centered box shrinks to its
+      // content and left-aligned copy floats in the middle.
+      child: SizedBox(
+        width: double.infinity,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24, vertical: vertical),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (title != null) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title!,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                    ),
+                    ?action,
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+              child,
             ],
-            child,
-          ],
+          ),
         ),
       ),
     );
@@ -81,13 +112,12 @@ class _Section extends StatelessWidget {
 }
 
 class _Brand extends StatelessWidget {
-  const _Brand({this.color});
-
-  final Color? color;
+  const _Brand();
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final style = Theme.of(context).textTheme.titleLarge
+        ?.copyWith(fontSize: 24, fontWeight: FontWeight.w800);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -100,11 +130,16 @@ class _Brand extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        Text(
-          'ProPlay',
-          style: theme.textTheme.titleLarge?.copyWith(
-            color: color ?? theme.colorScheme.primary,
-            fontWeight: FontWeight.w800,
+        Text.rich(
+          TextSpan(
+            style: style,
+            children: const [
+              TextSpan(text: 'Pro'),
+              TextSpan(
+                text: 'Play',
+                style: TextStyle(color: AppColors.selectedText),
+              ),
+            ],
           ),
         ),
       ],
@@ -117,19 +152,46 @@ class _NavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Expanded(
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: FittedBox(fit: BoxFit.scaleDown, child: _Brand()),
-          ),
+    final wide = ResponsiveBreakpoints.of(context).largerThan(MOBILE);
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: AppColors.bar,
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: _Section(
+        vertical: 10,
+        child: Row(
+          children: [
+            const Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: FittedBox(fit: BoxFit.scaleDown, child: _Brand()),
+              ),
+            ),
+            if (wide)
+              TextButton(
+                onPressed: () => context.go('/events'),
+                child: const Text('Eventos'),
+              ),
+            TextButton(
+              onPressed: () => context.go('/login'),
+              child: const Text('Ingresar'),
+            ),
+            const SizedBox(width: 8),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+              ),
+              onPressed: () => context.go('/registration'),
+              child: const Text('Crear cuenta'),
+            ),
+          ],
         ),
-        TextButton(
-          onPressed: () => context.go('/login'),
-          child: const Text('Ingresar'),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -140,91 +202,107 @@ class _Hero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const white = Colors.white;
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary,
-        image: DecorationImage(
-          image: const AssetImage('assets/images/landing/hero.webp'),
-          fit: BoxFit.cover,
-          alignment: Alignment.centerRight,
-          colorFilter: ColorFilter.mode(
-            Colors.black.withValues(alpha: 0.25),
-            BlendMode.darken,
+    final wide = ResponsiveBreakpoints.of(context).largerThan(MOBILE);
+    return Stack(
+      children: [
+        const Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.page,
+              image: DecorationImage(
+                image: AssetImage('assets/images/landing/hero.webp'),
+                fit: BoxFit.cover,
+                alignment: Alignment.centerRight,
+              ),
+            ),
           ),
         ),
-      ),
-      child: _Section(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 24),
-              Text(
-                'DEPORTE EN PERÚ',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: white,
-                  letterSpacing: 1.2,
-                ),
+        // Dark wash from the left keeps the copy readable over the photo.
+        // A sibling (not foregroundDecoration) so it sits behind the text.
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  AppColors.page.withValues(alpha: 0.94),
+                  AppColors.page.withValues(alpha: 0.7),
+                  AppColors.page.withValues(alpha: 0.2),
+                ],
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Encuentra tu próximo partido',
-                style: theme.textTheme.displaySmall?.copyWith(
-                  color: white,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Únete a grupos, reserva tu lugar con pro coins y juega cerca de ti.',
-                style: theme.textTheme.titleMedium?.copyWith(color: white),
-              ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
+            ),
+          ),
+        ),
+        ConstrainedBox(
+          constraints: BoxConstraints(minHeight: wide ? 480 : 0),
+          child: _Section(
+            vertical: wide ? 56 : 40,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: white,
-                      foregroundColor: theme.colorScheme.primary,
+                  Text(
+                    'DEPORTE EN PERÚ',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: AppColors.selectedText,
+                      letterSpacing: 1.6,
                     ),
-                    onPressed: () => context.go('/registration'),
-                    child: const Text('Crear cuenta'),
                   ),
-                  OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: white,
-                      side: const BorderSide(color: white),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Encuentra tu próximo partido',
+                    style: TextStyle(
+                      fontFamily: kDisplayFont,
+                      fontWeight: FontWeight.w800,
+                      fontSize: wide ? 64 : 44,
+                      height: 1.0,
+                      color: AppColors.text,
                     ),
-                    onPressed: () => context.go('/login'),
-                    child: const Text('Ingresar'),
                   ),
-                  TextButton(
-                    style: TextButton.styleFrom(foregroundColor: white),
-                    onPressed: () => context.go('/events'),
-                    child: const Text('Ver eventos'),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Únete a grupos, reserva tu lugar con pro coins y juega cerca de ti.',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: AppColors.text,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      FilledButton(
+                        onPressed: () => context.go('/registration'),
+                        child: const Text('Crear cuenta'),
+                      ),
+                      OutlinedButton(
+                        onPressed: () => context.go('/login'),
+                        child: const Text('Ingresar'),
+                      ),
+                      TextButton(
+                        onPressed: () => context.go('/events'),
+                        child: const Text('Ver eventos'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  Wrap(
+                    spacing: 40,
+                    runSpacing: 12,
+                    children: [
+                      _Stat('${kSports.length}', 'deportes'),
+                      const _Stat('Yape', 'recarga tus pro coins'),
+                      const _Stat('QR', 'check-in con ticket'),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              Wrap(
-                spacing: 32,
-                runSpacing: 12,
-                children: [
-                  _Stat('${kSports.length}', 'deportes'),
-                  const _Stat('Yape', 'recarga tus pro coins'),
-                  const _Stat('QR', 'check-in con ticket'),
-                ],
-              ),
-              const SizedBox(height: 24),
-            ],
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -238,20 +316,32 @@ class _Stat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const white = Colors.white;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           value,
-          style: theme.textTheme.headlineSmall?.copyWith(
-            color: white,
-            fontWeight: FontWeight.bold,
+          style: theme.textTheme.headlineMedium?.copyWith(
+            color: AppColors.selectedText,
           ),
         ),
-        Text(label, style: theme.textTheme.bodySmall?.copyWith(color: white)),
+        Text(label, style: theme.textTheme.bodySmall),
       ],
+    );
+  }
+}
+
+class _SeeAllEvents extends StatelessWidget {
+  const _SeeAllEvents();
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: () => context.go('/events'),
+      icon: const Icon(Icons.arrow_forward, size: 18),
+      iconAlignment: IconAlignment.end,
+      label: const Text('Ver todos'),
     );
   }
 }
@@ -264,36 +354,57 @@ class _SportsWrap extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final cols = constraints.maxWidth >= 900 ? kSports.length : 2;
-        const gap = 12.0;
-        final size = (constraints.maxWidth - gap * (cols - 1)) / cols;
+        const gap = 16.0;
+        final w = (constraints.maxWidth - gap * (cols - 1)) / cols;
         return Wrap(
           spacing: gap,
           runSpacing: gap,
-          children: [
-            for (final s in kSports)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  sportImage(s.value),
-                  width: size,
-                  height: size,
-                  fit: BoxFit.cover,
-                  semanticLabel: s.display,
-                ),
-              ),
-          ],
+          children: [for (final s in kSports) _SportTile(sport: s, width: w)],
         );
       },
     );
   }
 }
 
-// Landing images per sport; no per-event photo exists.
-const _sportImages = {
-  'fútbol': 'event-1-futbol',
-  'voleibol': 'event-3-voleibol',
-  'baloncesto': 'event-4-baloncesto',
-};
+class _SportTile extends StatelessWidget {
+  const _SportTile({required this.sport, required this.width});
+
+  final ({String display, String value, IconData icon}) sport;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      child: AspectRatio(
+        // The artwork already carries the sport name; keep its bottom edge.
+        aspectRatio: 1.15,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(
+                sportImage(sport.value),
+                fit: BoxFit.cover,
+                alignment: Alignment.bottomCenter,
+                semanticLabel: sport.display,
+                errorBuilder: (_, _, _) =>
+                    const ColoredBox(color: AppColors.card),
+              ),
+              Positioned.fill(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(onTap: () => context.go('/events')),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class _EventsGrid extends StatelessWidget {
   const _EventsGrid();
@@ -307,80 +418,37 @@ class _EventsGrid extends StatelessWidget {
       child: BlocBuilder<EventsFeedBloc, EventsFeedState>(
         builder: (context, state) {
           if (state is EventsFeedLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return _grid([
+              for (var i = 0; i < 6; i++) const EventCardSkeleton(),
+            ]);
           }
           if (state is! EventsFeedLoaded || state.visible.isEmpty) {
-            return const Text('Pronto habrá nuevos eventos.');
+            return Text(
+              'Pronto habrá nuevos eventos.',
+              style: Theme.of(context).textTheme.bodySmall,
+            );
           }
-          return _cards(context, state.visible.take(6).toList());
+          return _grid([
+            for (final SessionModel e in state.visible.take(6))
+              EventCard(session: e, onTap: () => context.go('/events/${e.id}')),
+          ]);
         },
       ),
     );
   }
 
-  Widget _cards(BuildContext context, List<SessionModel> events) {
-    final theme = Theme.of(context);
+  Widget _grid(List<Widget> children) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final w = constraints.maxWidth;
-        final cols = w >= 900 ? 3 : (w >= 560 ? 2 : 1);
-        const gap = 16.0;
+        final cols = w >= 1200 ? 3 : (w >= 700 ? 2 : 1);
+        const gap = 12.0;
         final cardWidth = (w - gap * (cols - 1)) / cols;
         return Wrap(
           spacing: gap,
           runSpacing: gap,
           children: [
-            for (final e in events)
-              SizedBox(
-                width: cardWidth,
-                child: Card(
-                  margin: EdgeInsets.zero,
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () => context.go('/events/${e.id}'),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AspectRatio(
-                          aspectRatio: 16 / 9,
-                          child: e.bannerUrl != null
-                              ? PlatformCachedImage(
-                                  imageUrl: e.bannerUrl!,
-                                  fit: BoxFit.cover,
-                                )
-                              : Image.asset(
-                                  'assets/images/landing/${_sportImages[e.sport] ?? 'event-1-futbol'}.webp',
-                                  fit: BoxFit.cover,
-                                  excludeFromSemantics: true,
-                                ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(e.title, style: theme.textTheme.titleMedium),
-                              const SizedBox(height: 8),
-                              if (e.district != null) Text(e.district!),
-                              Text(
-                                DateFormat(
-                                  'EEE d MMM, HH:mm',
-                                  'es',
-                                ).format(e.eventDate),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '${e.costPerPlayer > 0 ? '${UserModel.formatCredits(e.costPerPlayer)} coins' : 'Gratis'}'
-                                ' · ${e.maxPlayers - e.playerCount} cupos',
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+            for (final c in children) SizedBox(width: cardWidth, child: c),
           ],
         );
       },
@@ -397,7 +465,7 @@ class _Steps extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final cols = constraints.maxWidth >= 700 ? 3 : 1;
-        const gap = 24.0;
+        const gap = 16.0;
         final w = (constraints.maxWidth - gap * (cols - 1)) / cols;
         return Wrap(
           spacing: gap,
@@ -406,24 +474,44 @@ class _Steps extends StatelessWidget {
             for (var i = 0; i < _steps.length; i++)
               SizedBox(
                 width: w,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: theme.colorScheme.primary,
-                      foregroundColor: theme.colorScheme.onPrimary,
-                      child: Text('${i + 1}'),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: const BoxDecoration(
+                                color: AppColors.selectedTint,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                _steps[i].icon,
+                                color: AppColors.selectedText,
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '0${i + 1}',
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                color: AppColors.border,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _steps[i].title,
+                          style: theme.textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(_steps[i].body, style: theme.textTheme.bodyMedium),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _steps[i].title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(_steps[i].body),
-                  ],
+                  ),
                 ),
               ),
           ],
@@ -436,56 +524,51 @@ class _Steps extends StatelessWidget {
 class _Footer extends StatelessWidget {
   const _Footer();
 
-  // Same dark red as the hero gradient end (see assets/images/landing/hero.webp).
-  static const _bg = Color(0xFF2B0708);
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const white = Colors.white;
-    final link = TextButton.styleFrom(foregroundColor: white);
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: _bg,
+        color: AppColors.bar,
         border: Border(
           top: BorderSide(color: theme.colorScheme.primary, width: 4),
         ),
       ),
       child: _Section(
-        child: DefaultTextStyle.merge(
-          style: const TextStyle(color: white),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const _Brand(color: white),
-              const SizedBox(height: 4),
-              const Text('Organiza y descubre deporte en Perú.'),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                children: [
-                  TextButton(
-                    style: link,
-                    onPressed: () => context.go('/login'),
-                    child: const Text('Ingresar'),
-                  ),
-                  TextButton(
-                    style: link,
-                    onPressed: () => context.go('/registration'),
-                    child: const Text('Crear cuenta'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '© ${DateTime.now().year} ProPlay',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: Colors.white70,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _Brand(),
+            const SizedBox(height: 8),
+            Text(
+              'Organiza y descubre deporte en Perú.',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              children: [
+                TextButton(
+                  onPressed: () => context.go('/events'),
+                  child: const Text('Eventos'),
                 ),
-              ),
-            ],
-          ),
+                TextButton(
+                  onPressed: () => context.go('/login'),
+                  child: const Text('Ingresar'),
+                ),
+                TextButton(
+                  onPressed: () => context.go('/registration'),
+                  child: const Text('Crear cuenta'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '© ${DateTime.now().year} ProPlay',
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
         ),
       ),
     );
