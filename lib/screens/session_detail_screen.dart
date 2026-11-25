@@ -3,7 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/widgets/cached_image.dart';
-import 'package:proplay/widgets/event_banner.dart';
+import 'package:proplay/widgets/event_bottom_bar.dart';
+import 'package:proplay/widgets/event_hero.dart';
 import 'package:proplay/bloc/session_detail/session_detail_bloc.dart';
 import 'package:proplay/bloc/session_detail/session_detail_event.dart';
 import 'package:proplay/bloc/session_detail/session_detail_state.dart';
@@ -93,8 +94,11 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
               _wasProcessingJoin = false;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(state.message),
-                  backgroundColor: Colors.red,
+                  content: Text(
+                    state.message,
+                    style: const TextStyle(color: Color(0xFF1A0000)),
+                  ),
+                  backgroundColor: AppColors.error,
                 ),
               );
             }
@@ -113,7 +117,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                     const Icon(
                       Icons.error_outline,
                       size: 60,
-                      color: Colors.red,
+                      color: AppColors.error,
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -145,175 +149,181 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
 
             return Column(
               children: [
-                if (session.bannerUrl != null)
-                  EventBanner(url: session.bannerUrl!, height: 120),
-                // Session Info Card
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor
-                        .withValues(alpha: 0.1),
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Theme.of(context).dividerColor,
-                        width: 1,
-                      ),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.zero,
                     children: [
-                      Text(
-                        session.title,
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.calendar_today, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            DateFormat.yMMMd().add_jm().format(
-                              session.eventDate,
-                            ),
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.access_time, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Hasta: ${DateFormat.jm().format(session.eventEndDate)}',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.attach_money, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            'PEN ${session.costPerPlayer.toStringAsFixed(2)} por jugador',
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ],
-                      ),
-                      if (session.locationAddress != null) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.location_on, size: 16),
-                                  const SizedBox(width: 4),
-                                  Flexible(
-                                    child: Text(
-                                      session.locationAddress!,
+                      EventHero(session: session),
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 900),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.calendar_today, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      DateFormat.yMMMd().add_jm().format(
+                                        session.eventDate,
+                                      ),
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodyMedium,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.access_time, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Hasta: ${DateFormat.jm().format(session.eventEndDate)}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.attach_money, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'S/ ${UserModel.formatCredits(session.costPerPlayer)} por jugador',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
+                                    ),
+                                  ],
+                                ),
+                                if (session.locationAddress != null) ...[
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.location_on,
+                                              size: 16,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Text(
+                                                session.locationAddress!,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyMedium,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (session.locationLat != null &&
+                                          session.locationLng != null)
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    SessionMapScreen(
+                                                      title: session.title,
+                                                      latitude:
+                                                          session.locationLat!,
+                                                      longitude:
+                                                          session.locationLng!,
+                                                      address: session
+                                                          .locationAddress,
+                                                    ),
+                                              ),
+                                            );
+                                          },
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 0,
+                                            ),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                          ),
+                                          child: Text(
+                                            'ver en mapa',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ],
-                              ),
-                            ),
-                            if (session.locationLat != null &&
-                                session.locationLng != null)
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => SessionMapScreen(
-                                        title: session.title,
-                                        latitude: session.locationLat!,
-                                        longitude: session.locationLng!,
-                                        address: session.locationAddress,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 0,
-                                  ),
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                                child: Text(
-                                  'ver en mapa',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      // Player count badge
-                      _buildBadge(
-                        context,
-                        '${players.length}/${session.maxPlayers}',
-                        'Jugadores',
-                        Colors.green,
-                      ),
-                    ],
-                  ),
-                ),
-                // Player List
-                Expanded(
-                  child: hasPlayers
-                      ? ListView(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          children: [
-                            if (players.isNotEmpty) ...[
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                  16,
-                                  8,
-                                  16,
-                                  8,
-                                ),
-                                child: Text(
-                                  'Jugadores Confirmados',
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.green,
-                                      ),
-                                ),
-                              ),
-                              ...players.asMap().entries.map((entry) {
-                                final index = entry.key;
-                                final player = entry.value;
-                                return _buildPlayerTile(
+                                const SizedBox(height: 12),
+                                // Player count badge
+                                _buildBadge(
                                   context,
-                                  player,
-                                  index + 1,
-                                  isOwnerOrAdmin,
-                                );
-                              }),
-                            ],
-                          ],
+                                  '${players.length}/${session.maxPlayers}',
+                                  'Jugadores',
+                                  AppColors.success,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (hasPlayers)
+                        Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 900),
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    16,
+                                    8,
+                                    16,
+                                    8,
+                                  ),
+                                  child: Text(
+                                    'Jugadores Confirmados',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.success,
+                                        ),
+                                  ),
+                                ),
+                                ...players.asMap().entries.map((entry) {
+                                  final index = entry.key;
+                                  final player = entry.value;
+                                  return _buildPlayerTile(
+                                    context,
+                                    player,
+                                    index + 1,
+                                    isOwnerOrAdmin,
+                                  );
+                                }),
+                              ],
+                            ),
+                          ),
                         )
-                      : Center(
+                      else
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 32),
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
                                 Icons.people_outline,
@@ -335,21 +345,10 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                             ],
                           ),
                         ),
-                ),
-                // Action Button
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, -2),
-                      ),
                     ],
                   ),
+                ),
+                EventBottomBar(
                   child: isProcessing
                       ? const Center(child: CircularProgressIndicator())
                       : isJoined
@@ -359,10 +358,10 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
+                                color: AppColors.success.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: Colors.green,
+                                  color: AppColors.success,
                                   width: 2,
                                 ),
                               ),
@@ -371,14 +370,14 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                                 children: [
                                   Icon(
                                     Icons.check_circle,
-                                    color: Colors.green,
+                                    color: AppColors.success,
                                     size: 24,
                                   ),
                                   SizedBox(width: 8),
                                   Text(
                                     'Ya estás inscrito en esta pichanga',
                                     style: TextStyle(
-                                      color: Colors.green,
+                                      color: AppColors.success,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
                                     ),
@@ -420,7 +419,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                                 icon: const Icon(Icons.cancel_outlined),
                                 label: const Text('Cancelar mi cupo'),
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.red,
+                                  foregroundColor: AppColors.error,
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 12,
                                   ),
@@ -437,7 +436,9 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                           icon: const Icon(Icons.add),
                           label: const Text('Unirse a la Pichanga'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).primaryColor,
+                            backgroundColor: Theme.of(context)
+                                .colorScheme
+                                .primary,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
@@ -502,7 +503,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
               '$position.',
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Colors.green,
+                color: AppColors.success,
               ),
             ),
           ),
@@ -517,7 +518,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                 )
               : CircleAvatar(
                   radius: 20,
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppColors.success,
                   child: Text(
                     initials,
                     style: const TextStyle(
@@ -550,9 +551,16 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                     value: 'remove',
                     child: Row(
                       children: [
-                        Icon(Icons.remove_circle, size: 18, color: Colors.red),
+                        Icon(
+                          Icons.remove_circle,
+                          size: 18,
+                          color: AppColors.error,
+                        ),
                         SizedBox(width: 8),
-                        Text('Eliminar', style: TextStyle(color: Colors.red)),
+                        Text(
+                          'Eliminar',
+                          style: TextStyle(color: AppColors.error),
+                        ),
                       ],
                     ),
                   ),
@@ -601,13 +609,13 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
             const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.warning_amber, color: Colors.orange, size: 20),
+                Icon(Icons.warning_amber, color: AppColors.warning, size: 20),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Puedes cancelar hasta 24 horas antes del evento y recibir reembolso completo.',
                     style: TextStyle(
-                      color: Colors.orange,
+                      color: AppColors.warning,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -628,7 +636,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
               Navigator.of(dialogContext).pop();
               context.read<SessionDetailBloc>().add(const JoinSession());
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.green),
+            style: TextButton.styleFrom(foregroundColor: AppColors.success),
             child: const Text('Unirse'),
           ),
         ],
@@ -650,7 +658,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
               : 'Si cancelas ahora no recibirás reembolso.',
           style: TextStyle(
             fontWeight: FontWeight.w500,
-            color: refundable ? Colors.green : Colors.orange,
+            color: refundable ? AppColors.success : AppColors.warning,
           ),
         ),
         actions: [
@@ -665,7 +673,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                 const CancelParticipation(),
               );
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Cancelar mi cupo'),
           ),
         ],
@@ -693,7 +701,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                 RemoveUserFromSession(player.uid),
               );
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Eliminar'),
           ),
         ],
