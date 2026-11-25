@@ -1,19 +1,17 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:responsive_framework/responsive_framework.dart';
 import 'package:proplay/bloc/events_feed/events_feed_bloc.dart';
 import 'package:proplay/bloc/events_feed/events_feed_event.dart';
 import 'package:proplay/bloc/events_feed/events_feed_state.dart';
 import 'package:proplay/models/session_model.dart';
-import 'package:proplay/models/user_model.dart';
 import 'package:proplay/screens/session_detail_screen.dart';
 import 'package:proplay/services/session_service.dart';
-import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/utils/feed_filters.dart';
 import 'package:proplay/utils/sports.dart';
-import 'package:proplay/widgets/event_banner.dart';
+import 'package:proplay/widgets/event_card.dart';
 
 /// Public events feed body (filters + cards). Non-scrolling: the host
 /// (Home or `/events`) provides the scroll view. Works for guests.
@@ -113,7 +111,7 @@ class _EventsFeedViewState extends State<EventsFeedView> {
                       ),
                     )
                   else
-                    for (final s in loaded.visible) _EventCard(session: s),
+                    _EventCards(sessions: loaded.visible),
                 ],
               ),
             ),
@@ -242,103 +240,49 @@ class _FiltersBarState extends State<_FiltersBar> {
   }
 }
 
-class _EventCard extends StatelessWidget {
-  final SessionModel session;
+void _openEvent(BuildContext context, SessionModel session) {
+  if (context.isAuthenticated) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SessionDetailScreen(sessionId: session.id),
+      ),
+    );
+  } else {
+    context.go('/events/${session.id}');
+  }
+}
 
-  const _EventCard({required this.session});
+/// One column on mobile, two on wider screens. Non-scrolling (see class doc).
+class _EventCards extends StatelessWidget {
+  final List<SessionModel> sessions;
+
+  const _EventCards({required this.sessions});
 
   @override
   Widget build(BuildContext context) {
-    final sport = kSports.firstWhere(
-      (s) => s.value == session.sport,
-      orElse: () => kSports.first,
-    );
-    final where = [
-      sport.display,
-      if (session.district != null) session.district!,
-    ].join(' · ');
-
-    final hasBanner = session.bannerUrl != null;
-
-    void open() {
-      if (context.isAuthenticated) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SessionDetailScreen(sessionId: session.id),
-          ),
-        );
-      } else {
-        context.go('/events/${session.id}');
-      }
+    final wide = ResponsiveBreakpoints.of(context).largerThan(MOBILE);
+    Widget card(SessionModel s) =>
+        EventCard(session: s, onTap: () => _openEvent(context, s));
+    if (!wide) {
+      return Column(
+        children: [
+          for (final s in sessions)
+            Padding(padding: const EdgeInsets.only(bottom: 12), child: card(s)),
+        ],
+      );
     }
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      clipBehavior: Clip.antiAlias,
-      child: SizedBox(
-        // Fixed height only with a banner: `stretch` needs a bounded height.
-        height: hasBanner ? 112 : null,
-        child: Row(
-          crossAxisAlignment: hasBanner
-              ? CrossAxisAlignment.stretch
-              : CrossAxisAlignment.center,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final w = (constraints.maxWidth - 12) / 2;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
           children: [
-            // Banner on the left; the sport avatar is only the fallback.
-            if (hasBanner)
-              InkWell(
-                onTap: open,
-                child: SizedBox(
-                  width: 120,
-                  child: EventBanner(
-                    url: session.bannerUrl!,
-                    height: double.infinity,
-                  ),
-                ),
-              ),
-            Expanded(
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(12),
-                leading: hasBanner
-                    ? null
-                    : CircleAvatar(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        child: Icon(sport.icon),
-                      ),
-                title: Text(
-                  session.title,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  '$where\n${DateFormat('EEE d MMM, HH:mm', 'es').format(session.eventDate)}',
-                ),
-                isThreeLine: true,
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      session.costPerPlayer > 0
-                          ? 'S/ ${UserModel.formatCredits(session.costPerPlayer)}'
-                          : 'Gratis',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.selectedText,
-                      ),
-                    ),
-                    Text(
-                      session.playerCount >= session.maxPlayers
-                          ? 'Lleno'
-                          : '${session.playerCount}/${session.maxPlayers} cupos',
-                    ),
-                  ],
-                ),
-                onTap: open,
-              ),
-            ),
+            for (final s in sessions) SizedBox(width: w, child: card(s)),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
