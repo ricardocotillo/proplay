@@ -1,6 +1,9 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:proplay/theme/app_colors.dart';
 
+/// Bundled display family (assets/fonts), used for headings and event titles.
+const String kDisplayFont = 'BarlowCondensed';
+
 /// Single dark theme for the whole app (no light theme by design).
 class AppTheme {
   AppTheme._();
@@ -39,14 +42,25 @@ class AppTheme {
     final text = base.textTheme
         .apply(bodyColor: AppColors.text, displayColor: AppColors.text)
         .copyWith(
+          headlineMedium: const TextStyle(
+            fontFamily: kDisplayFont,
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.3,
+            color: AppColors.text,
+          ),
           headlineSmall: const TextStyle(
+            fontFamily: kDisplayFont,
             fontSize: 24,
             fontWeight: FontWeight.w800,
+            letterSpacing: 0.3,
             color: AppColors.text,
           ),
           titleLarge: const TextStyle(
-            fontSize: 20,
+            fontFamily: kDisplayFont,
+            fontSize: 22,
             fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
             color: AppColors.text,
           ),
           titleMedium: const TextStyle(

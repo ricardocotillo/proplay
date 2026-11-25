@@ -557,6 +557,10 @@ Shared widgets: `AppDrawer`, `AppSidebar`, `WalletIndicator`, `UpcomingEvents`, 
 
 The app is dark only. `lib/theme/app_theme.dart` exposes `AppTheme.dark` (used by both `MaterialApp`s in `lib/main.dart`) and `lib/theme/app_colors.dart` holds palette values the `ColorScheme` cannot (hero gradient, muted text, success/warning). Screens read colors and text styles from `Theme.of(context)`; do not add hard-coded colors. Deliberate exception: the QR background on ticket screens stays white so it scans.
 
+Typography: headings (`headlineMedium`, `headlineSmall`, `titleLarge`) use the bundled Barlow Condensed family (`assets/fonts/`, SIL OFL, `kDisplayFont`); body, labels and buttons stay on the default font. No runtime font fetching.
+
+Event UI: `EventCard` (feed; banner on the left, sport photo fallback, seat progress, hover on web, two columns above mobile), `EventHero` and `EventBottomBar` (shared by `PublicEventScreen` and `SessionDetailScreen`: hero image with title, fixed action bar). Date and seat copy come from the pure helpers in `lib/utils/event_format.dart` (`eventWhenLabel`, `seatsInfo`).
+
 ## 11. Platforms, Firebase, maps
 
 | Platform | Config |
