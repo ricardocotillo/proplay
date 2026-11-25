@@ -553,6 +553,10 @@ Shared widgets: `AppDrawer`, `AppSidebar`, `WalletIndicator`, `UpcomingEvents`, 
 
 ---
 
+### Theming
+
+The app is dark only. `lib/theme/app_theme.dart` exposes `AppTheme.dark` (used by both `MaterialApp`s in `lib/main.dart`) and `lib/theme/app_colors.dart` holds palette values the `ColorScheme` cannot (hero gradient, muted text, success/warning). Screens read colors and text styles from `Theme.of(context)`; do not add hard-coded colors. Deliberate exception: the QR background on ticket screens stays white so it scans.
+
 ## 11. Platforms, Firebase, maps
 
 | Platform | Config |
