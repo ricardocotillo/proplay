@@ -9,7 +9,6 @@ import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/utils/sports.dart';
 import 'package:proplay/widgets/app_drawer.dart';
-import 'package:proplay/widgets/app_sidebar.dart';
 import 'package:proplay/widgets/wallet_indicator.dart';
 import 'package:proplay/widgets/events_feed_view.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
@@ -127,184 +126,187 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       key: _scaffoldKey,
-      appBar: AppBar(
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-          style: IconButton.styleFrom(backgroundColor: AppColors.card),
-          onPressed: () {
-            // TODO: Handle notification tap
-          },
-          icon: const Icon(Icons.notifications_none),
-        ),
-        actions: [
-          WalletIndicator(onTap: _showAddCreditsDialog),
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: GestureDetector(
-              onTap: _openDrawer,
-              child: user?.profileImageUrl != null
-                  ? PlatformCachedImage(
-                      imageUrl: user!.profileImageUrl!,
-                      imageBuilder: (context, imageProvider) => Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          image: DecorationImage(
-                            image: imageProvider,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      placeholder: (context, url) => const CircleAvatar(
-                        radius: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                      errorWidget: (context, url, error) => const CircleAvatar(
-                        radius: 20,
-                        child: Icon(Icons.person),
-                      ),
-                    )
-                  : CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      child: Text(
-                        user != null
-                            ? '${user.firstName[0]}${user.lastName[0]}'
-                                  .toUpperCase()
-                            : 'U',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-            ),
-          ),
-        ],
-      ),
-      endDrawer: isDesktop ? null : const AppDrawer(),
-      body: Row(
-        children: [
-          // Persistent sidebar on desktop
-          if (isDesktop) const AppSidebar(),
-          // Main content
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+      appBar: isDesktop
+          ? null
+          : AppBar(
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              automaticallyImplyLeading: false,
+              leading: IconButton(
+                style: IconButton.styleFrom(backgroundColor: AppColors.card),
+                onPressed: () {
+                  // TODO: Handle notification tap
+                },
+                icon: const Icon(Icons.notifications_none),
+              ),
+              actions: [
+                WalletIndicator(onTap: _showAddCreditsDialog),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: AppColors.heroGradient,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Bienvenido, ${user?.firstName ?? ''}',
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(color: Colors.white70),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Juega como un pro',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: BlocConsumer<GroupBloc, GroupState>(
-                    listener: (context, state) {
-                      if (state is GroupJoinSuccess) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(state.message),
-                            backgroundColor: AppColors.success,
-                          ),
-                        );
-                        _loadGroups();
-                      } else if (state is GroupDeleteSuccess) {
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text(state.message)));
-                        _loadGroups();
-                      }
-                    },
-                    builder: (context, state) {
-                      if (state is GroupLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      if (state is GroupLoaded) {
-                        return ListView(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              child: EventsFeedView(
-                                userLat: _userLat,
-                                userLng: _userLng,
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: GestureDetector(
+                    onTap: _openDrawer,
+                    child: user?.profileImageUrl != null
+                        ? PlatformCachedImage(
+                            imageUrl: user!.profileImageUrl!,
+                            imageBuilder: (context, imageProvider) => Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                image: DecorationImage(
+                                  image: imageProvider,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                              child: Text(
-                                'Mis grupos',
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.bold),
+                            placeholder: (context, url) => const CircleAvatar(
+                              radius: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            errorWidget: (context, url, error) =>
+                                const CircleAvatar(
+                                  radius: 20,
+                                  child: Icon(Icons.person),
+                                ),
+                          )
+                        : CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Theme.of(context)
+                                .colorScheme
+                                .primary,
+                            child: Text(
+                              user != null
+                                  ? '${user.firstName[0]}${user.lastName[0]}'
+                                        .toUpperCase()
+                                  : 'U',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            if (state.groups.isEmpty)
-                              _buildEmptyState(context)
-                            else
-                              _buildGroupsList(state.groups),
-                          ],
-                        );
-                      }
-
-                      if (state is GroupError) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.error_outline,
-                                size: 48,
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(state.message),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: _loadGroups,
-                                child: const Text('Reintentar'),
-                              ),
-                            ],
                           ),
-                        );
-                      }
-
-                      return _buildEmptyState(context);
-                    },
                   ),
                 ),
               ],
             ),
+      endDrawer: isDesktop ? null : const AppDrawer(),
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: isDesktop ? 1400 : double.infinity,
           ),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: AppColors.heroGradient,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Bienvenido, ${user?.firstName ?? ''}',
+                        style: Theme.of(context).textTheme.titleSmall
+                            ?.copyWith(color: Colors.white70),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Juega como un pro',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                child: BlocConsumer<GroupBloc, GroupState>(
+                  listener: (context, state) {
+                    if (state is GroupJoinSuccess) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(state.message),
+                          backgroundColor: AppColors.success,
+                        ),
+                      );
+                      _loadGroups();
+                    } else if (state is GroupDeleteSuccess) {
+                      ScaffoldMessenger.of(context)
+                          .showSnackBar(SnackBar(content: Text(state.message)));
+                      _loadGroups();
+                    }
+                  },
+                  builder: (context, state) {
+                    if (state is GroupLoading) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (state is GroupLoaded) {
+                      return ListView(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            child: EventsFeedView(
+                              userLat: _userLat,
+                              userLng: _userLng,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                            child: Text(
+                              'Mis grupos',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          if (state.groups.isEmpty)
+                            _buildEmptyState(context)
+                          else
+                            _buildGroupsList(state.groups),
+                        ],
+                      );
+                    }
+
+                    if (state is GroupError) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(state.message),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _loadGroups,
+                              child: const Text('Reintentar'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return _buildEmptyState(context);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

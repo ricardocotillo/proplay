@@ -38,6 +38,9 @@ import 'package:proplay/screens/payment_success_screen.dart';
 import 'package:proplay/screens/payment_pending_screen.dart';
 import 'package:proplay/screens/payment_failure_screen.dart';
 import 'package:proplay/screens/my_tickets_screen.dart';
+import 'package:proplay/screens/credit_history_screen.dart';
+import 'package:proplay/screens/credit_approval_screen.dart';
+import 'package:proplay/widgets/app_shell.dart';
 import 'package:proplay/screens/validate_ticket_screen.dart';
 import 'package:proplay/theme/app_theme.dart';
 
@@ -112,87 +115,123 @@ class _MyAppState extends State<MyApp> {
           builder: (context, authState) {
             _router ??= GoRouter(
               routes: [
-                GoRoute(
-                  path: '/',
-                  name: 'home',
-                  builder: (context, state) => const HomeScreen(),
+                ShellRoute(
+                  builder: (context, state, child) =>
+                      AppShell(location: state.uri.path, child: child),
                   routes: [
                     GoRoute(
-                      path: 'sessions',
-                      name: 'sessions',
-                      builder: (context, state) => const EventsFeedScreen(),
-                    ),
-                    GoRoute(
-                      path: 'create-group',
-                      name: 'create-group',
-                      builder: (context, state) => const CreateGroupScreen(),
-                    ),
-                    GoRoute(
-                      path: 'edit-profile',
-                      name: 'edit-profile',
-                      builder: (context, state) => const EditProfileScreen(),
-                    ),
-                    GoRoute(
-                      path: 'purchase-credits',
-                      name: 'purchase-credits',
-                      builder: (context, state) =>
-                          const PurchaseCreditsScreen(),
-                    ),
-                    GoRoute(
-                      path: 'payment/success',
-                      name: 'payment-success',
-                      builder: (context, state) => PaymentSuccessScreen(
-                        preferenceId:
-                            state.uri.queryParameters['preference_id'] ??
-                            state.uri.queryParameters['pref_id'] ??
-                            state.uri.queryParameters['id'],
-                      ),
-                    ),
-                    GoRoute(
-                      path: 'payment/pending',
-                      name: 'payment-pending',
-                      builder: (context, state) => const PaymentPendingScreen(),
-                    ),
-                    GoRoute(
-                      path: 'payment/failure',
-                      name: 'payment-failure',
-                      builder: (context, state) => const PaymentFailureScreen(),
-                    ),
-                    GoRoute(
-                      path: 'tickets',
-                      name: 'tickets',
-                      builder: (context, state) => const MyTicketsScreen(),
-                    ),
-                    GoRoute(
-                      path: 'validate-ticket',
-                      name: 'validate-ticket',
-                      builder: (context, state) => ValidateTicketScreen(
-                        token: state.uri.queryParameters['token'],
-                      ),
-                    ),
-                    GoRoute(
-                      path: 'group/:id',
-                      name: 'group-detail',
-                      builder: (context, state) {
-                        final id = state.pathParameters['id']!;
-                        return GroupDetailScreenLoader(groupId: id);
-                      },
+                      path: '/',
+                      name: 'home',
+                      builder: (context, state) => const HomeScreen(),
                       routes: [
                         GoRoute(
-                          path: 'edit',
-                          name: 'group-edit',
-                          builder: (context, state) {
-                            final id = state.pathParameters['id']!;
-                            return GroupEditScreenLoader(groupId: id);
-                          },
+                          path: 'sessions',
+                          name: 'sessions',
+                          builder: (context, state) => const EventsFeedScreen(),
                         ),
                         GoRoute(
-                          path: 'info',
-                          name: 'group-info',
+                          path: 'create-group',
+                          name: 'create-group',
+                          builder: (context, state) =>
+                              const CreateGroupScreen(),
+                        ),
+                        GoRoute(
+                          path: 'edit-profile',
+                          name: 'edit-profile',
+                          builder: (context, state) =>
+                              const EditProfileScreen(),
+                        ),
+                        GoRoute(
+                          path: 'purchase-credits',
+                          name: 'purchase-credits',
+                          builder: (context, state) =>
+                              const PurchaseCreditsScreen(),
+                        ),
+                        GoRoute(
+                          path: 'credit-history',
+                          name: 'credit-history',
+                          builder: (context, state) =>
+                              const CreditHistoryScreen(),
+                        ),
+                        GoRoute(
+                          path: 'credit-approval',
+                          name: 'credit-approval',
+                          builder: (context, state) =>
+                              const CreditApprovalScreen(),
+                        ),
+                        GoRoute(
+                          path: 'payment/success',
+                          name: 'payment-success',
+                          builder: (context, state) => PaymentSuccessScreen(
+                            preferenceId:
+                                state.uri.queryParameters['preference_id'] ??
+                                state.uri.queryParameters['pref_id'] ??
+                                state.uri.queryParameters['id'],
+                          ),
+                        ),
+                        GoRoute(
+                          path: 'payment/pending',
+                          name: 'payment-pending',
+                          builder: (context, state) =>
+                              const PaymentPendingScreen(),
+                        ),
+                        GoRoute(
+                          path: 'payment/failure',
+                          name: 'payment-failure',
+                          builder: (context, state) =>
+                              const PaymentFailureScreen(),
+                        ),
+                        GoRoute(
+                          path: 'tickets',
+                          name: 'tickets',
+                          builder: (context, state) => const MyTicketsScreen(),
+                        ),
+                        GoRoute(
+                          path: 'validate-ticket',
+                          name: 'validate-ticket',
+                          builder: (context, state) => ValidateTicketScreen(
+                            token: state.uri.queryParameters['token'],
+                          ),
+                        ),
+                        GoRoute(
+                          path: 'group/:id',
+                          name: 'group-detail',
                           builder: (context, state) {
                             final id = state.pathParameters['id']!;
-                            return GroupInfoScreenLoader(groupId: id);
+                            return GroupDetailScreenLoader(groupId: id);
                           },
+                          routes: [
+                            GoRoute(
+                              path: 'edit',
+                              name: 'group-edit',
+                              builder: (context, state) {
+                                final id = state.pathParameters['id']!;
+                                return GroupEditScreenLoader(groupId: id);
+                              },
+                            ),
+                            GoRoute(
+                              path: 'info',
+                              name: 'group-info',
+                              builder: (context, state) {
+                                final id = state.pathParameters['id']!;
+                                return GroupInfoScreenLoader(groupId: id);
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    GoRoute(
+                      path: '/events',
+                      name: 'events',
+                      builder: (context, state) => const EventsFeedScreen(),
+                      routes: [
+                        GoRoute(
+                          path: ':id',
+                          name: 'event-detail',
+                          builder: (context, state) => PublicEventScreen(
+                            eventId: state.pathParameters['id']!,
+                          ),
                         ),
                       ],
                     ),
@@ -207,20 +246,6 @@ class _MyAppState extends State<MyApp> {
                   path: '/welcome',
                   name: 'welcome',
                   builder: (context, state) => const LandingScreen(),
-                ),
-                GoRoute(
-                  path: '/events',
-                  name: 'events',
-                  builder: (context, state) => const EventsFeedScreen(),
-                  routes: [
-                    GoRoute(
-                      path: ':id',
-                      name: 'event-detail',
-                      builder: (context, state) => PublicEventScreen(
-                        eventId: state.pathParameters['id']!,
-                      ),
-                    ),
-                  ],
                 ),
                 GoRoute(
                   path: '/registration',
@@ -247,10 +272,17 @@ class _MyAppState extends State<MyApp> {
                 }
 
                 final authState = context.read<AuthBloc>().state;
+                final superUser =
+                    authState is AuthAuthenticated &&
+                    authState.userModel.superUser;
                 return authRedirect(
-                  loggedIn: authState is AuthAuthenticated,
-                  location: state.matchedLocation,
-                );
+                      loggedIn: authState is AuthAuthenticated,
+                      location: state.matchedLocation,
+                    ) ??
+                    adminRedirect(
+                      superUser: superUser,
+                      location: state.matchedLocation,
+                    );
               },
               refreshListenable: GoRouterRefreshStream(
                 context.read<AuthBloc>().stream,
