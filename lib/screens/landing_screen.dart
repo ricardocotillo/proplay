@@ -8,6 +8,7 @@ import 'package:proplay/bloc/events_feed/events_feed_state.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/session_service.dart';
+import 'package:proplay/widgets/cached_image.dart';
 import 'package:proplay/utils/sports.dart';
 import 'package:proplay/widgets/responsive_layout.dart';
 
@@ -342,11 +343,7 @@ class _EventsGrid extends StatelessWidget {
                       children: [
                         AspectRatio(
                           aspectRatio: 16 / 9,
-                          child: Image.asset(
-                            'assets/images/landing/${_sportImages[e.sport] ?? 'event-1-futbol'}.webp',
-                            fit: BoxFit.cover,
-                            excludeFromSemantics: true,
-                          ),
+                          child: _EventBanner(event: e),
                         ),
                         Padding(
                           padding: const EdgeInsets.all(16),
@@ -378,6 +375,29 @@ class _EventsGrid extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _EventBanner extends StatelessWidget {
+  const _EventBanner({required this.event});
+
+  final SessionModel event;
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = Image.asset(
+      'assets/images/landing/${_sportImages[event.sport] ?? 'event-1-futbol'}.webp',
+      fit: BoxFit.cover,
+      excludeFromSemantics: true,
+    );
+    final url = event.groupImageUrl;
+    if (url == null || url.isEmpty) return fallback;
+    return PlatformCachedImage(
+      imageUrl: url,
+      fit: BoxFit.cover,
+      placeholder: (_, _) => fallback,
+      errorWidget: (_, _, _) => fallback,
     );
   }
 }

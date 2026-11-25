@@ -13,7 +13,7 @@ async function main() {
   const snap = await db.collection('liveSessions').where('isPrivate', '==', false).get();
   console.log(`Public liveSessions found: ${snap.size}`);
 
-  const groupNames = new Map<string, string | undefined>();
+  const groupNames = new Map<string, {name?: string; image?: string}>();
   let batch = db.batch();
   let inBatch = 0;
   let written = 0;
@@ -21,9 +21,12 @@ async function main() {
     const data = doc.data();
     const gid: string | undefined = data.groupId;
     if (gid && !groupNames.has(gid)) {
-      groupNames.set(gid, (await db.doc(`groups/${gid}`).get()).data()?.name);
+      const g = (await db.doc(`groups/${gid}`).get()).data();
+      groupNames.set(gid, {name: g?.name, image: g?.profileImageUrl ?? undefined});
     }
-    const projection = buildPublicEvent(doc.id, data, gid ? groupNames.get(gid) : undefined);
+    const projection = buildPublicEvent(
+      doc.id, data, gid ? groupNames.get(gid)?.name : undefined, gid ? groupNames.get(gid)?.image : undefined,
+    );
     if (!projection) continue;
     batch.set(db.doc(`publicEvents/${doc.id}`), projection);
     written++;

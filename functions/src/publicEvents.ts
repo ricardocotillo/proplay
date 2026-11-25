@@ -14,6 +14,7 @@ export function buildPublicEvent(
   id: string,
   data: Record<string, any>,
   groupName?: string,
+  groupImageUrl?: string,
 ): Record<string, any> | null {
   if (data.isPrivate !== false) return null;
   const out: Record<string, any> = {id};
@@ -21,6 +22,7 @@ export function buildPublicEvent(
     if (data[f] !== undefined) out[f] = data[f];
   }
   if (groupName !== undefined) out.groupName = groupName;
+  if (groupImageUrl) out.groupImageUrl = groupImageUrl;
   return out;
 }
 
@@ -42,11 +44,13 @@ export const mirrorPublicEvent = onDocumentWritten(
       return;
     }
     let groupName: string | undefined;
+    let groupImageUrl: string | undefined;
     if (data.groupId) {
       const g = await db.doc(`groups/${data.groupId}`).get();
       groupName = g.data()?.name;
+      groupImageUrl = g.data()?.profileImageUrl ?? undefined;
     }
-    const projection = buildPublicEvent(id, data, groupName);
+    const projection = buildPublicEvent(id, data, groupName, groupImageUrl);
     if (projection) await target.set(projection);
   },
 );

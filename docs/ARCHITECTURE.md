@@ -326,7 +326,7 @@ Uniqueness lock, e.g. `dni_12345678`. Fields: `uid`, `createdAt`. Written in the
 
 ### `publicEvents/{sessionId}` — projection
 
-Written **only** by the `mirrorPublicEvent` Cloud Function (rules: `read: true`, `write: false`). One document per `liveSessions` doc with `isPrivate == false`; deleted when the event becomes private or is deleted. Copies scheduling, price, seats (`playerCount`/`maxPlayers`), sport, age/gender, location (incl. `g`/`l`), `district`, `format`, plus `groupName` (organizer). It **never** contains `players`. The public feed and `/events/:id` read this collection only. Existing events are copied once by `functions/scripts/backfillPublicEvents.ts`.
+Written **only** by the `mirrorPublicEvent` Cloud Function (rules: `read: true`, `write: false`). One document per `liveSessions` doc with `isPrivate == false`; deleted when the event becomes private or is deleted. Copies scheduling, price, seats (`playerCount`/`maxPlayers`), sport, age/gender, location (incl. `g`/`l`), `district`, `format`, plus `groupName` and `groupImageUrl` (organizer group name and photo, shown as the card banner on the welcome page; absent when the group has none). It **never** contains `players`. The public feed and `/events/:id` read this collection only. Existing events are copied once by `functions/scripts/backfillPublicEvents.ts`.
 
 ### `creditHistory/{id}` — `CreditHistoryModel`
 

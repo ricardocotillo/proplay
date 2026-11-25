@@ -30,6 +30,9 @@ class SessionModel extends Equatable {
   /// (`publicEvents`), written by the Cloud Function — never by the client.
   final String? groupName;
 
+  /// Organizer group image, public projection only (shown as the event banner).
+  final String? groupImageUrl;
+
   const SessionModel({
     required this.id,
     required this.templateId,
@@ -53,6 +56,7 @@ class SessionModel extends Equatable {
     this.district,
     this.format,
     this.groupName,
+    this.groupImageUrl,
   });
 
   @override
@@ -79,6 +83,7 @@ class SessionModel extends Equatable {
     district,
     format,
     groupName,
+    groupImageUrl,
   ];
 
   SessionModel copyWith({
@@ -104,6 +109,7 @@ class SessionModel extends Equatable {
     String? district,
     String? format,
     String? groupName,
+    String? groupImageUrl,
   }) {
     return SessionModel(
       id: id ?? this.id,
@@ -128,6 +134,7 @@ class SessionModel extends Equatable {
       district: district ?? this.district,
       format: format ?? this.format,
       groupName: groupName ?? this.groupName,
+      groupImageUrl: groupImageUrl ?? this.groupImageUrl,
     );
   }
 
@@ -190,6 +197,7 @@ class SessionModel extends Equatable {
       district: map['district'] as String?,
       format: map['format'] as String?,
       groupName: map['groupName'] as String?,
+      groupImageUrl: map['groupImageUrl'] as String?,
     );
   }
 }
