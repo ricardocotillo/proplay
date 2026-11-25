@@ -13,4 +13,13 @@ void main() {
     expect(t.appBarTheme.backgroundColor, AppColors.bar);
     expect(t.scaffoldBackgroundColor, AppColors.page);
   });
+
+  test('headings use the bundled display font, body does not', () {
+    final t = AppTheme.dark.textTheme;
+    expect(t.headlineSmall!.fontFamily, 'BarlowCondensed');
+    expect(t.headlineMedium!.fontFamily, 'BarlowCondensed');
+    expect(t.titleLarge!.fontFamily, 'BarlowCondensed');
+    expect(t.titleMedium!.fontFamily, isNot('BarlowCondensed'));
+    expect(t.bodyMedium!.fontFamily, isNot('BarlowCondensed'));
+  });
 }
