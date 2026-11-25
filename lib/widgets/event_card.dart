@@ -113,13 +113,16 @@ class _EventCardState extends State<EventCard> {
                           ],
                         ),
                         const SizedBox(height: 2),
-                        Flexible(
-                          child: Text(
-                            session.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              height: 1.1,
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.topLeft,
+                            child: Text(
+                              session.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                height: 1.1,
+                              ),
                             ),
                           ),
                         ),
@@ -127,6 +130,7 @@ class _EventCardState extends State<EventCard> {
                         Row(
                           children: [
                             Flexible(
+                              flex: 2,
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
@@ -153,7 +157,7 @@ class _EventCardState extends State<EventCard> {
                             ),
                             if (address != null && address.isNotEmpty) ...[
                               const SizedBox(width: 8),
-                              Expanded(
+                              Flexible(
                                 child: Text(
                                   address,
                                   maxLines: 1,
@@ -164,7 +168,7 @@ class _EventCardState extends State<EventCard> {
                             ],
                           ],
                         ),
-                        const Spacer(),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
                             Expanded(
