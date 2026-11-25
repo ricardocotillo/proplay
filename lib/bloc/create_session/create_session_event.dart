@@ -4,14 +4,17 @@ abstract class CreateSessionEvent extends Equatable {
   const CreateSessionEvent();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
 
 class CreateSessionTemplate extends CreateSessionEvent {
   final SessionTemplateModel template;
 
-  const CreateSessionTemplate(this.template);
+  /// Optional banner picked by the organizer; uploaded before the template is written.
+  final XFile? banner;
+
+  const CreateSessionTemplate(this.template, {this.banner});
 
   @override
-  List<Object> get props => [template];
+  List<Object?> get props => [template, banner];
 }

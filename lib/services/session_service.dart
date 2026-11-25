@@ -88,6 +88,7 @@ class SessionService {
       locationAddress: template.locationAddress,
       district: template.district,
       format: template.format,
+      bannerUrl: template.bannerUrl,
     );
 
     await _firestore.collection('liveSessions').add(liveSession.toMap());

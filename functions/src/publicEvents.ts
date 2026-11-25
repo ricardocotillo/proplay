@@ -6,7 +6,7 @@ const PUBLIC_FIELDS = [
   'templateId', 'groupId', 'title', 'eventDate', 'eventEndDate', 'status',
   'playerCount', 'maxPlayers', 'costPerPlayer', 'isPrivate', 'sport',
   'minAge', 'maxAge', 'desiredGender', 'locationLat', 'locationLng',
-  'locationAddress', 'district', 'format', 'g', 'l',
+  'locationAddress', 'district', 'format', 'bannerUrl', 'g', 'l',
 ] as const;
 
 /** Returns the public projection of a live session, or null if it is private. */

@@ -32,3 +32,9 @@ test('missing optional fields stay undefined', () => {
   assert.equal(out.format, undefined);
   assert.equal(out.groupName, undefined);
 });
+
+test('bannerUrl is copied when present, undefined when absent', () => {
+  const url = 'https://x/y.jpg';
+  assert.equal(buildPublicEvent('s1', {...base, bannerUrl: url})!.bannerUrl, url);
+  assert.equal(buildPublicEvent('s1', base)!.bannerUrl, undefined);
+});

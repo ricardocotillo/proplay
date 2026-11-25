@@ -23,6 +23,7 @@ class SessionTemplateModel extends Equatable {
   final String? locationAddress;
   final String? district;
   final String? format;
+  final String? bannerUrl;
 
   const SessionTemplateModel({
     this.id,
@@ -45,6 +46,7 @@ class SessionTemplateModel extends Equatable {
     this.locationAddress,
     this.district,
     this.format,
+    this.bannerUrl,
   });
 
   @override
@@ -69,6 +71,7 @@ class SessionTemplateModel extends Equatable {
     locationAddress,
     district,
     format,
+    bannerUrl,
   ];
 
   SessionTemplateModel copyWith({
@@ -92,6 +95,7 @@ class SessionTemplateModel extends Equatable {
     String? locationAddress,
     String? district,
     String? format,
+    String? bannerUrl,
   }) {
     return SessionTemplateModel(
       id: id ?? this.id,
@@ -100,10 +104,10 @@ class SessionTemplateModel extends Equatable {
       title: title ?? this.title,
       eventDate: eventDate ?? this.eventDate,
       eventEndDate: eventEndDate ?? this.eventEndDate,
-      durationInMinutes: durationInMinutes,
+      durationInMinutes: durationInMinutes ?? this.durationInMinutes,
       maxPlayers: maxPlayers ?? this.maxPlayers,
       totalCost: totalCost ?? this.totalCost,
-      costPerPlayer: costPerPlayer,
+      costPerPlayer: costPerPlayer ?? this.costPerPlayer,
       isPrivate: isPrivate ?? this.isPrivate,
       sport: sport ?? this.sport,
       minAge: minAge ?? this.minAge,
@@ -114,6 +118,7 @@ class SessionTemplateModel extends Equatable {
       locationAddress: locationAddress ?? this.locationAddress,
       district: district ?? this.district,
       format: format ?? this.format,
+      bannerUrl: bannerUrl ?? this.bannerUrl,
     );
   }
 
@@ -138,6 +143,7 @@ class SessionTemplateModel extends Equatable {
       'locationAddress': locationAddress,
       if (district != null) 'district': district,
       if (format != null) 'format': format,
+      if (bannerUrl != null) 'bannerUrl': bannerUrl,
       // GeoFirestore fields for efficient location queries
       if (locationLat != null && locationLng != null) ...{
         'g': GeohashUtils.encode(locationLat!, locationLng!),
@@ -168,6 +174,7 @@ class SessionTemplateModel extends Equatable {
       locationAddress: map['locationAddress'] as String?,
       district: map['district'] as String?,
       format: map['format'] as String?,
+      bannerUrl: map['bannerUrl'] as String?,
     );
   }
 }

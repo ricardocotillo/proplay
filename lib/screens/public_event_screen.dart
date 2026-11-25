@@ -11,6 +11,7 @@ import 'package:proplay/screens/session_detail_screen.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/utils/sports.dart';
+import 'package:proplay/widgets/event_banner.dart';
 
 /// Read-only event detail at `/events/:id`. Safe for guests: it reads the
 /// `publicEvents` projection, which never contains the players list.
@@ -83,6 +84,13 @@ class _Details extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (event.bannerUrl != null) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: EventBanner(url: event.bannerUrl!),
+                ),
+                const SizedBox(height: 16),
+              ],
               Text(
                 event.title,
                 style: Theme.of(context).textTheme.headlineSmall
