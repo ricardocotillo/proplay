@@ -245,6 +245,8 @@ class _EventCard extends StatelessWidget {
       if (session.district != null) session.district!,
     ].join(' · ');
 
+    final hasBanner = session.bannerUrl != null;
+
     void open() {
       if (context.isAuthenticated) {
         Navigator.push(
@@ -261,47 +263,65 @@ class _EventCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          if (session.bannerUrl != null)
-            InkWell(
-              onTap: open,
-              child: EventBanner(url: session.bannerUrl!),
-            ),
-          ListTile(
-            contentPadding: const EdgeInsets.all(12),
-            leading: CircleAvatar(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              child: Icon(sport.icon, color: Colors.white),
-            ),
-            title: Text(
-              session.title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(
-              '$where\n${DateFormat('EEE d MMM, HH:mm', 'es').format(session.eventDate)}',
-            ),
-            isThreeLine: true,
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  session.costPerPlayer > 0
-                      ? 'S/ ${UserModel.formatCredits(session.costPerPlayer)}'
-                      : 'Gratis',
+      child: SizedBox(
+        // Fixed height only with a banner: `stretch` needs a bounded height.
+        height: hasBanner ? 112 : null,
+        child: Row(
+          crossAxisAlignment: hasBanner
+              ? CrossAxisAlignment.stretch
+              : CrossAxisAlignment.center,
+          children: [
+            // Banner on the left; the sport avatar is only the fallback.
+            if (hasBanner)
+              InkWell(
+                onTap: open,
+                child: SizedBox(
+                  width: 120,
+                  child: EventBanner(
+                    url: session.bannerUrl!,
+                    height: double.infinity,
+                  ),
+                ),
+              ),
+            Expanded(
+              child: ListTile(
+                contentPadding: const EdgeInsets.all(12),
+                leading: hasBanner
+                    ? null
+                    : CircleAvatar(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        child: Icon(sport.icon, color: Colors.white),
+                      ),
+                title: Text(
+                  session.title,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                Text(
-                  session.playerCount >= session.maxPlayers
-                      ? 'Lleno'
-                      : '${session.playerCount}/${session.maxPlayers} cupos',
+                subtitle: Text(
+                  '$where\n${DateFormat('EEE d MMM, HH:mm', 'es').format(session.eventDate)}',
                 ),
-              ],
+                isThreeLine: true,
+                trailing: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      session.costPerPlayer > 0
+                          ? 'S/ ${UserModel.formatCredits(session.costPerPlayer)}'
+                          : 'Gratis',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      session.playerCount >= session.maxPlayers
+                          ? 'Lleno'
+                          : '${session.playerCount}/${session.maxPlayers} cupos',
+                    ),
+                  ],
+                ),
+                onTap: open,
+              ),
             ),
-            onTap: open,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
