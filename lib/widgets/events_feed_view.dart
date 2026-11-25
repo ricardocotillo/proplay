@@ -95,7 +95,7 @@ class _EventsFeedViewState extends State<EventsFeedView> {
           return Align(
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1100),
+              constraints: const BoxConstraints(maxWidth: 1600),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -253,7 +253,8 @@ void _openEvent(BuildContext context, SessionModel session) {
   }
 }
 
-/// One column on mobile, two on wider screens. Non-scrolling (see class doc).
+/// One column on mobile, two on wider screens, three on wide desktops.
+/// Non-scrolling (see class doc).
 class _EventCards extends StatelessWidget {
   final List<SessionModel> sessions;
 
@@ -274,7 +275,10 @@ class _EventCards extends StatelessWidget {
     }
     return LayoutBuilder(
       builder: (context, constraints) {
-        final w = (constraints.maxWidth - 12) / 2;
+        // Columns follow the available width (the feed also lives in a
+        // narrower host at `/events`), 3 only when cards stay roomy.
+        final cols = constraints.maxWidth >= 1200 ? 3 : 2;
+        final w = (constraints.maxWidth - 12 * (cols - 1)) / cols;
         return Wrap(
           spacing: 12,
           runSpacing: 12,
