@@ -5,6 +5,7 @@ import 'package:proplay/widgets/cached_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/utils/sports.dart';
 import 'package:proplay/widgets/app_drawer.dart';
@@ -132,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         automaticallyImplyLeading: false,
         leading: IconButton(
-          style: IconButton.styleFrom(backgroundColor: Colors.white),
+          style: IconButton.styleFrom(backgroundColor: AppColors.card),
           onPressed: () {
             // TODO: Handle notification tap
           },
@@ -197,22 +198,29 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Bienvenido, ${user?.firstName ?? ''}',
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: Theme.of(context).colorScheme.secondary,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.heroGradient,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Bienvenido, ${user?.firstName ?? ''}',
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(color: Colors.white70),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Juega como un pro',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          'Juega como un pro',
+                          style: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(color: Colors.white),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Expanded(
@@ -222,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(state.message),
-                            backgroundColor: Colors.green,
+                            backgroundColor: AppColors.success,
                           ),
                         );
                         _loadGroups();
@@ -272,10 +280,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.error_outline,
                                 size: 48,
-                                color: Colors.red,
+                                color: Theme.of(context).colorScheme.error,
                               ),
                               const SizedBox(height: 16),
                               Text(state.message),
@@ -591,7 +599,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Error al guardar perfil: $e'),
-                      backgroundColor: Colors.red,
+                      backgroundColor: Theme.of(context).colorScheme.error,
                     ),
                   );
                 }

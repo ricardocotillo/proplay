@@ -4,6 +4,7 @@ import 'package:proplay/widgets/cached_image.dart';
 import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/screens/credit_history_screen.dart';
 import 'package:proplay/screens/credit_approval_screen.dart';
@@ -20,15 +21,16 @@ class AppSidebar extends StatelessWidget {
 
     return Container(
       width: 280,
-      color: Theme.of(context).colorScheme.surface,
+      decoration: const BoxDecoration(
+        color: AppColors.bar,
+        border: Border(right: BorderSide(color: AppColors.border)),
+      ),
       child: Column(
         children: [
           // Header with User Info
           Container(
             padding: const EdgeInsets.fromLTRB(16, 32, 16, 24),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-            ),
+            decoration: const BoxDecoration(gradient: AppColors.heroGradient),
             child: Column(
               children: [
                 user?.profileImageUrl != null
@@ -185,9 +187,9 @@ class AppSidebar extends StatelessWidget {
               Navigator.pop(dialogContext);
               context.read<AuthBloc>().add(AuthLogoutRequested());
             },
-            child: const Text(
+            child: Text(
               'Cerrar Sesión',
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ),
         ],
@@ -217,9 +219,9 @@ class _SidebarMenuItem extends StatelessWidget {
     FontWeight? fontWeight;
 
     if (isDestructive) {
-      color = Colors.red;
+      color = Theme.of(context).colorScheme.error;
     } else if (isPrimary) {
-      color = Theme.of(context).colorScheme.primary;
+      color = AppColors.selectedText;
       fontWeight = FontWeight.w600;
     }
 
