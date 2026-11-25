@@ -8,10 +8,12 @@ import 'package:proplay/bloc/events_feed/events_feed_state.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/screens/session_detail_screen.dart';
 import 'package:proplay/services/session_service.dart';
+import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/utils/feed_filters.dart';
 import 'package:proplay/utils/sports.dart';
 import 'package:proplay/widgets/event_card.dart';
+import 'package:proplay/widgets/skeleton.dart';
 
 /// Public events feed body (filters + cards). Non-scrolling: the host
 /// (Home or `/events`) provides the scroll view. Works for guests.
@@ -61,9 +63,16 @@ class _EventsFeedViewState extends State<EventsFeedView> {
       child: BlocBuilder<EventsFeedBloc, EventsFeedState>(
         builder: (context, state) {
           if (state is EventsFeedLoading) {
-            return const Padding(
-              padding: EdgeInsets.all(32),
-              child: Center(child: CircularProgressIndicator()),
+            return Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1600),
+                child: _CardGrid(
+                  children: [
+                    for (var i = 0; i < 6; i++) const EventCardSkeleton(),
+                  ],
+                ),
+              ),
             );
           }
           if (state is EventsFeedError) {
@@ -100,18 +109,21 @@ class _EventsFeedViewState extends State<EventsFeedView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _FiltersBar(state: loaded),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   if (loaded.visible.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(32),
-                      child: Center(
-                        child: Text(
-                          'No hay eventos con estos filtros por ahora.',
-                        ),
+                    _EmptyFeed(filtered: !loaded.filters.isEmpty)
+                  else ...[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        loaded.visible.length == 1
+                            ? '1 evento'
+                            : '${loaded.visible.length} eventos',
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
-                    )
-                  else
+                    ),
                     _EventCards(sessions: loaded.visible),
+                  ],
                 ],
               ),
             ),
@@ -146,6 +158,16 @@ class _FiltersBarState extends State<_FiltersBar> {
   }
 
   @override
+  void didUpdateWidget(_FiltersBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Filters cleared from elsewhere (the empty state): drop stale text.
+    if (widget.state.filters.isEmpty && !oldWidget.state.filters.isEmpty) {
+      _price.clear();
+      _format.clear();
+    }
+  }
+
+  @override
   void dispose() {
     _price.dispose();
     _format.dispose();
@@ -170,38 +192,40 @@ class _FiltersBarState extends State<_FiltersBar> {
       runSpacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        DropdownButton<String?>(
-          value: f.sport,
-          hint: const Text('Deporte'),
-          items: [
-            const DropdownMenuItem(
-              value: null,
-              child: Text('Todos los deportes'),
-            ),
-            for (final s in kSports)
-              DropdownMenuItem(value: s.value, child: Text(s.display)),
-          ],
-          onChanged: (v) => _set(f.copyWith(sport: v)),
+        ChoiceChip(
+          label: const Text('Todos'),
+          selected: f.sport == null,
+          onSelected: (_) => _set(f.copyWith(sport: null)),
         ),
-        DropdownButton<String?>(
-          value: districts.contains(f.district) ? f.district : null,
-          hint: const Text('Distrito'),
-          items: [
-            const DropdownMenuItem(
-              value: null,
-              child: Text('Todos los distritos'),
-            ),
-            for (final d in districts)
-              DropdownMenuItem(value: d, child: Text(d)),
-          ],
-          onChanged: (v) => _set(f.copyWith(district: v)),
-        ),
+        for (final s in kSports)
+          ChoiceChip(
+            avatar: Icon(s.icon, size: 18),
+            label: Text(s.display),
+            selected: f.sport == s.value,
+            onSelected: (sel) => _set(f.copyWith(sport: sel ? s.value : null)),
+          ),
+        const _FilterDivider(),
         for (final e in parts.entries)
           ChoiceChip(
             label: Text(e.value),
             selected: f.dayPart == e.key,
             onSelected: (sel) => _set(f.copyWith(dayPart: sel ? e.key : null)),
           ),
+        const _FilterDivider(),
+        PopupMenuButton<String>(
+          tooltip: 'Distrito',
+          // Sentinel '' = all: a null item value never reaches onSelected.
+          onSelected: (v) => _set(f.copyWith(district: v.isEmpty ? null : v)),
+          itemBuilder: (_) => [
+            const PopupMenuItem(value: '', child: Text('Todos los distritos')),
+            for (final d in districts) PopupMenuItem(value: d, child: Text(d)),
+          ],
+          child: _PillLabel(
+            icon: Icons.place_outlined,
+            text: districts.contains(f.district) ? f.district! : 'Distrito',
+            selected: districts.contains(f.district),
+          ),
+        ),
         SizedBox(
           width: 130,
           child: TextField(
@@ -227,15 +251,110 @@ class _FiltersBarState extends State<_FiltersBar> {
           ),
         ),
         if (!f.isEmpty)
-          TextButton(
+          ActionChip(
+            avatar: const Icon(Icons.close, size: 16),
+            label: const Text('Limpiar'),
             onPressed: () {
               _price.clear();
               _format.clear();
               _set(const FeedFilters());
             },
-            child: const Text('Limpiar'),
           ),
       ],
+    );
+  }
+}
+
+class _FilterDivider extends StatelessWidget {
+  const _FilterDivider();
+
+  @override
+  Widget build(BuildContext context) =>
+      const SizedBox(height: 24, child: VerticalDivider(width: 16));
+}
+
+/// Pill that looks like a [ChoiceChip] but opens a menu (district).
+class _PillLabel extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final bool selected;
+
+  const _PillLabel({
+    required this.icon,
+    required this.text,
+    required this.selected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? AppColors.selectedText : AppColors.muted;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 7, 6, 7),
+      decoration: ShapeDecoration(
+        color: selected ? AppColors.selectedTint : AppColors.card,
+        shape: const StadiumBorder(side: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              color: selected ? AppColors.selectedText : AppColors.text,
+            ),
+          ),
+          Icon(Icons.arrow_drop_down, size: 20, color: color),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmptyFeed extends StatelessWidget {
+  final bool filtered;
+
+  const _EmptyFeed({required this.filtered});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 16),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.event_busy, size: 48, color: AppColors.muted),
+            const SizedBox(height: 12),
+            Text(
+              filtered
+                  ? 'No hay eventos con estos filtros'
+                  : 'Aún no hay eventos próximos',
+              style: theme.textTheme.titleLarge,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              filtered
+                  ? 'Prueba quitando algún filtro.'
+                  : 'Vuelve pronto para ver nuevos partidos.',
+              style: theme.textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+            if (filtered) ...[
+              const SizedBox(height: 16),
+              OutlinedButton(
+                onPressed: () => context.read<EventsFeedBloc>().add(
+                  const EventsFeedFiltersChanged(FeedFilters()),
+                ),
+                child: const Text('Limpiar filtros'),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -253,23 +372,35 @@ void _openEvent(BuildContext context, SessionModel session) {
   }
 }
 
-/// One column on mobile, two on wider screens, three on wide desktops.
-/// Non-scrolling (see class doc).
 class _EventCards extends StatelessWidget {
   final List<SessionModel> sessions;
 
   const _EventCards({required this.sessions});
 
   @override
+  Widget build(BuildContext context) => _CardGrid(
+    children: [
+      for (final s in sessions)
+        EventCard(session: s, onTap: () => _openEvent(context, s)),
+    ],
+  );
+}
+
+/// One column on mobile, two on wider screens, three on wide desktops.
+/// Non-scrolling (see class doc).
+class _CardGrid extends StatelessWidget {
+  final List<Widget> children;
+
+  const _CardGrid({required this.children});
+
+  @override
   Widget build(BuildContext context) {
     final wide = ResponsiveBreakpoints.of(context).largerThan(MOBILE);
-    Widget card(SessionModel s) =>
-        EventCard(session: s, onTap: () => _openEvent(context, s));
     if (!wide) {
       return Column(
         children: [
-          for (final s in sessions)
-            Padding(padding: const EdgeInsets.only(bottom: 12), child: card(s)),
+          for (final c in children)
+            Padding(padding: const EdgeInsets.only(bottom: 12), child: c),
         ],
       );
     }
@@ -282,9 +413,7 @@ class _EventCards extends StatelessWidget {
         return Wrap(
           spacing: 12,
           runSpacing: 12,
-          children: [
-            for (final s in sessions) SizedBox(width: w, child: card(s)),
-          ],
+          children: [for (final c in children) SizedBox(width: w, child: c)],
         );
       },
     );

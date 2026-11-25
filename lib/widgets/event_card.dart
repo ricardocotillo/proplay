@@ -7,6 +7,13 @@ import 'package:proplay/utils/event_format.dart';
 import 'package:proplay/utils/sports.dart';
 import 'package:proplay/widgets/event_banner.dart';
 
+/// Card height and image width, shared with `EventCardSkeleton` so loading
+/// placeholders are exactly the size of the real cards (no layout shift).
+const double kEventCardHeight = 164;
+
+double eventCardImageWidth(BuildContext context) =>
+    ResponsiveBreakpoints.of(context).largerThan(MOBILE) ? 168 : 132;
+
 /// Feed card: image on the left, details on the right. Dumb on purpose:
 /// navigation lives in the caller via [onTap].
 class EventCard extends StatefulWidget {
@@ -26,7 +33,6 @@ class _EventCardState extends State<EventCard> {
   Widget build(BuildContext context) {
     final session = widget.session;
     final theme = Theme.of(context);
-    final wide = ResponsiveBreakpoints.of(context).largerThan(MOBILE);
     final sport = kSports.firstWhere(
       (s) => s.value == session.sport,
       orElse: () => kSports.first,
@@ -52,12 +58,12 @@ class _EventCardState extends State<EventCard> {
         child: InkWell(
           onTap: widget.onTap,
           child: SizedBox(
-            height: 164,
+            height: kEventCardHeight,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(
-                  width: wide ? 168 : 132,
+                  width: eventCardImageWidth(context),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
