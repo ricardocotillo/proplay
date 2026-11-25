@@ -1,0 +1,4 @@
+key,active,groupId,creatorId,title,sport,weekday,start,end,maxPlayers,totalCost,isPrivate,minAge,maxAge,desiredGender,lat,lng,address,district,format
+futbol-mie,yes,GROUP_ID,OWNER_UID,Fútbol miércoles,fútbol,mie,20:00,21:30,10,120,no,18,60,any,-12.1219,-77.0297,"Av. Larco 123, Miraflores",Miraflores,5 vs 5
+voley-jue,no,GROUP_ID,OWNER_UID,Vóley jueves,voleibol,jue,19:00,21:00,12,96,no,,,any,-12.0953,-77.0359,"Calle Ejemplo 45, San Isidro",San Isidro,
+basket-sab,yes,GROUP_ID,OWNER_UID,Baloncesto sábado,baloncesto,sab,09:00,11:00,10,80,no,,,male,-12.1100,-77.0300,"Parque Test, Surquillo",Surquillo,

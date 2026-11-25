@@ -50,3 +50,5 @@ app.*.map.json
 firestore-debug.log
 ui-debug.log
 firebase-debug.log
+# Local weekly-events data (copy events.example.csv)
+functions/events/events.csv

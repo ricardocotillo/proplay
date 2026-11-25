@@ -131,6 +131,24 @@ npm test            # unit tests
 npm run test:emulator   # emulator tests (needs Java): rules, cancelParticipation, trigger, backfill
 ```
 
+## Weekly events script
+
+Creates one week of events from a local CSV (Admin SDK; dry-run by default; never deletes).
+
+```bash
+cd functions
+cp events/events.example.csv events/events.csv   # once; gitignored. Fill GROUP_ID / OWNER_UID
+gcloud auth application-default login             # once
+npm run events:create -- --week 2026-12-07            # dry-run: prints CREATE / UPDATE / WARN
+npm run events:create -- --week 2026-12-07 --apply   # write
+```
+
+- One row = one weekly series. Edit, add or delete rows before each run; `active=no` skips a row.
+- `--week` is any date in the target week (default: next week). Times are Lima (UTC-5).
+- `key` is the identity (`rec_{key}_{date}`). Never rename it or it becomes a new series. Re-runs are idempotent.
+- Events with players keep their price and players; seat or price changes that would break them only warn.
+- Removing an event is manual (delete it in the app). `publicEvents` is filled by the existing trigger.
+
 ## Deploy order
 
 Run by hand from the repo root, **in this order** (rules are additive, so the old app keeps working until step 4):
