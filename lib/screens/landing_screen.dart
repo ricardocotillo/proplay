@@ -366,21 +366,26 @@ class _SportTile extends StatelessWidget {
               ),
               Positioned(
                 left: 16,
+                right: 12,
                 bottom: 14,
-                child: Row(
-                  children: [
-                    Icon(sport.icon, color: Colors.white, size: 22),
-                    const SizedBox(width: 8),
-                    Text(
-                      sport.display.toUpperCase(),
-                      style: const TextStyle(
-                        fontFamily: kDisplayFont,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    children: [
+                      Icon(sport.icon, color: Colors.white, size: 22),
+                      const SizedBox(width: 8),
+                      Text(
+                        sport.display.toUpperCase(),
+                        style: const TextStyle(
+                          fontFamily: kDisplayFont,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               Positioned.fill(
