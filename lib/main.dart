@@ -39,6 +39,7 @@ import 'package:proplay/screens/payment_pending_screen.dart';
 import 'package:proplay/screens/payment_failure_screen.dart';
 import 'package:proplay/screens/my_tickets_screen.dart';
 import 'package:proplay/screens/validate_ticket_screen.dart';
+import 'package:proplay/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -259,6 +260,7 @@ class _MyAppState extends State<MyApp> {
             if (authState is AuthInitial) {
               return MaterialApp(
                 debugShowCheckedModeBanner: false,
+                theme: AppTheme.dark,
                 builder: (context, child) => ResponsiveBreakpoints.builder(
                   child: child!,
                   breakpoints: [
@@ -325,29 +327,7 @@ class _MyAppState extends State<MyApp> {
               ),
               routerConfig: _router!,
               title: 'ProPlay',
-              theme: ThemeData(
-                colorScheme: const ColorScheme.light(
-                  primary: Color(0xFFBA1B1D),
-                  onPrimary: Color(0xFFFFFFFF),
-                  secondary: Color(0xFFBA1B1D),
-                  onSecondary: Color(0xFFFFFFFF),
-                  surface: Color(0xFFFFFFFF),
-                  onSurface: Color(0xFF010101),
-                  error: Color(0xFFBA1B1D),
-                  onError: Color(0xFFFFFFFF),
-                ),
-                scaffoldBackgroundColor: const Color(0xFFFFFFFF),
-                appBarTheme: const AppBarTheme(
-                  backgroundColor: Color(0xFFBA1B1D),
-                  foregroundColor: Color(0xFFFFFFFF),
-                ),
-                elevatedButtonTheme: ElevatedButtonThemeData(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFBA1B1D),
-                    foregroundColor: const Color(0xFFFFFFFF),
-                  ),
-                ),
-              ),
+              theme: AppTheme.dark,
             );
           },
         ),
