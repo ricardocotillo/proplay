@@ -95,16 +95,12 @@ class _HomeScreenState extends State<HomeScreen> {
       final user = context.currentUser;
       if (user == null) return;
 
-      final needsSports = user.sports.isEmpty;
-      final needsMatchInfo = !user.isMatchInfoComplete;
-      final shouldPromptMatchInfo =
-          needsMatchInfo && !user.profileCompletionDismissed;
+      // Optional, asked once: the feed doesn't filter by sport, so nothing
+      // here may block the user from browsing.
+      final incomplete = user.sports.isEmpty || !user.isMatchInfoComplete;
+      if (!incomplete || user.profileCompletionDismissed) return;
 
-      if (!needsSports && !shouldPromptMatchInfo) {
-        return;
-      }
-
-      _showProfileSetupDialog(forceSports: needsSports);
+      _showProfileSetupDialog();
     });
   }
 
@@ -133,13 +129,6 @@ class _HomeScreenState extends State<HomeScreen> {
               scrolledUnderElevation: 0,
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               automaticallyImplyLeading: false,
-              leading: IconButton(
-                style: IconButton.styleFrom(backgroundColor: AppColors.card),
-                onPressed: () {
-                  // TODO: Handle notification tap
-                },
-                icon: const Icon(Icons.notifications_none),
-              ),
               actions: [
                 WalletIndicator(onTap: _showAddCreditsDialog),
                 Padding(
@@ -541,21 +530,17 @@ class _HomeScreenState extends State<HomeScreen> {
     context.push('/purchase-credits');
   }
 
-  void _showProfileSetupDialog({required bool forceSports}) {
+  void _showProfileSetupDialog() {
     final user = context.currentUser;
     if (user == null) return;
 
     showDialog(
       context: context,
-      barrierDismissible: !forceSports,
       builder: (dialogContext) => _ProfileSetupDialog(
         initialSelectedSports: user.sports,
         initialGender: user.gender,
         initialAge: user.age,
-        forceSports: forceSports,
         onDismissed: () {
-          if (forceSports) return;
-
           final currentUser = context.currentUser;
           if (currentUser == null) return;
 
@@ -614,7 +599,6 @@ class _ProfileSetupDialog extends StatefulWidget {
   final List<String> initialSelectedSports;
   final String? initialGender;
   final int? initialAge;
-  final bool forceSports;
   final void Function() onDismissed;
   final void Function({
     required List<String> sports,
@@ -627,7 +611,6 @@ class _ProfileSetupDialog extends StatefulWidget {
     required this.initialSelectedSports,
     required this.initialGender,
     required this.initialAge,
-    required this.forceSports,
     required this.onDismissed,
     required this.onSaved,
   });
@@ -660,10 +643,6 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
 
   void _handleSave() {
     final sports = _selectedSports.toList();
-    if (widget.forceSports && sports.isEmpty) {
-      return;
-    }
-
     _actionTaken = true;
 
     final ageText = _ageController.text.trim();
@@ -674,10 +653,6 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
   }
 
   void _handleDismiss() {
-    if (widget.forceSports) {
-      return;
-    }
-
     _actionTaken = true;
     widget.onDismissed();
     Navigator.pop(context);
@@ -686,9 +661,8 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !widget.forceSports,
       onPopInvokedWithResult: (didPop, result) {
-        if (!widget.forceSports && !_actionTaken) {
+        if (!_actionTaken) {
           widget.onDismissed();
         }
       },
@@ -766,17 +740,8 @@ class _ProfileSetupDialogState extends State<_ProfileSetupDialog> {
           ),
         ),
         actions: [
-          if (!widget.forceSports)
-            TextButton(
-              onPressed: _handleDismiss,
-              child: const Text('Ahora no'),
-            ),
-          ElevatedButton(
-            onPressed: widget.forceSports && _selectedSports.isEmpty
-                ? null
-                : _handleSave,
-            child: const Text('Guardar'),
-          ),
+          TextButton(onPressed: _handleDismiss, child: const Text('Ahora no')),
+          ElevatedButton(onPressed: _handleSave, child: const Text('Guardar')),
         ],
       ),
     );

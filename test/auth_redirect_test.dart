@@ -2,9 +2,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:proplay/utils/auth_redirect.dart';
 
 void main() {
-  test('guest on protected route goes to /welcome', () {
+  test('guest on / goes to /welcome', () {
     expect(authRedirect(loggedIn: false, location: '/'), '/welcome');
-    expect(authRedirect(loggedIn: false, location: '/group/x'), '/welcome');
+  });
+
+  test('guest on a deep link signs in and comes back to it', () {
+    expect(
+      authRedirect(
+        loggedIn: false,
+        location: '/validate-ticket',
+        target: '/validate-ticket?token=abc',
+      ),
+      '/login?from=%2Fvalidate-ticket%3Ftoken%3Dabc',
+    );
+    expect(authRedirect(loggedIn: false, location: '/group/x'), '/login');
+    expect(
+      authRedirect(loggedIn: false, location: '/tickets', target: '//evil.com'),
+      '/login',
+    );
   });
 
   test('guest may see public routes', () {

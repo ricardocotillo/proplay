@@ -6,7 +6,7 @@ If anything here drifts, treat **docs/ARCHITECTURE.md** as source of truth for h
 
 ---
 
-ProPlay is a Flutter + Firebase app for organizing and discovering sports sessions in Peru. Users join groups, match into nearby sessions, spend **pro coins**, and check in with QR tickets.
+ProPlay is a Flutter + Firebase app for organizing and discovering sports sessions in Peru. Users join groups, match into nearby sessions, pay from their **saldo** (credits, 1 credit = S/ 1), and check in with QR tickets. User-facing copy says "saldo" in S/, never "pro coins".
 
 ---
 
@@ -83,7 +83,7 @@ Full field lists: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#7-firestore-data-m
 
 ## Routing
 
-`go_router` in `lib/main.dart` is auth-gated. Unauthenticated users only see `/welcome` (landing), `/login`, `/registration` and the public feed `/events` + `/events/:id` (read-only, `publicEvents` only).
+`go_router` in `lib/main.dart` is auth-gated. Unauthenticated users only see `/welcome` (landing), `/login`, `/registration` and the public feed `/events` + `/events/:id` (read-only, `publicEvents` only). Other deep links send guests to `/login?from=<link>`. URLs are real paths (`usePathUrlStrategy`), not `/#/`.
 
 Primary routes: `/welcome`, `/`, `/events`, `/events/:id`, `/sessions` (same feed), `/create-group`, `/edit-profile`, `/purchase-credits`, `/credit-history`, `/credit-approval` (super user), `/tickets`, `/validate-ticket`, `/group/:id`, `/group/:id/edit`, `/group/:id/info`, `/payment/{success,pending,failure}`.
 

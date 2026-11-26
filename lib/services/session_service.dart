@@ -642,7 +642,7 @@ class SessionService {
 
         if (userCredits < costPerPlayer) {
           throw Exception(
-            'No tienes suficientes créditos. Necesitas S/ ${UserModel.formatCredits(costPerPlayer)} y tienes S/ ${UserModel.formatCredits(userCredits)}.',
+            'No tienes saldo suficiente. Necesitas S/ ${UserModel.formatCredits(costPerPlayer)} y tienes S/ ${UserModel.formatCredits(userCredits)}.',
           );
         }
 

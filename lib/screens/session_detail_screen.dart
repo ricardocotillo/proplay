@@ -6,6 +6,7 @@ import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/widgets/cached_image.dart';
 import 'package:proplay/widgets/event_bottom_bar.dart';
 import 'package:proplay/widgets/event_hero.dart';
+import 'package:proplay/widgets/share_event_button.dart';
 import 'package:proplay/bloc/session_detail/session_detail_bloc.dart';
 import 'package:proplay/bloc/session_detail/session_detail_event.dart';
 import 'package:proplay/bloc/session_detail/session_detail_state.dart';
@@ -46,7 +47,21 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
         currentUser: currentUser,
       )..add(LoadSessionDetail(widget.sessionId)),
       child: Scaffold(
-        appBar: AppBar(title: const Text('Detalles de la Pichanga')),
+        appBar: AppBar(
+          title: const Text('Detalles de la Pichanga'),
+          actions: [
+            // Only public events have a guest-readable page to share.
+            BlocBuilder<SessionDetailBloc, SessionDetailState>(
+              builder: (context, state) =>
+                  state is SessionDetailLoaded && !state.session.isPrivate
+                  ? ShareEventButton(
+                      eventId: state.session.id,
+                      title: state.session.title,
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
         body: BlocConsumer<SessionDetailBloc, SessionDetailState>(
           listener: (context, state) {
             // Track if we're processing a join action
@@ -498,7 +513,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                     );
               },
               icon: const Icon(Icons.account_balance_wallet_outlined),
-              label: const Text('Recargar créditos'),
+              label: const Text('Recargar saldo'),
               style: buttonStyle,
             ),
           ],
@@ -663,7 +678,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Se te debitarán $cost créditos de tu cuenta.',
+              'Se descontarán S/ $cost de tu saldo.',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),

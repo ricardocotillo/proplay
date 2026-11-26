@@ -86,7 +86,7 @@ class AppDrawer extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.history),
-                  title: const Text('Historial de Créditos'),
+                  title: const Text('Historial de saldo'),
                   onTap: () {
                     context.pop(); // Close drawer
                     Navigator.push(
@@ -99,7 +99,7 @@ class AppDrawer extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.qr_code),
-                  title: const Text('Mis Tickets'),
+                  title: const Text('Mis partidos'),
                   onTap: () {
                     context.pop(); // Close drawer
                     Navigator.push(
@@ -149,6 +149,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   onTap: () {
                     final authBloc = context.read<AuthBloc>();
+                    final router = GoRouter.of(context);
                     // Show confirmation dialog
                     showDialog(
                       context: context,
@@ -167,6 +168,9 @@ class AppDrawer extends StatelessWidget {
                               Navigator.pop(dialogContext); // Close dialog
                               context.pop(); // Close the drawer
                               authBloc.add(AuthLogoutRequested());
+                              // Not `/login?from=<this page>`: the next
+                              // account must not land on this user's page.
+                              router.go('/');
                             },
                             child: Text(
                               'Cerrar Sesión',

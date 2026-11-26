@@ -6,6 +6,7 @@ import 'package:responsive_framework/responsive_framework.dart';
 import 'package:proplay/utils/breakpoints.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:go_router/go_router.dart';
 
 import 'firebase_options.dart';
@@ -46,6 +47,9 @@ import 'package:proplay/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Real paths (/events/x, /validate-ticket?token=) instead of /#/...: the
+  // ticket QR and shared event links are plain URLs.
+  usePathUrlStrategy();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await initializeDateFormatting('es');
   runApp(const MyApp());
@@ -282,6 +286,7 @@ class _MyAppState extends State<MyApp> {
                       loggedIn: authState is AuthAuthenticated,
                       location: state.matchedLocation,
                       from: state.uri.queryParameters['from'],
+                      target: state.uri.toString(),
                     ) ??
                     adminRedirect(
                       superUser: superUser,

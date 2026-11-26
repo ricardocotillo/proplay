@@ -7,6 +7,9 @@ import 'package:proplay/screens/session_detail_screen.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
+import 'package:proplay/theme/app_colors.dart';
+import 'package:proplay/utils/ticket_url_builder.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:proplay/utils/auth_helper.dart';
 
 class GroupsSessionsScreen extends StatelessWidget {
@@ -70,95 +73,127 @@ class GroupsSessionsScreen extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
             if (state is SessionLoaded) {
+              // Publishing is curated: group owners/admins who are not
+              // verified organizers learn why there is no "Crear +".
+              final role = state.currentUserRole;
+              final showNotice =
+                  (role == 'owner' || role == 'admin') &&
+                  currentUser?.superUser != true;
               if (state.sessions.isEmpty) {
-                return const Center(child: Text('No hay próximas pichangas.'));
+                return Column(
+                  children: [
+                    if (showNotice) const _CuratedNotice(),
+                    const Expanded(
+                      child: Center(child: Text('No hay próximas pichangas.')),
+                    ),
+                  ],
+                );
               }
-              return ListView.builder(
-                itemCount: state.sessions.length,
-                itemBuilder: (context, index) {
-                  final session = state.sessions[index];
-                  return Dismissible(
-                    key: Key(session.id),
-                    direction: DismissDirection.endToStart,
-                    confirmDismiss: (direction) async {
-                      return await showDialog<bool>(
-                            context: context,
-                            builder: (BuildContext dialogContext) {
-                              return AlertDialog(
-                                title: const Text('Eliminar sesión'),
-                                content: const Text(
-                                  '¿Estás seguro de que quieres eliminar esta sesión? '
-                                  'Esta acción no se puede deshacer.',
+              return Column(
+                children: [
+                  if (showNotice) const _CuratedNotice(),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: state.sessions.length,
+                      itemBuilder: (context, index) {
+                        final session = state.sessions[index];
+                        return Dismissible(
+                          key: Key(session.id),
+                          direction: DismissDirection.endToStart,
+                          confirmDismiss: (direction) async {
+                            return await showDialog<bool>(
+                                  context: context,
+                                  builder: (BuildContext dialogContext) {
+                                    return AlertDialog(
+                                      title: const Text('Eliminar sesión'),
+                                      content: const Text(
+                                        '¿Estás seguro de que quieres eliminar esta sesión? '
+                                        'Esta acción no se puede deshacer.',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(dialogContext)
+                                                  .pop(false),
+                                          child: const Text('Cancelar'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(dialogContext)
+                                                  .pop(true),
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: Theme.of(
+                                              dialogContext,
+                                            ).colorScheme.error,
+                                          ),
+                                          child: const Text('Eliminar'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ) ??
+                                false;
+                          },
+                          onDismissed: (direction) {
+                            context.read<SessionBloc>().add(
+                              DeleteSession(session.id),
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${session.title} eliminada'),
+                              ),
+                            );
+                          },
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 20.0),
+                            color: AppColors.error,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Icon(
+                                  Icons.delete,
+                                  color: Theme.of(context).colorScheme.onError,
                                 ),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(dialogContext).pop(false),
-                                    child: const Text('Cancelar'),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Eliminar',
+                                  style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onError,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(dialogContext).pop(true),
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: Theme.of(dialogContext)
-                                          .colorScheme
-                                          .error,
-                                    ),
-                                    child: const Text('Eliminar'),
-                                  ),
-                                ],
-                              );
-                            },
-                          ) ??
-                          false;
-                    },
-                    onDismissed: (direction) {
-                      context.read<SessionBloc>().add(
-                        DeleteSession(session.id),
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('${session.title} eliminada')),
-                      );
-                    },
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20.0),
-                      color: Colors.red,
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Icon(Icons.delete, color: Colors.white),
-                          SizedBox(width: 8),
-                          Text(
-                            'Eliminar',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    child: ListTile(
-                      title: Text(session.title),
-                      subtitle: Text(
-                        DateFormat.yMMMd().add_jm().format(session.eventDate),
-                      ),
-                      trailing: Text(
-                        '${session.playerCount}/${session.maxPlayers} jugadores',
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                SessionDetailScreen(sessionId: session.id),
+                          child: ListTile(
+                            title: Text(session.title),
+                            subtitle: Text(
+                              DateFormat.yMMMd().add_jm().format(
+                                session.eventDate,
+                              ),
+                            ),
+                            trailing: Text(
+                              '${session.playerCount}/${session.maxPlayers} jugadores',
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SessionDetailScreen(
+                                    sessionId: session.id,
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         );
                       },
                     ),
-                  );
-                },
+                  ),
+                ],
               );
             }
             if (state is SessionError) {
@@ -169,6 +204,54 @@ class GroupsSessionsScreen extends StatelessWidget {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _CuratedNotice extends StatelessWidget {
+  const _CuratedNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.verified_outlined, color: AppColors.muted),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Publicar eventos está disponible para organizadores '
+                  'verificados.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                TextButton.icon(
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  onPressed: () => launchUrl(
+                    supportWhatsAppUri(
+                      'Hola, quiero verificar mi grupo en ProPlay para publicar eventos.',
+                    ),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  icon: const Icon(Icons.chat_outlined, size: 18),
+                  label: const Text('Escríbenos por WhatsApp'),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
