@@ -1,11 +1,9 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:proplay/bloc/auth/auth_bloc.dart';
-import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/cached_image.dart';
+import 'package:proplay/widgets/logout_dialog.dart';
 import 'package:proplay/widgets/wallet_indicator.dart';
 
 /// "Perfil" tab: who you are, saldo, and the account pages that used to live
@@ -109,40 +107,11 @@ class ProfileScreen extends StatelessWidget {
                 icon: Icons.logout,
                 title: 'Cerrar sesión',
                 color: AppColors.error,
-                onTap: () => _confirmLogout(context),
+                onTap: () => confirmLogout(context),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _confirmLogout(BuildContext context) {
-    final authBloc = context.read<AuthBloc>();
-    final router = GoRouter.of(context);
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Cerrar sesión'),
-        content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              authBloc.add(AuthLogoutRequested());
-              // Not `/login?from=<this page>`: the next account must not
-              // land on this user's page. `/` resolves to `/welcome`.
-              router.go('/');
-            },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Cerrar sesión'),
-          ),
-        ],
       ),
     );
   }

@@ -14,6 +14,8 @@ class AppBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final active = activeSection(location);
     final items = navFor(signedIn: true);
+    // Every location that shows the bar has a section (tested), so -1 is
+    // unreachable; 0 only keeps the widget valid.
     final index = items.indexWhere((i) => i.section == active);
     return NavigationBar(
       backgroundColor: AppColors.bar,

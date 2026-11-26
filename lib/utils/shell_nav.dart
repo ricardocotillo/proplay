@@ -46,12 +46,18 @@ const _guestNav = <NavItem>[
 List<NavItem> navFor({required bool signedIn}) =>
     signedIn ? kShellNav : _guestNav;
 
+/// `/tickets/` is `/tickets`.
+String _norm(String location) => location.length > 1 && location.endsWith('/')
+    ? location.substring(0, location.length - 1)
+    : location;
+
 bool _inSection(String location, String root) =>
     location == root || location.startsWith('$root/');
 
 /// Section to highlight for [location], or null when the page belongs to no
 /// destination.
-String? activeSection(String location) {
+String? activeSection(String rawLocation) {
+  final location = _norm(rawLocation);
   if (location == '/' ||
       _inSection(location, '/events') ||
       _inSection(location, '/sessions')) {
@@ -82,4 +88,4 @@ bool showsBottomNav(String location) => const {
   '/tickets',
   '/groups',
   '/profile',
-}.contains(location);
+}.contains(_norm(location));

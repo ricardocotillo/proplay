@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:proplay/bloc/group_events/group_events_cubit.dart';
 import 'package:proplay/models/session_model.dart';
@@ -24,13 +26,21 @@ class _FakeSessions implements SessionService {
   List<String>? asked;
   bool fail = false;
 
+  /// When set, the next call waits for it before answering.
+  Completer<void>? gate;
+
   @override
   Future<List<SessionModel>> getUpcomingSessionsForGroups(
     List<String> groupIds,
   ) async {
     asked = groupIds;
+    final wait = gate;
+    gate = null;
+    await wait?.future;
     if (fail) throw Exception('boom');
-    return [_event('a'), _event('b')];
+    return groupIds.contains('old')
+        ? [_event('stale')]
+        : [_event('a'), _event('b')];
   }
 
   @override
@@ -60,5 +70,17 @@ void main() {
     await cubit.load(['g1']);
     expect(cubit.state.events, isEmpty);
     expect(cubit.state.loading, isFalse);
+  });
+
+  test('a slower, older load never overwrites the newer one', () async {
+    final gate = Completer<void>();
+    final sessions = _FakeSessions()..gate = gate;
+    final cubit = GroupEventsCubit(sessions);
+    final slow = cubit.load(['old']); // waits on the gate
+    await cubit.load(['g1']);
+    expect(cubit.state.events.map((e) => e.id), ['a', 'b']);
+    gate.complete();
+    await slow;
+    expect(cubit.state.events.map((e) => e.id), ['a', 'b']);
   });
 }

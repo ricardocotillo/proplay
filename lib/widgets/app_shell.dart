@@ -19,9 +19,22 @@ class AppShell extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!ResponsiveBreakpoints.of(context).largerThan(TABLET)) {
       if (context.watchUser == null || !showsBottomNav(location)) return child;
+      final media = MediaQuery.of(context);
+      // Keyboard open: no bar (nothing on these pages needs it meanwhile).
+      if (media.viewInsets.bottom > 0) return child;
+      // The bar handles the bottom safe area itself; the page above it must
+      // not reserve it again.
       return Column(
         children: [
-          Expanded(child: child),
+          Expanded(
+            child: MediaQuery(
+              data: media.copyWith(
+                padding: media.padding.copyWith(bottom: 0),
+                viewPadding: media.viewPadding.copyWith(bottom: 0),
+              ),
+              child: child,
+            ),
+          ),
           AppBottomNav(location: location),
         ],
       );

@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:proplay/bloc/group/group_bloc.dart';
 import 'package:proplay/bloc/group/group_event.dart';
 import 'package:proplay/bloc/group/group_state.dart';
+import 'package:proplay/models/group_model.dart';
 import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -17,6 +18,9 @@ class GroupsScreen extends StatefulWidget {
 }
 
 class _GroupsScreenState extends State<GroupsScreen> {
+  /// Last loaded list; null until the first load finishes.
+  List<GroupModel>? _groups;
+
   @override
   void initState() {
     super.initState();
@@ -43,33 +47,53 @@ class _GroupsScreenState extends State<GroupsScreen> {
           ),
           child: BlocConsumer<GroupBloc, GroupState>(
             listener: (context, state) {
-              if (state is GroupJoinSuccess) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
+              final messenger = ScaffoldMessenger.of(context);
+              if (state is GroupLoaded) {
+                _groups = state.groups;
+              } else if (state is GroupJoinSuccess) {
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Te uniste al grupo.'),
                     backgroundColor: AppColors.success,
                   ),
                 );
                 _loadGroups();
               } else if (state is GroupDeleteSuccess) {
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(SnackBar(content: Text(state.message)));
+                messenger.showSnackBar(SnackBar(content: Text(state.message)));
                 _loadGroups();
+              } else if (state is GroupCreateSuccess) {
+                _loadGroups();
+              } else if (state is GroupError && _groups != null) {
+                // A failed join or delete keeps the list on screen.
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'No pudimos completar la acción. Revisa el código e '
+                      'inténtalo de nuevo.',
+                    ),
+                    backgroundColor: AppColors.error,
+                  ),
+                );
               }
             },
             builder: (context, state) {
-              if (state is GroupLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (state is GroupLoaded) {
+              final groups = _groups;
+              // Success and error states keep the last list instead of
+              // flashing the empty state until the reload finishes.
+              if (groups != null) {
                 return ListView(
                   padding: const EdgeInsets.only(top: 16, bottom: 24),
                   children: [
-                    state.groups.isEmpty
+                    if (state is GroupLoading)
+                      const LinearProgressIndicator(minHeight: 2),
+                    groups.isEmpty
                         ? _buildEmptyState(context)
-                        : _buildGroupsList(state.groups),
+                        : _buildGroupsList(groups),
                   ],
                 );
+              }
+              if (state is GroupLoading) {
+                return const Center(child: CircularProgressIndicator());
               }
               if (state is GroupError) {
                 return Center(

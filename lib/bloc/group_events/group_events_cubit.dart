@@ -20,21 +20,22 @@ class GroupEventsCubit extends Cubit<GroupEventsState> {
 
   GroupEventsCubit(this._sessions) : super(const GroupEventsState());
 
+  /// Latest load wins: a slower, older result must not overwrite it.
+  int _seq = 0;
+
   Future<void> load(List<String> groupIds) async {
+    final mine = ++_seq;
     if (groupIds.isEmpty) {
       emit(const GroupEventsState());
       return;
     }
     emit(GroupEventsState(events: state.events, loading: true));
     try {
-      emit(
-        GroupEventsState(
-          events: await _sessions.getUpcomingSessionsForGroups(groupIds),
-        ),
-      );
+      final events = await _sessions.getUpcomingSessionsForGroups(groupIds);
+      if (mine == _seq) emit(GroupEventsState(events: events));
     } catch (_) {
       // A failed row must not break Home: the feed above still works.
-      emit(const GroupEventsState());
+      if (mine == _seq) emit(const GroupEventsState());
     }
   }
 }

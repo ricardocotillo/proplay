@@ -91,4 +91,29 @@ void main() {
       expect(showsBottomNav(l), isFalse, reason: l);
     }
   });
+
+  test('a trailing slash is the same location', () {
+    expect(activeSection('/tickets/'), 'tickets');
+    expect(activeSection('/groups/'), 'groups');
+    expect(showsBottomNav('/tickets/'), isTrue);
+    expect(showsBottomNav('/'), isTrue);
+    expect(activeSection('/'), 'explore');
+  });
+
+  test('every location that shows the bottom bar has a section', () {
+    for (final l in [
+      '/',
+      '/events',
+      '/sessions',
+      '/tickets',
+      '/groups',
+      '/profile',
+    ]) {
+      expect(showsBottomNav(l) && activeSection(l) != null, isTrue, reason: l);
+    }
+    for (final l in ['/validate-ticket', '/payment/success']) {
+      expect(showsBottomNav(l), isFalse, reason: l);
+      expect(activeSection(l), isNull, reason: l);
+    }
+  });
 }
