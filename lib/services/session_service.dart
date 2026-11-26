@@ -8,6 +8,7 @@ import 'package:proplay/models/session_template_model.dart';
 import 'package:proplay/models/waitlist_entry_model.dart';
 import 'package:proplay/utils/geohash_utils.dart';
 import 'package:proplay/utils/location_utils.dart';
+import 'package:proplay/utils/recurrence.dart';
 
 class SessionService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -30,7 +31,12 @@ class SessionService {
     return distance <= maxDistanceKm;
   }
 
-  Future<void> createSessionTemplate(SessionTemplateModel template) async {
+  /// Creates the template and its first live session, plus [occurrences] - 1
+  /// weekly copies (same price, seats, place), all written in one batch.
+  Future<void> createSessionTemplate(
+    SessionTemplateModel template, {
+    int occurrences = 1,
+  }) async {
     try {
       final durationInMinutes = template.eventEndDate
           .toDate()
@@ -51,10 +57,12 @@ class SessionService {
           .collection('sessionTemplates')
           .add(templateWithCalculations.toMap());
 
-      // Create the first live session from the template
+      // Create the live sessions from the template (the first one, and the
+      // weekly copies when the organizer asked to repeat)
       await _createFirstLiveSession(
         templateId: templateDoc.id,
         template: templateWithCalculations,
+        occurrences: occurrences.clamp(1, kMaxOccurrences),
       );
     } catch (e) {
       if (kDebugMode) print(e);
@@ -65,6 +73,7 @@ class SessionService {
   Future<void> _createFirstLiveSession({
     required String templateId,
     required SessionTemplateModel template,
+    int occurrences = 1,
   }) async {
     // Create the first live session with the template's event date
     final liveSession = SessionModel(
@@ -94,10 +103,22 @@ class SessionService {
 
     // creatorId lets organizer checks key on the event, not only the group
     // (groupless events are planned).
-    await _firestore.collection('liveSessions').add({
-      ...liveSession.toMap(),
-      'creatorId': template.creatorId,
-    });
+    final starts = weeklyOccurrences(liveSession.eventDate, occurrences);
+    final ends = weeklyEnds(
+      liveSession.eventDate,
+      liveSession.eventEndDate,
+      occurrences,
+    );
+    final batch = _firestore.batch();
+    for (var i = 0; i < occurrences; i++) {
+      batch.set(_firestore.collection('liveSessions').doc(), {
+        ...liveSession
+            .copyWith(eventDate: starts[i], eventEndDate: ends[i])
+            .toMap(),
+        'creatorId': template.creatorId,
+      });
+    }
+    await batch.commit();
   }
 
   Future<List<SessionModel>> getUpcomingSessions(String groupId) async {

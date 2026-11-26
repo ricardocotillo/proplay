@@ -2,6 +2,7 @@ import {onCall, HttpsError} from 'firebase-functions/v2/https';
 import {onSchedule} from 'firebase-functions/v2/scheduler';
 import {getFirestore, FieldValue, Firestore, Timestamp} from 'firebase-admin/firestore';
 import {getMessaging} from 'firebase-admin/messaging';
+import {blockedMessage, isBlocked} from './attendancePolicy';
 import {joinError} from './joinPolicy';
 import {Sender} from './notify';
 import {applyOffer, holdsOf, notifyOffer, OfferPlan, planOffer, readWaitlist} from './waitlist';
@@ -43,6 +44,8 @@ export const joinWaitlist = onCall(async (request) => {
     const userSnap = await tx.get(db.doc(`users/${uid}`));
     if (!userSnap.exists) throw new HttpsError('failed-precondition', 'No encontramos tu perfil.');
     const user = userSnap.data()!;
+    const until: number | undefined = user.blockedUntil?.toMillis?.();
+    if (isBlocked(until, nowMs)) throw new HttpsError('failed-precondition', blockedMessage(until!));
     const isPrivate = session.isPrivate !== false;
     const isMember = isPrivate && typeof session.groupId === 'string'
       ? (await tx.get(db.doc(`groups/${session.groupId}/members/${uid}`))).exists

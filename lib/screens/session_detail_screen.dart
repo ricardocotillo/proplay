@@ -23,6 +23,7 @@ import 'package:proplay/services/user_service.dart';
 import 'package:proplay/services/ticket_service.dart';
 import 'package:proplay/screens/session_map_screen.dart';
 import 'package:proplay/utils/app_paths.dart';
+import 'package:proplay/utils/attendance_policy.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/utils/join_availability.dart';
 import 'package:proplay/utils/min_players.dart';
@@ -624,6 +625,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
       cost: session.costPerPlayer,
       now: DateTime.now(),
       balance: balance,
+      blockedUntil: (context.watchUser ?? context.currentUser!).blockedUntil,
     );
     final buttonStyle = ElevatedButton.styleFrom(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -636,6 +638,29 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
           onPressed: null,
           style: buttonStyle,
           child: const Text('Evento finalizado'),
+        );
+      case JoinBlock.blocked:
+        final until = (context.watchUser ?? context.currentUser!).blockedUntil!;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Pausa por ausencias: podrás unirte de nuevo el '
+              '${blockedUntilLabel(until)}.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.warning),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: () => context.push('/politica-asistencia'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 0),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text('Ver política de asistencia'),
+            ),
+          ],
         );
       case JoinBlock.full:
         return Column(

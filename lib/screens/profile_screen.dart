@@ -1,7 +1,10 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:proplay/bloc/attendance/no_shows_cubit.dart';
 import 'package:proplay/bloc/notifications/notifications_cubit.dart';
+import 'package:proplay/services/attendance_service.dart';
+import 'package:proplay/utils/attendance_policy.dart';
 import 'package:proplay/services/notification_service.dart';
 import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
@@ -89,6 +92,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               _PushSwitch(uid: user.uid),
+              _AttendanceTile(uid: user.uid, blockedUntil: user.blockedUntil),
               _Tile(
                 icon: Icons.edit_outlined,
                 title: 'Editar perfil',
@@ -152,6 +156,47 @@ class _PushSwitch extends StatelessWidget {
             onChanged: s.busy || s.status == PushStatus.blocked
                 ? null
                 : (v) => context.read<NotificationsCubit>().set(v),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Attendance status and a link to the policy.
+class _AttendanceTile extends StatelessWidget {
+  const _AttendanceTile({required this.uid, required this.blockedUntil});
+
+  final String uid;
+  final DateTime? blockedUntil;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => NoShowsCubit(AttendanceService(), uid)..load(),
+      child: BlocBuilder<NoShowsCubit, int?>(
+        builder: (context, count) {
+          final paused =
+              blockedUntil != null && blockedUntil!.isAfter(DateTime.now());
+          final subtitle = paused
+              ? 'En pausa para unirte hasta el ${blockedUntilLabel(blockedUntil!)}'
+              : count == null
+              ? 'Cómo contamos las ausencias'
+              : count == 0
+              ? 'Sin ausencias en los últimos $kNoShowWindowDays días'
+              : '$count ausencia${count == 1 ? '' : 's'} en los últimos '
+                    '$kNoShowWindowDays días';
+          return ListTile(
+            leading: Icon(
+              paused
+                  ? Icons.pause_circle_outline
+                  : Icons.event_available_outlined,
+              color: paused ? AppColors.warning : null,
+            ),
+            title: const Text('Política de asistencia'),
+            subtitle: Text(subtitle),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/politica-asistencia'),
           );
         },
       ),

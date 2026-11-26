@@ -3,7 +3,9 @@ const _publicRoutes = {'/welcome', '/login', '/registration'};
 
 /// Public events feed: open to everyone, never redirected.
 bool _isOpen(String location) =>
-    location == '/events' || location.startsWith('/events/');
+    location == '/events' ||
+    location.startsWith('/events/') ||
+    location == '/politica-asistencia';
 
 /// A `?from=` target is honoured only when it is an in-app path that is not
 /// itself a guest route (no open redirect, no loop).

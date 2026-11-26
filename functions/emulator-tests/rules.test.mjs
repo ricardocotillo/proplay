@@ -407,6 +407,26 @@ await t('on update the minimum stays 2 up to the maximum; it can be removed', as
 });
 await t('a legacy event over the cap can still be edited in other fields', () => assertSucceeds(updateDoc(evt('lim_legacy'), {title: 'Viejo'})));
 
+// --- attendance policy ---
+await env.withSecurityRulesDisabled(async (c) => {
+  const d = c.firestore();
+  await setDoc(doc(d, 'users/att1'), {credits: '0.00', documentType: 'dni', documentNumber: '12345678', blockedUntil: Timestamp.fromMillis(Date.now() + 86400000)});
+  await setDoc(doc(d, 'users/att1/noShows/e1'), {eventId: 'e1', at: Timestamp.now()});
+});
+const att = as('att1');
+await t('a user cannot lift or set their own block', async () => {
+  await assertFails(updateDoc(doc(att, 'users/att1'), {blockedUntil: deleteField()}));
+  await assertFails(updateDoc(doc(att, 'users/att1'), {blockedUntil: Timestamp.fromMillis(Date.now() - 1000)}));
+  await assertFails(updateDoc(doc(alice, 'users/alice'), {blockedUntil: Timestamp.fromMillis(Date.now() + 1000)}));
+});
+await t('a blocked user still edits their profile', () => assertSucceeds(updateDoc(doc(att, 'users/att1'), {firstName: 'Ana'})));
+await t('a user reads their own no-shows, nobody else does, nobody writes them', async () => {
+  await assertSucceeds(getDoc(doc(att, 'users/att1/noShows/e1')));
+  await assertFails(getDoc(doc(bob, 'users/att1/noShows/e1')));
+  await assertFails(setDoc(doc(att, 'users/att1/noShows/e2'), {eventId: 'e2', at: serverTimestamp()}));
+  await assertFails(deleteDoc(doc(att, 'users/att1/noShows/e1')));
+});
+
 await env.cleanup();
 const failed = results.filter((r) => !r).length;
 console.log(`\nrules: ${results.length - failed}/${results.length} passed`);

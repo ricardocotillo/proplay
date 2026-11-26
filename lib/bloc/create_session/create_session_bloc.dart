@@ -37,7 +37,10 @@ class CreateSessionBloc extends Bloc<CreateSessionEvent, CreateSessionState> {
           ),
         );
       }
-      await _sessionService.createSessionTemplate(template);
+      await _sessionService.createSessionTemplate(
+        template,
+        occurrences: event.occurrences,
+      );
       emit(SessionCreationSuccess());
     } catch (e) {
       emit(SessionCreationFailure(e.toString()));
