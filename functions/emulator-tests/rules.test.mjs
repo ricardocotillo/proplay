@@ -302,6 +302,28 @@ await t('event creator validates a valid ticket', () => assertSucceeds(updateDoc
 await t('a plain member cannot validate', () => assertFails(updateDoc(doc(as('plainm'), 'tickets/gt_s_p2'), {status: 'used', usedAt: ts(), validatedBy: 'plainm'})));
 await t('the creator cannot undo a check-in from the client (checkInPlayer does)', () => assertFails(updateDoc(doc(as('creator'), 'tickets/gt_s_p1'), {status: 'valid', usedAt: null, validatedBy: null})));
 
+// --- web push tokens ---
+await t('user registers their own push token', () => assertSucceeds(setDoc(doc(alice, 'users/alice/fcmTokens/tok1'), {createdAt: serverTimestamp(), platform: 'web', token: 'tok1'})));
+await t('user lists and removes their own tokens', async () => {
+  await assertSucceeds(getDoc(doc(alice, 'users/alice/fcmTokens/tok1')));
+  await assertSucceeds(deleteDoc(doc(alice, 'users/alice/fcmTokens/tok1')));
+});
+await t('nobody registers or reads a token on someone else', async () => {
+  await assertFails(setDoc(doc(bob, 'users/alice/fcmTokens/tok2'), {createdAt: serverTimestamp(), platform: 'web', token: 'tok2'}));
+  await env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), 'users/alice/fcmTokens/tok3'), {createdAt: Timestamp.now(), platform: 'web'}));
+  await assertFails(getDoc(doc(bob, 'users/alice/fcmTokens/tok3')));
+  await assertFails(deleteDoc(doc(bob, 'users/alice/fcmTokens/tok3')));
+});
+await t('token doc with extra fields or a bad platform is denied', async () => {
+  await assertFails(setDoc(doc(alice, 'users/alice/fcmTokens/tok4'), {createdAt: serverTimestamp(), platform: 'web', token: 'tok4', admin: true}));
+  await assertFails(setDoc(doc(alice, 'users/alice/fcmTokens/tok5'), {createdAt: serverTimestamp(), platform: 'fax', token: 'tok5'}));
+});
+await t('token field must equal the doc id', () => assertFails(setDoc(doc(alice, 'users/alice/fcmTokens/tok6'), {createdAt: serverTimestamp(), platform: 'web', token: 'someone-elses'})));
+await t('notificationsSent is server-only', async () => {
+  await assertFails(setDoc(doc(alice, 'notificationsSent/two_hours_s1'), {at: serverTimestamp()}));
+  await assertFails(getDoc(doc(alice, 'notificationsSent/two_hours_s1')));
+});
+
 await env.cleanup();
 const failed = results.filter((r) => !r).length;
 console.log(`\nrules: ${results.length - failed}/${results.length} passed`);

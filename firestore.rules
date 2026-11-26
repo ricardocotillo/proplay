@@ -130,6 +130,17 @@ service cloud.firestore {
       match /groups/{groupId} {
         allow read, write: if isOwner(userId);
       }
+
+      // Web push tokens: one doc per device, id = the FCM token. Only the
+      // user manages their own; the functions read them with the admin SDK.
+      match /fcmTokens/{token} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(['createdAt', 'platform', 'token'])
+          && request.resource.data.token == token
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.platform in ['web', 'android', 'ios'];
+      }
     }
 
     // -------------------------

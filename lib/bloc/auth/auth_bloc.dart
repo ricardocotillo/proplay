@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:proplay/services/auth_service.dart';
 import 'package:proplay/services/group_service.dart';
+import 'package:proplay/services/notification_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/utils/document.dart';
@@ -16,15 +17,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthService _authService;
   final UserService _userService;
   final GroupService _groupService;
+  final NotificationService? _push;
   StreamSubscription<User?>? _authSubscription;
 
   AuthBloc({
     required AuthService authService,
     required UserService userService,
     required GroupService groupService,
+    NotificationService? notificationService,
   }) : _authService = authService,
        _userService = userService,
        _groupService = groupService,
+       _push = notificationService,
        super(AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
@@ -293,6 +297,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(AuthLoading());
     try {
+      // Forget this browser's push token first: afterwards the previous
+      // account's pushes would keep arriving, and a new account on the same
+      // browser would share the token. Best effort; never blocks logout.
+      final uid = _authService.currentUser?.uid;
+      if (uid != null) {
+        try {
+          await _push?.disable(uid).timeout(const Duration(seconds: 5));
+        } catch (_) {}
+      }
       await _authService.signOut();
       emit(AuthUnauthenticated());
     } catch (e) {

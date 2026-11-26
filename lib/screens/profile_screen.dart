@@ -1,5 +1,8 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:proplay/bloc/notifications/notifications_cubit.dart';
+import 'package:proplay/services/notification_service.dart';
 import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/cached_image.dart';
@@ -85,6 +88,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
+              _PushSwitch(uid: user.uid),
               _Tile(
                 icon: Icons.edit_outlined,
                 title: 'Editar perfil',
@@ -112,6 +116,44 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// "Avisos en el navegador": reminders and saldo approvals as web push.
+/// Hidden when web push isn't available (not web, or no VAPID key yet).
+class _PushSwitch extends StatelessWidget {
+  const _PushSwitch({required this.uid});
+
+  final String uid;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => NotificationsCubit(NotificationService(), uid)..load(),
+      child: BlocConsumer<NotificationsCubit, NotificationsState>(
+        listenWhen: (_, s) => s.message != null,
+        listener: (context, s) =>
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(s.message!))),
+        builder: (context, s) {
+          if (s.status == PushStatus.unsupported)
+            return const SizedBox.shrink();
+          return SwitchListTile(
+            secondary: const Icon(Icons.notifications_outlined),
+            title: const Text('Avisos en el navegador'),
+            subtitle: Text(
+              s.status == PushStatus.blocked
+                  ? 'Bloqueados en tu navegador'
+                  : 'Recordatorios de tus eventos y saldo aprobado',
+            ),
+            value: s.status == PushStatus.on,
+            onChanged: s.busy || s.status == PushStatus.blocked
+                ? null
+                : (v) => context.read<NotificationsCubit>().set(v),
+          );
+        },
       ),
     );
   }
