@@ -92,12 +92,14 @@ await t('events without a minimum, or with an invalid one, are never auto-cancel
   assert.equal(await exists(`liveSessions/${b.id}`), true);
 });
 
-await t('only the hour after the 24 h mark is checked', async () => {
+await t('only the two hours after the 24 h mark are checked', async () => {
   const early = await seed({min: 4, joined: 1, hours: 30});
   const late = await seed({min: 4, joined: 1, hours: 12});
+  const inside = await seed({min: 4, joined: 1, hours: 22.5});
   await runAutoCancel(db, sender(), Date.now());
   assert.equal(await exists(`liveSessions/${early.id}`), true);
   assert.equal(await exists(`liveSessions/${late.id}`), true);
+  assert.equal(await exists(`liveSessions/${inside.id}`), false);
 });
 
 await t('running twice cancels once and pushes once', async () => {
@@ -120,19 +122,61 @@ await t('a join between the query and the cancel wins (re-checked inside the tra
 });
 
 await t('waitlisted people are told, never charged; late cancellers are paid back', async () => {
-  const {id, ps} = await seed({min: 6, joined: 2, maxPlayers: 2});
+  const {id, ps} = await seed({min: 4, joined: 4, maxPlayers: 4, hours: 72});
   const w = `w${++n}`; await user(w); await enable(w);
   await run(joinWaitlist, w, {sessionId: id});
-  // one player cancels inside 24 h (no refund), the offer goes to the waiter
-  await run(cancelParticipation, ps[0], {sessionId: id});
-  assert.equal(await credits(ps[0]), '20.00');
+  await run(cancelParticipation, ps[0], {sessionId: id}); // early: refunded, w offered
+  await db.doc(`liveSessions/${id}`).update({eventDate: Timestamp.fromMillis(Date.now() + 23.5 * H)});
+  await run(cancelParticipation, ps[1], {sessionId: id}); // late: no refund, still counted
+  assert.equal(await credits(ps[1]), '20.00');
   const s = sender();
-  await runAutoCancel(db, s, Date.now());
-  assert.equal(await credits(ps[0]), '30.00'); // late canceller paid back
-  assert.equal(await credits(ps[1]), '30.00');
+  await runAutoCancel(db, s, Date.now()); // 2 players + 1 late = 3 < 4
+  assert.equal(await exists(`liveSessions/${id}`), false);
+  assert.equal(await credits(ps[1]), '30.00'); // late canceller paid back
+  assert.equal(await credits(ps[2]), '30.00');
+  assert.equal(await credits(ps[3]), '30.00');
   assert.equal(await credits(w), '30.00');
   assert.ok(s.sent.some((m) => m.tokens.includes(`${w}-t`) && /No se te cobró nada/.test(m.notification.body)));
   assert.equal((await db.collection(`liveSessions/${id}/waitlist`).get()).size, 0);
+});
+
+await t('a player cannot force the cancel by leaving inside the window', async () => {
+  const {id, ps} = await seed({min: 3, joined: 3});
+  await run(cancelParticipation, ps[0], {sessionId: id}); // late cancel: no refund, now 2 players + 1 late
+  assert.equal(await credits(ps[0]), '20.00');
+  await runAutoCancel(db, sender(), Date.now());
+  assert.equal(await exists(`liveSessions/${id}`), true); // still counted: the event plays
+  assert.equal(await credits(ps[0]), '20.00'); // and the leaver is not refunded
+});
+
+await t('a late cancel replaced from the waitlist stops counting', async () => {
+  const {id, ps} = await seed({min: 3, joined: 3, maxPlayers: 3});
+  const w = `w${++n}`; await user(w);
+  await run(joinWaitlist, w, {sessionId: id});
+  await run(cancelParticipation, ps[0], {sessionId: id}); // late, w offered
+  await run(joinSession, w, {sessionId: id}); // fill: ps[0] paid back, row refunded
+  assert.equal(await credits(ps[0]), '30.00');
+  await runAutoCancel(db, sender(), Date.now()); // 3 players again: stays
+  assert.equal(await exists(`liveSessions/${id}`), true);
+});
+
+await t('a minimum above the maximum is ignored by the server', async () => {
+  const {id} = await seed({min: 4, joined: 1, maxPlayers: 10});
+  await db.doc(`liveSessions/${id}`).update({minPlayers: 50});
+  await runAutoCancel(db, sender(), Date.now());
+  assert.equal(await exists(`liveSessions/${id}`), true);
+});
+
+await t('the creator who is also a player gets one message, the organizer one', async () => {
+  const {id, owner} = await seed({min: 4, joined: 0});
+  await run(joinSession, owner, {sessionId: id});
+  const s = sender();
+  await runAutoCancel(db, s, Date.now());
+  const mine = s.sent.filter((m) => m.tokens.includes(`${owner}-t`));
+  assert.equal(mine.length, 1);
+  assert.match(mine[0].notification.title, /Cancelamos tu evento/);
+  assert.equal(await credits(owner), '30.00');
+  void id;
 });
 
 const failed = results.filter((r) => !r).length;

@@ -51,7 +51,7 @@ void main() {
       expect(note(1, 0, const Duration(hours: 48)), isNull);
     });
     test('reached: says it is on', () {
-      expect(note(4, 4, const Duration(hours: 48)), contains('alcanzado'));
+      expect(note(4, 4, const Duration(hours: 48)), 'Mínimo alcanzado.');
       expect(note(4, 9, const Duration(hours: 2)), contains('alcanzado'));
     });
     test('short before the check: promises the cancel and refund', () {
@@ -62,6 +62,8 @@ void main() {
     });
     test('short after the check window: no promise', () {
       expect(note(6, 3, const Duration(hours: 5)), isNull);
+      expect(note(6, 3, const Duration(hours: 22)), isNull);
+      expect(note(6, 3, const Duration(hours: 23)), isNotNull);
     });
   });
 
@@ -83,6 +85,11 @@ void main() {
     final s = SessionModel.fromMap('e1', map);
     expect(s.minPlayers, 4);
     expect(s.toMap()['minPlayers'], 4);
+    // a hand-edited document with a decimal does not crash the parse
+    expect(
+      SessionModel.fromMap('e3', {...map, 'minPlayers': 4.0}).minPlayers,
+      4,
+    );
     final none = SessionModel.fromMap('e2', {...map}..remove('minPlayers'));
     expect(none.minPlayers, isNull);
     expect(none.toMap().containsKey('minPlayers'), isFalse);

@@ -168,7 +168,7 @@ class SessionTemplateModel extends Equatable {
       eventEndDate: map['eventEndDate'] as Timestamp,
       durationInMinutes: map['durationInMinutes'] as int?,
       maxPlayers: map['maxPlayers'] as int,
-      minPlayers: map['minPlayers'] as int?,
+      minPlayers: (map['minPlayers'] as num?)?.toInt(),
       totalCost: (map['totalCost'] as num).toDouble(),
       costPerPlayer: (map['costPerPlayer'] as num?)?.toDouble(),
       isPrivate: map['isPrivate'] as bool? ?? false,

@@ -197,7 +197,8 @@ class SessionModel extends Equatable {
       status: map['status'] as String,
       playerCount: map['playerCount'] as int,
       maxPlayers: map['maxPlayers'] as int,
-      minPlayers: map['minPlayers'] as int?,
+      // num: a hand-edited document may hold a decimal; never crash the feed.
+      minPlayers: (map['minPlayers'] as num?)?.toInt(),
       costPerPlayer: (map['costPerPlayer'] as num).toDouble(),
       isPrivate: map['isPrivate'] as bool? ?? false,
       players: map['players'] != null

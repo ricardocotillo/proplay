@@ -31,9 +31,10 @@ String? minPlayersNote({
   required DateTime now,
 }) {
   if (minPlayers == null || minPlayers < 2) return null;
-  if (playerCount >= minPlayers) return 'Mínimo alcanzado: el evento se juega.';
-  // The server only checks around the 24 h mark; later it makes no promise.
-  if (eventDate.difference(now) <= const Duration(hours: 23)) return null;
+  if (playerCount >= minPlayers) return 'Mínimo alcanzado.';
+  // The server checks in the two hours after the 24 h mark; later it makes
+  // no promise.
+  if (eventDate.difference(now) <= const Duration(hours: 22)) return null;
   final missing = minPlayers - playerCount;
   return 'Se juega con $minPlayers jugadores como mínimo (faltan $missing). '
       'Si 24 h antes no se juntan, el evento se cancela y se devuelve tu saldo.';

@@ -13,10 +13,11 @@ test('a usable minimum is a whole number of at least 2', () => {
   for (const v of [0, 1, -3, 2.5, NaN, '6', null, undefined]) assert.equal(validMin(v), false, String(v));
 });
 
-test('checked only in the hour after the 24 h mark', () => {
+test('checked only in the two hours after the 24 h mark', () => {
   assert.equal(shouldAutoCancel({...base, eventMs: NOW + 24 * H}), true);
   assert.equal(shouldAutoCancel({...base, eventMs: NOW + 23.5 * H}), true);
-  assert.equal(shouldAutoCancel({...base, eventMs: NOW + 23 * H}), false); // window closed
+  assert.equal(shouldAutoCancel({...base, eventMs: NOW + 22.5 * H}), true);
+  assert.equal(shouldAutoCancel({...base, eventMs: NOW + 22 * H}), false); // window closed
   assert.equal(shouldAutoCancel({...base, eventMs: NOW + 24 * H + 1}), false); // not yet
   assert.equal(shouldAutoCancel({...base, eventMs: NOW + 5 * H}), false); // created late: never checked
   assert.equal(shouldAutoCancel({...base, eventMs: NOW - H}), false);
@@ -30,6 +31,13 @@ test('only an underfilled event with a valid minimum is cancelled', () => {
   assert.equal(shouldAutoCancel({...at, min: undefined, players: 0}), false);
   assert.equal(shouldAutoCancel({...at, min: 1, players: 0}), false);
   assert.equal(shouldAutoCancel({...at, min: '6', players: 0}), false);
+});
+
+test('a minimum above the maximum is ignored; the maximum itself works', () => {
+  const at = {eventMs: NOW + 23 * H, nowMs: NOW, players: 1};
+  assert.equal(shouldAutoCancel({...at, min: 6, max: 4}), false);
+  assert.equal(shouldAutoCancel({...at, min: 4, max: 4}), true);
+  assert.equal(shouldAutoCancel({...at, min: 6}), true); // max unknown: trusted
 });
 
 test('copy is Spanish, says saldo, names the numbers', () => {
