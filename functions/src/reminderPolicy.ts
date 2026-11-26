@@ -52,3 +52,15 @@ export const creditApprovedPush = (credits: number): Push => ({
 
 /** Id of the doc that claims a notification so it is sent once. */
 export const claimId = (kind: string, id: string): string => `${kind}_${id}`;
+
+export const waitlistOfferPush = (title: string, eventId: string, minutes: number): Push => ({
+  title: 'Se liberó un cupo',
+  body: `${title}: tienes ${minutes} min para confirmar tu lugar.`,
+  path: `/events/${eventId}`,
+});
+
+export const lateCancelRefundPush = (amount: number, title: string): Push => ({
+  title: 'Te devolvimos tu saldo',
+  body: `Alguien tomó tu cupo en ${title}: recuperaste S/ ${amount.toFixed(2)}.`,
+  path: '/profile',
+});

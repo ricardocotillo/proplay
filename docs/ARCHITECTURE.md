@@ -241,6 +241,8 @@ groups/{groupId}
 
 sessionTemplates/{templateId}
 liveSessions/{sessionId}         # players[] embedded on the document
+  ├─ waitlist/{uid}              # server-written: { status waiting|offered, joinedAt, offerExpiresAt?, name }; a user reads only their own
+  └─ lateCancels/{uid}           # server-only: { spendId, createdAt, refunded } for cancels inside 24 h
 tickets/{sessionId}_{userId}
 documents/{type}_{number}        # uniqueness lock: { uid, createdAt }
 users/{uid}/fcmTokens/{token}     # web push device: { createdAt, platform, token }
@@ -315,7 +317,7 @@ Same scheduling / matchmaking / location fields, plus:
 
 List queries deliberately drop `players` to keep payloads small. Detail views stream the full document.
 
-`docs/sessions.md` proposed `players` / `waitingList` subcollections. The shipped model embeds players and throws `'Session is full'` instead of a waitlist.
+Players are embedded on the document. The waitlist is a subcollection (`waitlist/{uid}`), see *Waitlist* below.
 
 ### `tickets/{sessionId}_{userId}` — `TicketModel`
 
@@ -476,7 +478,17 @@ Guests tap a card → `/events/:id` (`PublicEventScreen`, "Ingresa para unirte" 
 
 ### Cloud Functions (`functions/`)
 
-TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation`, `joinSession` and the organizer / credit callables, `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`), and for web push `sendReminders` (scheduled), `notifyCreditApproved` and `claimDeviceToken` (triggers). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel`, `join` (callable logic, incl. join → cancel → rejoin), `organizer` (credit review, cancel/remove event, check-in) and `reminders` (push sending with a fake sender), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
+TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation`, `joinSession`, `joinWaitlist`, `leaveWaitlist` (and the scheduled `expireWaitlistOffers`) and the organizer / credit callables, `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`), and for web push `sendReminders` (scheduled), `notifyCreditApproved` and `claimDeviceToken` (triggers). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel`, `join` (callable logic, incl. join → cancel → rejoin), `organizer` (credit review, cancel/remove event, check-in) and `reminders` (push sending with a fake sender), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
+
+### Waitlist
+
+A full event shows **Unirme a la lista de espera** (`JoinWaitlist` → callable `joinWaitlist`). Joining is free: nothing is charged until a seat is offered and the person confirms. The balance is checked at join only so offers don't go to people who can't pay.
+
+- **Offer:** when a seat frees (player cancel, organizer removal, a declined or expired offer), the same transaction marks the oldest `waiting` entry `offered` with `offerExpiresAt` = now + 30 min (never past the start) and the person gets a push ("Se liberó un cupo", `notifyOffer`). A live offer **holds** the seat: `joinSession` counts held seats as taken for everyone but the holder.
+- **Confirm:** the holder taps *Confirmar y pagar*, which is `joinSession` (one transaction: debit, ledger, player, ticket, and the waitlist entry is deleted). **Decline / leave:** `LeaveWaitlist` → `leaveWaitlist`; a declined offer passes the seat on. **Expiry:** `expireWaitlistOffers` (every 10 min) drops entries past `offerExpiresAt` and offers the next person; until swept, an expired hold no longer blocks anyone.
+- **Late cancel:** cancelling less than 24 h before the start is not refunded, but the spend is recorded in `lateCancels/{uid}`. When a waitlist fill happens (`joinSession` by someone who was on the list) the oldest unrefunded late canceller, never the filler, is paid back their spend (capped at the price, once per spend, push "Te devolvimos tu saldo"). If nobody is on the waitlist the cancel stays non-refundable. If the organizer cancels the event, late cancellers are paid back too and the waitlist is deleted.
+- **UI:** the bottom bar of the event page shows waiting (with leave), a held seat (minutes left, confirm, decline) or the join button; `SessionDetailBloc` follows the user's own entry (`streamMyWaitlist`).
+- Not built: organizers can't see the waitlist; no position number; one hold at a time per freed seat.
 
 ### Notifications (web push)
 
@@ -675,7 +687,7 @@ Intended direction (from project guidelines):
 ## 14. Known pitfalls (read before you change money or seats)
 
 1. **Credits are a string on the user**, a double on the ledger. Always go through `UserModel.formatCredits` / `creditsValue`.
-2. **Every money or seat write is a callable** (`joinSession`, `cancelParticipation`, `reviewCreditPurchase`, `cancelEvent`, `removePlayer`). The rules deny client writes to `users.credits`, `players` / `playerCount`, tickets (except staff validation) and `creditHistory` (except a user's own pending Yape top-up), and a `liveSessions` delete. An owner may not lower `costPerPlayer` once players joined, because refunds are capped at the current price.
+2. **Every money or seat write is a callable** (`joinSession`, `joinWaitlist`, `leaveWaitlist`, `cancelParticipation`, `reviewCreditPurchase`, `cancelEvent`, `removePlayer`). The rules deny client writes to `users.credits`, `players` / `playerCount`, tickets (except staff validation) and `creditHistory` (except a user's own pending Yape top-up), and a `liveSessions` delete. An owner may not lower `costPerPlayer` once players joined, because refunds are capped at the current price.
 3. **Players live on the live session document.** Large games will hit document size / contention. A players subcollection (as in `docs/sessions.md`) is the eventual fix.
 4. **Two membership models.** Subcollections are source of truth. Do not revive `streamUserGroups` without writing `groups.members[]`.
 5. **Duplicate sport lists** in `HomeScreen`, `CreateGroupScreen`, `GroupEditScreen`. Extract a constant before adding a sport.
@@ -707,7 +719,7 @@ Intended direction (from project guidelines):
 ### Incomplete or leftover
 
 - Automated payment gateway (interface + stub + MP sample prefs + payment result routes)
-- Recurring sessions / waitlist (`docs/sessions.md`)
+- Recurring sessions (`docs/sessions.md`)
 - Refunds when an organizer deletes a session or an admin removes a player
 - Email verification
 - Locking down `users.credits` / `liveSessions` update rules

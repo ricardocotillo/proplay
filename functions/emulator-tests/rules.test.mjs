@@ -324,6 +324,29 @@ await t('notificationsSent is server-only', async () => {
   await assertFails(getDoc(doc(alice, 'notificationsSent/two_hours_s1')));
 });
 
+// --- waitlist ---
+await env.withSecurityRulesDisabled(async (c) => {
+  const d = c.firestore();
+  await setDoc(doc(d, 'liveSessions/wl_s/waitlist/alice'), {status: 'offered', joinedAt: Timestamp.now()});
+  await setDoc(doc(d, 'liveSessions/wl_s/waitlist/bob'), {status: 'waiting', joinedAt: Timestamp.now()});
+  await setDoc(doc(d, 'liveSessions/wl_s/lateCancels/zed'), {spendId: 'x', refunded: false});
+});
+await t('a user reads only their own waitlist entry', async () => {
+  await assertSucceeds(getDoc(doc(alice, 'liveSessions/wl_s/waitlist/alice')));
+  await assertFails(getDoc(doc(alice, 'liveSessions/wl_s/waitlist/bob')));
+  await assertFails(getDoc(doc(anon, 'liveSessions/wl_s/waitlist/alice')));
+});
+await t('nobody lists the waitlist from the client', () => assertFails(getDocs(collection(alice, 'liveSessions/wl_s/waitlist'))));
+await t('waitlist writes are server-only (join, accept, jump the queue)', async () => {
+  await assertFails(setDoc(doc(bob, 'liveSessions/wl_s/waitlist/bob2'), {status: 'waiting', joinedAt: serverTimestamp()}));
+  await assertFails(updateDoc(doc(alice, 'liveSessions/wl_s/waitlist/alice'), {status: 'offered', offerExpiresAt: Timestamp.fromMillis(Date.now() + 1e9)}));
+  await assertFails(deleteDoc(doc(alice, 'liveSessions/wl_s/waitlist/alice')));
+});
+await t('lateCancels is server-only', async () => {
+  await assertFails(getDoc(doc(as('zed'), 'liveSessions/wl_s/lateCancels/zed')));
+  await assertFails(setDoc(doc(alice, 'liveSessions/wl_s/lateCancels/alice'), {spendId: 'x', refunded: false}));
+});
+
 await env.cleanup();
 const failed = results.filter((r) => !r).length;
 console.log(`\nrules: ${results.length - failed}/${results.length} passed`);

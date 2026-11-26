@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +16,7 @@ import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/user_model.dart';
+import 'package:proplay/models/waitlist_entry_model.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
@@ -486,7 +489,12 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                             ],
                           ],
                         )
-                      : _buildJoinAction(context, session, players.length),
+                      : _buildJoinAction(
+                          context,
+                          session,
+                          players.length,
+                          isLoaded ? state.waitlist : null,
+                        ),
                 ),
               ],
             );
@@ -496,12 +504,82 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
     );
   }
 
+  /// Bottom bar for someone on the waitlist: waiting, or a seat is held.
+  Widget _buildWaitlistAction(
+    BuildContext context,
+    SessionModel session,
+    WaitlistEntryModel waitlist,
+  ) {
+    final theme = Theme.of(context);
+    final bloc = context.read<SessionDetailBloc>();
+    final leave = OutlinedButton(
+      onPressed: () => bloc.add(const LeaveWaitlist()),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size(double.infinity, 0),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+      child: Text(waitlist.isOffered ? 'No lo quiero' : 'Salir de la lista'),
+    );
+    if (!waitlist.isOffered) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.hourglass_top, color: AppColors.warning),
+              const SizedBox(width: 8),
+              Text(
+                'Estás en la lista de espera',
+                style: theme.textTheme.titleSmall,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Te avisamos si se libera un cupo. No se cobra hasta que confirmes.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.muted),
+          ),
+          const SizedBox(height: 8),
+          leave,
+        ],
+      );
+    }
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _HoldCountdown(expiresAt: waitlist.offerExpiresAt),
+        const SizedBox(height: 8),
+        ElevatedButton.icon(
+          onPressed: () => _showJoinConfirmationDialog(context, session),
+          icon: const Icon(Icons.check),
+          label: Text(
+            'Confirmar y pagar S/ ${UserModel.formatCredits(session.costPerPlayer)}',
+          ),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 0),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+        ),
+        const SizedBox(height: 8),
+        leave,
+      ],
+    );
+  }
+
   /// Bottom bar for a user who has not joined: join, or why they can't.
   Widget _buildJoinAction(
     BuildContext context,
     SessionModel session,
     int playerCount,
+    WaitlistEntryModel? waitlist,
   ) {
+    // On the waitlist (or holding an offered seat): that decides the bar,
+    // whatever the seat count says.
+    if (waitlist != null && session.eventDate.isAfter(DateTime.now())) {
+      return _buildWaitlistAction(context, session, waitlist);
+    }
     final balance = (context.watchUser ?? context.currentUser!).creditsValue;
     final block = joinBlock(
       eventDate: session.eventDate,
@@ -524,10 +602,25 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
           child: const Text('Evento finalizado'),
         );
       case JoinBlock.full:
-        return ElevatedButton(
-          onPressed: null,
-          style: buttonStyle,
-          child: const Text('Evento lleno'),
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Evento lleno. Entra a la lista de espera: te avisamos si se '
+              'libera un cupo y no se cobra hasta que confirmes.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: AppColors.muted),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: () =>
+                  context.read<SessionDetailBloc>().add(const JoinWaitlist()),
+              icon: const Icon(Icons.hourglass_top),
+              label: const Text('Unirme a la lista de espera'),
+              style: buttonStyle,
+            ),
+          ],
         );
       case JoinBlock.credits:
         final missing = UserModel.formatCredits(
@@ -871,6 +964,58 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// "Tienes un cupo reservado" with the minutes left, refreshed every 20 s.
+class _HoldCountdown extends StatefulWidget {
+  final DateTime? expiresAt;
+
+  const _HoldCountdown({required this.expiresAt});
+
+  @override
+  State<_HoldCountdown> createState() => _HoldCountdownState();
+}
+
+class _HoldCountdownState extends State<_HoldCountdown> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(
+      const Duration(seconds: 20),
+      (_) => mounted ? setState(() {}) : null,
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final left = widget.expiresAt?.difference(DateTime.now());
+    final minutes = left == null ? 0 : (left.inSeconds / 60).ceil();
+    final active = minutes > 0;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          active ? Icons.timer_outlined : Icons.timer_off_outlined,
+          color: active ? AppColors.success : AppColors.warning,
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            active ? 'Tienes un cupo reservado: $minutes min para confirmar' : 'Tu reserva venció; si el cupo sigue libre aún puedes confirmar',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+        ),
+      ],
     );
   }
 }
