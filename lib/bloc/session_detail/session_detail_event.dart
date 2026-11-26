@@ -51,3 +51,8 @@ class RemoveUserFromSession extends SessionDetailEvent {
   @override
   List<Object?> get props => [userId];
 }
+
+/// Organizer cancels the whole event (everyone refunded, event deleted).
+class CancelEvent extends SessionDetailEvent {
+  const CancelEvent();
+}

@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:proplay/models/credit_history_model.dart';
 import 'package:proplay/models/payment_result_model.dart';
 import 'package:proplay/models/user_model.dart';
+import 'package:proplay/utils/error_message.dart';
 
 class CreditHistoryService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -149,5 +151,39 @@ class CreditHistoryService {
               .map((doc) => CreditHistoryModel.fromDocument(doc))
               .toList(),
         );
+  }
+
+  /// Pending Yape top-ups with their buyer, newest first (superUser only).
+  // ponytail: one page of 50; add paging if the queue ever gets that long.
+  Future<List<(CreditHistoryModel, UserModel)>> getPendingPurchases() async {
+    final snapshot = await _firestore
+        .collection('creditHistory')
+        .where('status', isEqualTo: 'pending')
+        .orderBy('createdAt', descending: true)
+        .limit(50)
+        .get();
+    final entries = snapshot.docs.map(CreditHistoryModel.fromDocument).toList();
+    final users = await Future.wait(
+      entries.map((e) => _firestore.collection('users').doc(e.userId).get()),
+    );
+    return [
+      for (var i = 0; i < entries.length; i++)
+        if (users[i].exists) (entries[i], UserModel.fromDocument(users[i])),
+    ];
+  }
+
+  /// Approves (credits the buyer) or rejects a pending top-up via the
+  /// `reviewCreditPurchase` Cloud Function. The server checks superUser.
+  Future<void> reviewCreditPurchase(
+    String entryId, {
+    required bool approve,
+  }) async {
+    try {
+      await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
+          .httpsCallable('reviewCreditPurchase')
+          .call({'entryId': entryId, 'approve': approve});
+    } on FirebaseFunctionsException catch (e) {
+      throw callableError(e);
+    }
   }
 }

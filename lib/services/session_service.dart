@@ -588,12 +588,20 @@ class SessionService {
     }
   }
 
-  Future<void> deleteSession(String sessionId) async {
+  /// Organizer cancels the event via the `cancelEvent` Cloud Function: every
+  /// player is refunded in full, tickets and the event are deleted.
+  Future<({int refunded, double total})> cancelEvent(String sessionId) async {
     try {
-      await _firestore.collection('liveSessions').doc(sessionId).delete();
-    } catch (e) {
-      if (kDebugMode) print(e);
-      rethrow;
+      final result = await FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      ).httpsCallable('cancelEvent').call({'sessionId': sessionId});
+      final data = result.data as Map;
+      return (
+        refunded: (data['refunded'] as num? ?? 0).toInt(),
+        total: (data['total'] as num? ?? 0).toDouble(),
+      );
+    } on FirebaseFunctionsException catch (e) {
+      throw callableError(e);
     }
   }
 
@@ -713,34 +721,20 @@ class SessionService {
     }
   }
 
-  /// Admin: Remove a user from the session
-  Future<void> removeUserFromSession({
+  /// Organizer removes a player via the `removePlayer` Cloud Function: seat
+  /// freed, ticket deleted, price refunded in full.
+  Future<CancelResultModel> removeUserFromSession({
     required String sessionId,
     required String userId,
   }) async {
     try {
-      await _firestore.runTransaction((transaction) async {
-        final sessionRef = _firestore.collection('liveSessions').doc(sessionId);
-        final sessionDoc = await transaction.get(sessionRef);
-
-        if (!sessionDoc.exists) {
-          throw Exception('Evento no encontrado.');
-        }
-
-        final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
-
-        final players = session.players ?? [];
-
-        // Remove from players list
-        final updatedPlayers = players.where((p) => p.uid != userId).toList();
-
-        transaction.update(sessionRef, {
-          'players': updatedPlayers.map((p) => p.toMap()).toList(),
-          'playerCount': updatedPlayers.length,
-        });
-      });
-    } catch (e) {
-      rethrow;
+      final result =
+          await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
+              .httpsCallable('removePlayer')
+              .call({'sessionId': sessionId, 'userId': userId});
+      return CancelResultModel.fromMap(result.data as Map);
+    } on FirebaseFunctionsException catch (e) {
+      throw callableError(e);
     }
   }
 }

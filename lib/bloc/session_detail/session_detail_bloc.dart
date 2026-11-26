@@ -16,6 +16,10 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
   StreamSubscription<SessionModel>? _sessionSubscription;
   bool _isOwnerOrAdmin = false;
 
+  /// Set while cancelEvent runs: the event doc is deleted, so the stream's
+  /// "not found" error is expected and must not replace the screen.
+  bool _cancellingEvent = false;
+
   SessionDetailBloc({
     required this.sessionService,
     required this.groupService,
@@ -25,6 +29,7 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
     on<JoinSession>(_onJoinSession);
     on<CancelParticipation>(_onCancelParticipation);
     on<RemoveUserFromSession>(_onRemoveUserFromSession);
+    on<CancelEvent>(_onCancelEvent);
     on<_UpdateSessionState>(_onUpdateSessionState);
     on<_SessionError>(_onSessionError);
   }
@@ -73,6 +78,7 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
               );
             },
             onError: (error) {
+              if (_cancellingEvent) return;
               add(_SessionError(userMessage(error)));
             },
           );
@@ -175,6 +181,36 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
       );
       // The stream will automatically update the state
     } catch (e) {
+      emit(SessionDetailError(userMessage(e), session: currentState.session));
+    }
+  }
+
+  Future<void> _onCancelEvent(
+    CancelEvent event,
+    Emitter<SessionDetailState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! SessionDetailLoaded || !_isOwnerOrAdmin) return;
+
+    emit(
+      SessionDetailProcessing(
+        session: currentState.session,
+        action: 'cancelling_event',
+      ),
+    );
+    _cancellingEvent = true;
+    try {
+      final result = await sessionService.cancelEvent(currentState.session.id);
+      await _sessionSubscription?.cancel();
+      emit(
+        SessionDetailEventCancelled(
+          session: currentState.session,
+          refunded: result.refunded,
+          total: result.total,
+        ),
+      );
+    } catch (e) {
+      _cancellingEvent = false;
       emit(SessionDetailError(userMessage(e), session: currentState.session));
     }
   }

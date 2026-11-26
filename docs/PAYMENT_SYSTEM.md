@@ -132,18 +132,19 @@ Crea el registro histórico con estado `pending`.
 
 ## 👤 Flujo de Operaciones / Admin
 
-Los superusuarios tienen una opción llamada "Aprobar Créditos" en el `AppDrawer`. Esta pantalla (`CreditApprovalScreen`) es el centro operativo.
+Los superusuarios tienen una opción para aprobar saldo en el `AppDrawer`. Esta pantalla (`CreditApprovalScreen`, con `CreditApprovalCubit`) es el centro operativo.
 
 ### Proceso de Aprobación:
 
 1. **Vista de Lista**: Muestra todos los registros en `creditHistory` donde `status == 'pending'`, ordenados por `createdAt`.
 2. **Verificación**: El administrador revisa manualmente su propia aplicación Yape para encontrar una transacción que coincida con el `confirmationCode` y el `amountPaid`.
 3. **Acción**:
-   - El administrador toca "Aprobar".
-   - Se ejecuta una **Transacción de Firestore** en `CreditApprovalScreen._approveCredit()`.
-   - La transacción de forma atómica:
-     - Actualiza el campo `status` de `creditHistory` a `'approved'`.
-     - Incrementa el campo `credits` (string) del usuario llamando a `UserModel.formatCredits(newBalance)`.
+   - El administrador toca "Aprobar" o "Rechazar".
+   - La app llama a la Cloud Function `reviewCreditPurchase`, que verifica `superUser` en el servidor.
+   - En una sola transacción, y solo si el registro sigue en `'pending'`:
+     - Aprobar: cambia `status` a `'approved'` e incrementa `credits` (string, 2 decimales) del usuario.
+     - Rechazar: cambia `status` a `'rejected'` sin tocar el saldo.
+   - Una segunda aprobación del mismo registro falla ("ya fue revisada"), así que nunca se acredita dos veces.
 
 ---
 

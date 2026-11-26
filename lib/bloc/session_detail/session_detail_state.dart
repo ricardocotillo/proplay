@@ -61,6 +61,22 @@ class SessionDetailCancelled extends SessionDetailState {
   List<Object?> get props => [session, refunded, amount];
 }
 
+/// The organizer cancelled the event; the screen closes.
+class SessionDetailEventCancelled extends SessionDetailState {
+  final SessionModel session;
+  final int refunded;
+  final double total;
+
+  const SessionDetailEventCancelled({
+    required this.session,
+    required this.refunded,
+    required this.total,
+  });
+
+  @override
+  List<Object?> get props => [session, refunded, total];
+}
+
 /// Error occurred
 class SessionDetailError extends SessionDetailState {
   final String message;

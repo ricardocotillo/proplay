@@ -60,6 +60,25 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                     )
                   : const SizedBox.shrink(),
             ),
+            BlocBuilder<SessionDetailBloc, SessionDetailState>(
+              builder: (context, state) =>
+                  state is SessionDetailLoaded && state.isOwnerOrAdmin
+                  ? PopupMenuButton<String>(
+                      tooltip: 'Opciones del organizador',
+                      onSelected: (_) =>
+                          _showCancelEventDialog(context, state.session),
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(
+                          value: 'cancel_event',
+                          child: Text(
+                            'Cancelar evento',
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                        ),
+                      ],
+                    )
+                  : const SizedBox.shrink(),
+            ),
           ],
         ),
         body: BlocConsumer<SessionDetailBloc, SessionDetailState>(
@@ -107,6 +126,21 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
               );
             }
 
+            if (state is SessionDetailEventCancelled) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    state.refunded > 0
+                        ? 'Evento cancelado. Devolvimos '
+                              'S/ ${UserModel.formatCredits(state.total)} a '
+                              '${state.refunded == 1 ? '1 jugador' : '${state.refunded} jugadores'}.'
+                        : 'Evento cancelado.',
+                  ),
+                ),
+              );
+              Navigator.of(context).maybePop(true);
+            }
+
             if (state is SessionDetailError) {
               _wasProcessingJoin = false;
               ScaffoldMessenger.of(context).showSnackBar(
@@ -122,7 +156,8 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
           },
           builder: (context, state) {
             if (state is SessionDetailLoading ||
-                state is SessionDetailInitial) {
+                state is SessionDetailInitial ||
+                state is SessionDetailEventCancelled) {
               return const Center(child: CircularProgressIndicator());
             }
 
@@ -634,7 +669,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                         ),
                         SizedBox(width: 8),
                         Text(
-                          'Eliminar',
+                          'Retirar',
                           style: TextStyle(color: AppColors.error),
                         ),
                       ],
@@ -757,13 +792,45 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
     );
   }
 
+  void _showCancelEventDialog(BuildContext context, SessionModel session) {
+    final players = session.players?.length ?? 0;
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cancelar evento'),
+        content: Text(
+          players == 0
+              ? 'Se eliminará este evento. No se puede deshacer.'
+              : 'Se eliminará este evento y se devolverá lo que pagaron '
+                    '${players == 1 ? 'al jugador inscrito' : 'los $players jugadores inscritos'}. '
+                    'No se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Volver'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              context.read<SessionDetailBloc>().add(const CancelEvent());
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Cancelar evento'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showRemoveUserDialog(BuildContext context, SessionUserModel player) {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Eliminar Jugador'),
+        title: const Text('Retirar jugador'),
         content: Text(
-          '¿Estás seguro de que quieres eliminar a ${player.firstName} ${player.lastName} de esta pichanga?',
+          'Se retirará a ${player.firstName} ${player.lastName} de esta '
+          'pichanga y se le devolverá lo que pagó. No se puede deshacer.',
         ),
         actions: [
           TextButton(
@@ -778,7 +845,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
               );
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Eliminar'),
+            child: const Text('Retirar'),
           ),
         ],
       ),
