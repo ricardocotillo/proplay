@@ -227,6 +227,41 @@ await t('remove on a free event refunds nothing', async () => {
   assert.equal(await credits(a), '30.00');
 });
 
+// ---- forged ledger rows (written before the PR 5 rules) ----
+const spendOf = async (uid, id) => (await db.collection('creditHistory')
+  .where('userId', '==', uid).where('sourceId', '==', id).where('entryType', '==', 'spend').get()).docs[0];
+
+await t('a squatted refund_ id does not block the real refund', async () => {
+  const {id, owner, a} = await seedEvent();
+  const spend = await spendOf(a, id);
+  await db.doc(`creditHistory/refund_${spend.id}`).set({
+    userId: 'attacker', entryType: 'purchase', status: 'pending', creditAmount: 1, amountPaid: 1,
+  });
+  await run(cancelEvent, owner, {sessionId: id});
+  assert.equal(await credits(a), '30.00');
+  const row = (await db.doc(`creditHistory/refund_${spend.id}`).get()).data();
+  assert.equal(row.entryType, 'refund');
+  assert.equal(row.userId, a);
+});
+
+await t('a squatted refund_ id does not block a player cancel either', async () => {
+  const {id, a} = await seedEvent();
+  const spend = await spendOf(a, id);
+  await db.doc(`creditHistory/refund_${spend.id}`).set({userId: 'attacker', entryType: 'purchase', status: 'pending'});
+  assert.deepEqual(await run(cancelParticipation, a, {sessionId: id}), {refunded: true, amount: 10});
+});
+
+await t('a future-dated forged spend is ignored, refund is the real price', async () => {
+  const {id, a} = await seedEvent();
+  await db.collection('creditHistory').add({
+    userId: a, sourceId: id, entryType: 'spend', creditAmount: 1000,
+    createdAt: Timestamp.fromMillis(Date.now() + 365 * 24 * H),
+  });
+  await db.doc(`liveSessions/${id}`).update({costPerPlayer: 500}); // legacy price raise
+  assert.deepEqual(await run(cancelParticipation, a, {sessionId: id}), {refunded: true, amount: 10});
+  assert.equal(await credits(a), '30.00');
+});
+
 const failed = results.filter(([, ok]) => !ok);
 console.log(`\n${results.length - failed.length}/${results.length} passed`);
 process.exit(failed.length ? 1 : 0);

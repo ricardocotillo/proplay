@@ -4,7 +4,9 @@ import {
 } from 'firebase-admin/firestore';
 import {canManageEvent} from './adminPolicy';
 import {roundCents} from './joinPolicy';
-import {formatCredits, pickUnrefundedSpend, refundAmount, refundDocId, SpendRow} from './refundPolicy';
+import {
+  formatCredits, isPaidRefund, pickUnrefundedSpend, refundAmount, refundDocId, SpendRow,
+} from './refundPolicy';
 
 type Player = {uid?: string};
 type Refund = {uid: string; amount: number; balance: number; spendId: string};
@@ -74,7 +76,7 @@ async function planRefunds(
   const refundSnaps = await tx.getAll(
     ...picked.map((p) => db.doc(`creditHistory/${refundDocId(p.spend.id)}`)),
   );
-  const owed = picked.filter((_, i) => !refundSnaps[i].exists);
+  const owed = picked.filter((p, i) => !isPaidRefund(refundSnaps[i].data(), p.uid));
   if (owed.length === 0) return [];
   const users = await tx.getAll(...owed.map((p) => db.doc(`users/${p.uid}`)));
   return owed.flatMap((p, i) => users[i].exists ? [{

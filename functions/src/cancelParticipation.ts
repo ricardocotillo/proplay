@@ -2,6 +2,7 @@ import {onCall, HttpsError} from 'firebase-functions/v2/https';
 import {getFirestore, FieldValue} from 'firebase-admin/firestore';
 import {
   formatCredits,
+  isPaidRefund,
   isRefundable,
   pickUnrefundedSpend,
   refundAmount,
@@ -84,7 +85,7 @@ export const cancelParticipation = onCall(async (request) => {
       const spend = pickUnrefundedSpend(rows);
       if (spend) {
         const ref = db.doc(`creditHistory/${refundDocId(spend.id)}`);
-        if (!(await tx.get(ref)).exists) {
+        if (!isPaidRefund((await tx.get(ref)).data(), uid)) {
           amount = refundAmount(spend.creditAmount, session.costPerPlayer);
           spendRef = db.doc(`creditHistory/${spend.id}`);
           refundRef = ref;

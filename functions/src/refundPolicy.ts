@@ -12,11 +12,21 @@ export const refundDocId = (spendId: string) => `refund_${spendId}`;
 
 export type SpendRow = {id: string; creditAmount: number; createdAtMs: number; refunded: boolean};
 
-/** Latest `spend` row that has not been refunded yet, or undefined. */
-export const pickUnrefundedSpend = (rows: SpendRow[]): SpendRow | undefined =>
+/**
+ * Latest `spend` row that has not been refunded yet, or undefined. Rows dated
+ * in the future are ignored: a forged row would otherwise always sort first.
+ */
+export const pickUnrefundedSpend = (rows: SpendRow[], nowMs = Date.now()): SpendRow | undefined =>
   rows
-    .filter((r) => !r.refunded)
+    .filter((r) => !r.refunded && r.createdAtMs <= nowMs)
     .sort((a, b) => b.createdAtMs - a.createdAtMs)[0];
+
+/**
+ * True only for a refund the functions wrote for `uid`. Any other doc at a
+ * `refund_*` id (squatted before the rules blocked it) is overwritten.
+ */
+export const isPaidRefund = (data: Record<string, unknown> | undefined, uid: string): boolean =>
+  data?.entryType === 'refund' && data?.userId === uid;
 
 /** Refund never exceeds the event price; invalid inputs refund nothing. */
 export const refundAmount = (pricePaid: number, costPerPlayer: unknown): number => {

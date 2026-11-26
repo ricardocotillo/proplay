@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {initializeTestEnvironment, assertSucceeds, assertFails} from '@firebase/rules-unit-testing';
-import {doc, getDoc, setDoc, updateDoc, deleteDoc, Timestamp, writeBatch, serverTimestamp} from 'firebase/firestore';
+import {doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, Timestamp, writeBatch, serverTimestamp} from 'firebase/firestore';
 
 const RULES = fileURLToPath(new URL('../../firestore.rules', import.meta.url));
 const env = await initializeTestEnvironment({
@@ -225,9 +225,10 @@ await t('owner cannot create a session as someone else', () => assertFails(setDo
 await t('owner cannot change creatorId', () => assertFails(updateDoc(doc(owner, 'liveSessions/f11'), {creatorId: 'zed'})));
 await env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), 'liveSessions/paid1'), {groupId: 'g1', isPrivate: false, costPerPlayer: 10, playerCount: 2, players: [{uid: 'a'}, {uid: 'b'}]}));
 await t('owner cannot lower the price once players joined (refund cap)', () => assertFails(updateDoc(doc(owner, 'liveSessions/paid1'), {costPerPlayer: 0})));
-await t('owner can raise the price with players', () => assertSucceeds(updateDoc(doc(owner, 'liveSessions/paid1'), {costPerPlayer: 12})));
+await t('owner cannot raise the price with players either (refund cap)', () => assertFails(updateDoc(doc(owner, 'liveSessions/paid1'), {costPerPlayer: 12})));
+await t('owner still edits other fields with players', () => assertSucceeds(updateDoc(doc(owner, 'liveSessions/paid1'), {title: 'Nuevo'})));
 await t('owner can lower the price with no players', () => assertSucceeds(updateDoc(doc(owner, 'liveSessions/f6'), {costPerPlayer: 1})));
-const purchase = (extra = {}) => ({userId: 'alice', creditAmount: 15, amountPaid: 17, currency: 'PEN', createdAt: ts(),
+const purchase = (extra = {}) => ({userId: 'alice', creditAmount: 15, amountPaid: 17, currency: 'PEN', createdAt: serverTimestamp(),
   status: 'pending', entryType: 'purchase', direction: 'credit', sourceType: 'payment', sourceId: null,
   transactionId: null, paymentMethod: 'yape', paymentGateway: 'yape', confirmationCode: '123456', ...extra});
 await t('user can open own pending Yape top-up', () => assertSucceeds(setDoc(doc(alice, 'creditHistory/p_ok'), purchase())));
@@ -239,6 +240,29 @@ await t('top-up for someone else denied', () => assertFails(setDoc(doc(bob, 'cre
 await t('user cannot edit own ledger row', () => assertFails(updateDoc(doc(alice, 'creditHistory/p_ok'), {creditAmount: 50})));
 await t('superUser cannot edit a user balance from the client', () => assertFails(updateDoc(doc(as('root'), 'users/alice'), {credits: '100.00'})));
 await t('user still edits profile fields', () => assertSucceeds(updateDoc(doc(alice, 'users/alice'), {firstName: 'Ana B'})));
+
+// --- review gaps (PR #29) ---
+await env.withSecurityRulesDisabled(async (c) => {
+  const d = c.firestore();
+  await setDoc(doc(d, 'liveSessions/legacyPlayers'), {groupId: 'g1', costPerPlayer: 10, players: [{uid: 'a'}]});
+  await setDoc(doc(d, 'users/rich'), {credits: '50.00', documentType: 'dni', documentNumber: '12345678'});
+});
+await t('legacy doc with players but no playerCount: price frozen', () => assertFails(updateDoc(doc(owner, 'liveSessions/legacyPlayers'), {costPerPlayer: 0})));
+await t('deleting costPerPlayer with players denied', () => assertFails(updateDoc(doc(owner, 'liveSessions/paid1'), {costPerPlayer: deleteField()})));
+await t('deleting a non-zero credits field denied', () => assertFails(updateDoc(doc(as('rich'), 'users/rich'), {credits: deleteField()})));
+await t('creditHistory delete denied, even own row', () => assertFails(deleteDoc(doc(alice, 'creditHistory/p_ok'))));
+await t('top-up at a refund_ id denied (would block a refund)', () => assertFails(setDoc(doc(alice, 'creditHistory/refund_spend_s1_bob_tok'), purchase({creditAmount: 1, amountPaid: 1}))));
+await t('top-up at a spend_ id denied', () => assertFails(setDoc(doc(alice, 'creditHistory/spend_s1_alice_tok'), purchase())));
+await t('top-up with string amountPaid denied', () => assertFails(setDoc(doc(alice, 'creditHistory/p_str'), purchase({amountPaid: '17'}))));
+await t('top-up without amountPaid denied', async () => {
+  const p0 = purchase(); delete p0.amountPaid;
+  await assertFails(setDoc(doc(alice, 'creditHistory/p_nopaid'), p0));
+});
+await t('top-up dated in the future denied', () => assertFails(setDoc(doc(alice, 'creditHistory/p_future'), purchase({createdAt: Timestamp.fromMillis(Date.now() + 86400000)}))));
+await t('top-up as a debit denied', () => assertFails(setDoc(doc(alice, 'creditHistory/p_debit'), purchase({direction: 'debit'}))));
+await t('top-up in another currency denied', () => assertFails(setDoc(doc(alice, 'creditHistory/p_usd'), purchase({currency: 'USD'}))));
+await seedTicket('s1_v3', ticket('v3'));
+await t('staff validation still works under the lock', () => assertSucceeds(updateDoc(doc(owner, 'tickets/s1_v3'), {status: 'used', usedAt: ts(), validatedBy: 'owner1'})));
 
 await env.cleanup();
 const failed = results.filter((r) => !r).length;

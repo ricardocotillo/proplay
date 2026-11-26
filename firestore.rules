@@ -176,7 +176,10 @@ service cloud.firestore {
       // A client may only open its own pending Yape top-up. Spends, refunds
       // and approvals are written by Cloud Functions (reviewCreditPurchase,
       // joinSession, cancelParticipation, cancelEvent, removePlayer).
+      // spend_* / refund_* ids are the functions' (a squatted refund id
+      // would look like a refund already paid).
       allow create: if signedIn()
+        && !id.matches('^(spend|refund)_.*')
         && request.resource.data.keys().hasOnly([
             'userId', 'creditAmount', 'amountPaid', 'currency', 'createdAt',
             'status', 'entryType', 'direction', 'sourceType', 'sourceId',
@@ -189,7 +192,11 @@ service cloud.firestore {
         && request.resource.data.creditAmount is number
         && request.resource.data.creditAmount > 0
         && request.resource.data.amountPaid is number
-        && request.resource.data.amountPaid >= request.resource.data.creditAmount;
+        && request.resource.data.amountPaid >= request.resource.data.creditAmount
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.get('direction', 'credit') == 'credit'
+        && request.resource.data.get('sourceType', 'payment') == 'payment'
+        && request.resource.data.get('currency', 'PEN') == 'PEN';
 
       allow update, delete: if false;
     }
@@ -234,10 +241,11 @@ service cloud.firestore {
         && isGroupOwner(resource.data.groupId)
         && !request.resource.data.diff(resource.data).affectedKeys()
               .hasAny(['groupId', 'creatorId', 'players', 'playerCount'])
-        // Refunds are capped at the current price, so it can't drop below
-        // what joined players paid.
-        && (resource.data.get('playerCount', 0) == 0
-            || request.resource.data.get('costPerPlayer', 0) >= resource.data.get('costPerPlayer', 0));
+        // The price is frozen once anyone holds a seat: refunds are capped at
+        // the current price, so lowering it would short joined players and
+        // raising it would pay out more than they paid.
+        && ((resource.data.get('playerCount', 0) == 0 && resource.data.get('players', []).size() == 0)
+            || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['costPerPlayer']));
 
       // Delete: only the cancelEvent function (it refunds every player).
       allow delete: if false;

@@ -166,7 +166,6 @@ Ticket validation URL builder: `lib/utils/ticket_url_builder.dart` → `https://
 lib/
 ├── main.dart
 ├── firebase_options.dart          # generated — do not edit
-├── mp.dart                        # static Mercado Pago preference samples
 ├── bloc/<feature>/                # *_bloc.dart, *_event.dart, *_state.dart
 ├── models/
 ├── services/
@@ -666,7 +665,7 @@ Intended direction (from project guidelines):
 4. **Two membership models.** Subcollections are source of truth. Do not revive `streamUserGroups` without writing `groups.members[]`.
 5. **Duplicate sport lists** in `HomeScreen`, `CreateGroupScreen`, `GroupEditScreen`. Extract a constant before adding a sport.
 6. **Owner checks disagree** across session detail vs ticket validation.
-7. **Rules and functions are in git but deployed by hand** (`firestore.rules`, `functions/`). Deploy order: rules → functions → backfill → hosting (see README). The `mirrorPublicEvent` trigger region must equal the Firestore location (`southamerica-east1`). The rules still let a client edit its own `users.credits` and write `players` / `playerCount` of any `liveSessions` doc (join is client-side, so a user can still add or remove entries or inflate the seat count). Every other `liveSessions` field (title, place, price, `isPrivate`, ...) is writable only by the group owner, `groupId` is immutable, and deleting a session needs the group owner or admin. That keeps guests from seeing tampered or newly published events in `publicEvents`; moving join + credit approval server-side and tightening those rules is the durable fix (plan: [notes/join-session-server-side.md](notes/join-session-server-side.md)).
+7. **Rules and functions are in git but deployed by hand** (`firestore.rules`, `functions/`). Deploy order: functions → backfill → hosting → rules (see README). Rules go last because they deny every client write the callables replaced: an app build older than the callables stops working once they are live. The `mirrorPublicEvent` trigger region must equal the Firestore location (`southamerica-east1`). Before the first deploy of the locked rules, run `functions/scripts/auditLedger.ts` (read-only) and review any `creditHistory` row it flags.
 8. **`PaymentService` is a stub.** Do not hook a real card form to `CardDetails` (PCI). Use a gateway SDK / redirect.
 9. **Mixed navigation.** Deep links only work for GoRouter paths.
 10. **API keys in client files** (`AppConstants`, manifests, `web/index.html`) are expected for Maps but should be restricted by bundle id / HTTP referrer in Google Cloud.
