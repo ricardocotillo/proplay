@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:material_ui/material_ui.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:responsive_framework/responsive_framework.dart';
@@ -50,7 +51,15 @@ void main() async {
   // Real paths (/events/x, /validate-ticket?token=) instead of /#/...: the
   // ticket QR and shared event links are plain URLs.
   usePathUrlStrategy();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Google sign-in shows the authDomain to the user. Serve the auth handler
+  // from our own domain (Hosting serves /__/auth/* on proplayapp.com too).
+  // Override here so `flutterfire configure` can't regenerate it away.
+  final options = kIsWeb
+      ? DefaultFirebaseOptions.currentPlatform.copyWith(
+          authDomain: 'proplayapp.com',
+        )
+      : DefaultFirebaseOptions.currentPlatform;
+  await Firebase.initializeApp(options: options);
   await initializeDateFormatting('es');
   runApp(const MyApp());
 }
