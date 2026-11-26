@@ -1,47 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:uuid/uuid.dart';
 import 'package:proplay/models/ticket_model.dart';
-import 'package:proplay/models/session_model.dart';
-import 'package:proplay/models/user_model.dart';
 
 class TicketService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static const String ticketsCollection = 'tickets';
-  static const Uuid _uuid = Uuid();
 
   static String ticketId(String sessionId, String userId) =>
       '${sessionId}_$userId';
-
-  /// Pure builder (no I/O) so it can be called from inside another
-  /// service's Firestore transaction (see SessionService.joinSession).
-  static TicketModel buildTicketForJoin({
-    required SessionModel session,
-    required UserModel user,
-    String? validationToken,
-  }) {
-    return TicketModel(
-      id: ticketId(session.id, user.uid),
-      sessionId: session.id,
-      groupId: session.groupId,
-      userId: user.uid,
-      validationToken: validationToken ?? _uuid.v4(),
-      status: 'valid',
-      pricePaid: session.costPerPlayer,
-      createdAt: DateTime.now(),
-      eventTitle: session.title,
-      eventDate: session.eventDate,
-      eventEndDate: session.eventEndDate,
-      eventLocationAddress: session.locationAddress,
-      eventLocationLat: session.locationLat,
-      eventLocationLng: session.locationLng,
-      sport: session.sport,
-      userFirstName: user.firstName,
-      userLastName: user.lastName,
-      userProfileImageUrl: user.profileImageUrl,
-      userDocumentType: user.documentType,
-      userDocumentNumber: user.documentNumber,
-    );
-  }
 
   DocumentReference<Map<String, dynamic>> ticketRef(String ticketId) =>
       _firestore.collection(ticketsCollection).doc(ticketId);

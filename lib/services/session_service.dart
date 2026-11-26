@@ -1,11 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
+import 'package:proplay/utils/error_message.dart';
 import 'package:proplay/models/cancel_result_model.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/session_template_model.dart';
-import 'package:proplay/models/user_model.dart';
-import 'package:proplay/services/ticket_service.dart';
 import 'package:proplay/utils/geohash_utils.dart';
 import 'package:proplay/utils/location_utils.dart';
 
@@ -91,7 +90,12 @@ class SessionService {
       bannerUrl: template.bannerUrl,
     );
 
-    await _firestore.collection('liveSessions').add(liveSession.toMap());
+    // creatorId lets organizer checks key on the event, not only the group
+    // (groupless events are planned).
+    await _firestore.collection('liveSessions').add({
+      ...liveSession.toMap(),
+      'creatorId': template.creatorId,
+    });
   }
 
   Future<List<SessionModel>> getUpcomingSessions(String groupId) async {
@@ -605,104 +609,18 @@ class SessionService {
     );
   }
 
-  /// Join a session with race condition protection using Firestore transaction
-  /// Also debits the cost from user's credits
-  Future<void> joinSession(String sessionId, UserModel user) async {
-    final sessionUser = SessionUserModel(
-      uid: user.uid,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      profileImageUrl: user.profileImageUrl,
-      joinedAt: DateTime.now(),
-    );
-
+  /// Joins the signed-in user via the `joinSession` Cloud Function: the server
+  /// checks access, start time, seats and balance, then debits, writes the
+  /// ledger row, the player entry and the ticket in one transaction.
+  /// Returns the ticket id. Error messages are the server's Spanish copy.
+  Future<String> joinSession(String sessionId) async {
     try {
-      await _firestore.runTransaction((transaction) async {
-        final sessionRef = _firestore.collection('liveSessions').doc(sessionId);
-        final sessionDoc = await transaction.get(sessionRef);
-
-        if (!sessionDoc.exists) {
-          throw Exception('Evento no encontrado.');
-        }
-
-        final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
-
-        if (!session.eventDate.isAfter(DateTime.now())) {
-          throw Exception('Este evento ya empezó o terminó.');
-        }
-
-        // Balance from the document read in this transaction, not the
-        // cached model: a credit approval since the last refresh must count
-        // and must not be overwritten by the debit below.
-        final userRef = _firestore.collection('users').doc(user.uid);
-        final userDoc = await transaction.get(userRef);
-        if (!userDoc.exists) throw Exception('No encontramos tu perfil.');
-        final userCredits = UserModel.fromMap(userDoc.data()!).creditsValue;
-        final costPerPlayer = session.costPerPlayer;
-
-        if (userCredits < costPerPlayer) {
-          throw Exception(
-            'No tienes saldo suficiente. Necesitas S/ ${UserModel.formatCredits(costPerPlayer)} y tienes S/ ${UserModel.formatCredits(userCredits)}.',
-          );
-        }
-
-        // Check if user is already in the session or waiting list
-        final players = session.players ?? [];
-
-        if (players.any((p) => p.uid == user.uid)) {
-          throw Exception('Ya estás inscrito en este evento.');
-        }
-
-        if (players.length >= session.maxPlayers) {
-          throw Exception('Este evento ya está lleno.');
-        }
-
-        // Calculate new credit balance
-        final newCredits = userCredits - costPerPlayer;
-        final newCreditsFormatted = UserModel.formatCredits(newCredits);
-
-        // Update user's credits
-        transaction.update(userRef, {'credits': newCreditsFormatted});
-
-        // Create credit history entry for the spend
-        final creditHistoryRef = _firestore.collection('creditHistory').doc();
-        transaction.set(creditHistoryRef, {
-          'userId': user.uid,
-          'creditAmount': costPerPlayer,
-          'amountPaid': 0.0,
-          'createdAt': FieldValue.serverTimestamp(),
-          'status': 'completed',
-          'entryType': 'spend',
-          'direction': 'debit',
-          'sourceType': 'session',
-          'sourceId': sessionId,
-          'sessionId': sessionId,
-          'sessionTitle': session.title,
-          'groupId': session.groupId,
-          'balanceBefore': userCredits,
-          'balanceAfter': newCredits,
-          'notes': 'Unirse a pichanga: ${session.title}',
-        });
-
-        // Add to main player list
-        final updatedPlayers = [...players, sessionUser];
-        transaction.update(sessionRef, {
-          'players': updatedPlayers.map((p) => p.toMap()).toList(),
-          'playerCount': updatedPlayers.length,
-        });
-
-        // Create the virtual ticket atomically with the join
-        final ticket = TicketService.buildTicketForJoin(
-          session: session,
-          user: user,
-        );
-        final ticketRef = _firestore
-            .collection(TicketService.ticketsCollection)
-            .doc(ticket.id);
-        transaction.set(ticketRef, ticket.toMap());
-      });
-    } catch (e) {
-      rethrow;
+      final result = await FirebaseFunctions.instanceFor(
+        region: 'southamerica-east1',
+      ).httpsCallable('joinSession').call({'sessionId': sessionId});
+      return (result.data as Map)['ticketId'] as String;
+    } on FirebaseFunctionsException catch (e) {
+      throw callableError(e);
     }
   }
 
@@ -716,7 +634,7 @@ class SessionService {
       ).httpsCallable('cancelParticipation').call({'sessionId': sessionId});
       return CancelResultModel.fromMap(result.data as Map);
     } on FirebaseFunctionsException catch (e) {
-      throw Exception(e.message ?? 'No se pudo cancelar tu cupo');
+      throw callableError(e);
     }
   }
 
