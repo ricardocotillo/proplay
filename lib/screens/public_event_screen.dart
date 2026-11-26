@@ -7,9 +7,8 @@ import 'package:proplay/bloc/public_event/public_event_event.dart';
 import 'package:proplay/bloc/public_event/public_event_state.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/user_model.dart';
-import 'package:proplay/screens/session_detail_screen.dart';
+import 'package:proplay/utils/app_paths.dart';
 import 'package:proplay/services/session_service.dart';
-import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/utils/auth_redirect.dart';
 import 'package:proplay/utils/join_availability.dart';
 import 'package:proplay/theme/app_colors.dart';
@@ -18,7 +17,7 @@ import 'package:proplay/widgets/event_bottom_bar.dart';
 import 'package:proplay/widgets/event_hero.dart';
 import 'package:proplay/widgets/share_event_button.dart';
 
-/// Read-only event detail at `/events/:id`. Safe for guests: it reads the
+/// Guest view of `/events/:id` (see `EventScreen`). Safe for guests: it reads the
 /// `publicEvents` projection, which never contains the players list.
 class PublicEventScreen extends StatelessWidget {
   final String eventId;
@@ -73,7 +72,6 @@ class _Details extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final signedIn = context.isAuthenticated;
     final seats = seatsInfo(event.playerCount, event.maxPlayers);
     final block = joinBlock(
       eventDate: event.eventDate,
@@ -161,37 +159,20 @@ class _Details extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              if (signedIn)
-                FilledButton(
-                  onPressed: () async {
-                    final cancelled = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            SessionDetailScreen(sessionId: event.id),
-                      ),
-                    );
-                    // The event no longer exists: back to the feed.
-                    if (cancelled == true && context.mounted) {
-                      context.go('/events');
-                    }
-                  },
-                  child: const Text('Ver evento y unirme'),
-                )
-              else
-                FilledButton(
-                  // Guests sign in (or sign up from login) and come back here.
-                  onPressed: block == JoinBlock.none
-                      ? () => context.go(
-                          authPath('/login', from: '/events/${event.id}'),
-                        )
-                      : null,
-                  child: Text(switch (block) {
-                    JoinBlock.past => 'Evento finalizado',
-                    JoinBlock.full => 'Evento lleno',
-                    _ => 'Ingresa para unirte',
-                  }),
-                ),
+              FilledButton(
+                // Guests sign in (or sign up from login) and come back here;
+                // the same URL then shows the full event page.
+                onPressed: block == JoinBlock.none
+                    ? () => context.go(
+                        authPath('/login', from: eventPath(event.id)),
+                      )
+                    : null,
+                child: Text(switch (block) {
+                  JoinBlock.past => 'Evento finalizado',
+                  JoinBlock.full => 'Evento lleno',
+                  _ => 'Ingresa para unirte',
+                }),
+              ),
             ],
           ),
         ),

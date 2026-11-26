@@ -34,7 +34,9 @@ import 'package:proplay/screens/group_detail_screen_loader.dart';
 import 'package:proplay/screens/group_edit_screen_loader.dart';
 import 'package:proplay/screens/group_info_screen_loader.dart';
 import 'package:proplay/screens/events_feed_screen.dart';
-import 'package:proplay/screens/public_event_screen.dart';
+import 'package:proplay/screens/event_screen.dart';
+import 'package:proplay/screens/create_session_screen.dart';
+import 'package:proplay/screens/ticket_detail_screen.dart';
 import 'package:proplay/screens/purchase_credits_screen.dart';
 import 'package:proplay/screens/payment_success_screen.dart';
 import 'package:proplay/screens/payment_pending_screen.dart';
@@ -194,6 +196,15 @@ class _MyAppState extends State<MyApp> {
                           path: 'tickets',
                           name: 'tickets',
                           builder: (context, state) => const MyTicketsScreen(),
+                          routes: [
+                            GoRoute(
+                              path: ':id',
+                              name: 'ticket-detail',
+                              builder: (context, state) => TicketDetailScreen(
+                                ticketId: state.pathParameters['id']!,
+                              ),
+                            ),
+                          ],
                         ),
                         GoRoute(
                           path: 'validate-ticket',
@@ -210,6 +221,13 @@ class _MyAppState extends State<MyApp> {
                             return GroupDetailScreenLoader(groupId: id);
                           },
                           routes: [
+                            GoRoute(
+                              path: 'create-event',
+                              name: 'create-event',
+                              builder: (context, state) => CreateSessionScreen(
+                                groupId: state.pathParameters['id']!,
+                              ),
+                            ),
                             GoRoute(
                               path: 'edit',
                               name: 'group-edit',
@@ -238,9 +256,8 @@ class _MyAppState extends State<MyApp> {
                         GoRoute(
                           path: ':id',
                           name: 'event-detail',
-                          builder: (context, state) => PublicEventScreen(
-                            eventId: state.pathParameters['id']!,
-                          ),
+                          builder: (context, state) =>
+                              EventScreen(eventId: state.pathParameters['id']!),
                         ),
                       ],
                     ),

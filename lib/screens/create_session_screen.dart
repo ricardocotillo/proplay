@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
@@ -13,6 +14,7 @@ import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/storage_service.dart';
 import 'package:proplay/services/user_service.dart';
+import 'package:proplay/utils/app_paths.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/location_picker.dart';
 import 'package:proplay/widgets/step_indicator.dart';
@@ -284,7 +286,9 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         title: const Text('Crear sesión'),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.canPop()
+              ? context.pop()
+              : context.go(groupPath(widget.groupId)),
         ),
       ),
       body: _isLoadingGroup
@@ -297,7 +301,9 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                       content: Text('Sesión creada exitosamente!'),
                     ),
                   );
-                  Navigator.of(context).pop(true);
+                  context.canPop()
+                      ? context.pop(true)
+                      : context.go(groupPath(widget.groupId));
                 }
                 if (state is SessionCreationFailure) {
                   ScaffoldMessenger.of(context).showSnackBar(

@@ -123,7 +123,9 @@ While `AuthBloc` is still `AuthInitial`, a spinner `MaterialApp` is shown (no ro
 | `/` | `home` | `HomeScreen` |
 | `/sessions` | `sessions` | `EventsFeedScreen` (same feed as `/events`) |
 | `/events` | `events` | `EventsFeedScreen` — public feed, **open to guests** |
-| `/events/:id` | `event-detail` | `PublicEventScreen` — read-only `publicEvents` detail, **open to guests** |
+| `/events/:id` | `event-detail` | `EventScreen` — the one event page: `SessionDetailScreen` (players, join, cancel, organizer tools) when signed in, `PublicEventScreen` (read-only `publicEvents`) for guests; **open to guests** |
+| `/tickets/:id` | `ticket-detail` | `TicketDetailScreen` (ticket id `{sessionId}_{userId}`) |
+| `/group/:id/create-event` | `create-event` | `CreateSessionScreen` (group owners who are superUsers) |
 | `/create-group` | `create-group` | `CreateGroupScreen` |
 | `/edit-profile` | `edit-profile` | `EditProfileScreen` |
 | `/purchase-credits` | `purchase-credits` | `PurchaseCreditsScreen` |
@@ -147,12 +149,7 @@ Loaders exist so a deep link with only an id can stream the document, then hand 
 
 ### Still using `Navigator.push`
 
-These screens are **not** in the route table. Deep links will not open them.
-
-- `CreateSessionScreen`
-- `SessionDetailScreen`
-- `SessionMapScreen`
-- `TicketDetailScreen`
+Only `SessionMapScreen` (a one-off map view). Event, ticket and create-event pages are routes: link with `eventPath` / `ticketPath` / `createEventPath` (`lib/utils/app_paths.dart`). A page that returns a result (cancel event, create event) uses `context.push<bool>` and `context.pop(true)`, with `context.go` as the fallback when it was opened from a link.
 
 When you add a new primary destination, register it in `GoRouter` and navigate with `context.go` / `context.push`. Keep `Navigator.push` only for true one-off sheets if you must.
 
@@ -470,7 +467,7 @@ EventsFeedBloc.EventsFeedStarted → SessionService.getPublicEvents (publicEvent
     gender/age only for signed-in users) → sortFeed (distance if GPS, else date)
 ```
 
-Guests tap a card → `/events/:id` (`PublicEventScreen`, "Ingresa para unirte" → `/login?from=/events/:id`; login's "Regístrate" link keeps `from`, so sign-in and sign-up both return to the event). Signed-in users open `SessionDetailScreen` via `Navigator.push`; its bottom bar shows Unirse / Evento finalizado / Evento lleno / "Te faltan S/ X" + Recargar (`joinBlock` in `lib/utils/join_availability.dart`, display only). Errors reach the UI through `userMessage` (`lib/utils/error_message.dart`). Home leads with the same `EventsFeedView`, independent of the groups load; "Mis grupos" sits below it.
+Guests tap a card → `/events/:id` (`PublicEventScreen`, "Ingresa para unirte" → `/login?from=/events/:id`; login's "Regístrate" link keeps `from`, so sign-in and sign-up both return to the event). Signed-in users get the full page at the same URL (`EventScreen` switches on `watchUser`, so a guest who signs in lands on it); its bottom bar shows Unirse / Evento finalizado / Evento lleno / "Te faltan S/ X" + Recargar (`joinBlock` in `lib/utils/join_availability.dart`, display only). Errors reach the UI through `userMessage` (`lib/utils/error_message.dart`). Home leads with the same `EventsFeedView`, independent of the groups load; "Mis grupos" sits below it.
 
 ### Cloud Functions (`functions/`)
 
@@ -548,7 +545,7 @@ Join runs in the `joinSession` callable (one server transaction: seat + debit + 
 | --- | --- |
 | `LoginScreen` / `RegistrationScreen` | Auth + optional group code |
 | `HomeScreen` | Public events feed (`EventsFeedView`), groups, wallet, profile-setup dialog, GPS |
-| `EventsFeedScreen` / `PublicEventScreen` | `/events` feed and `/events/:id` (guests allowed; `publicEvents` only) |
+| `EventsFeedScreen` / `EventScreen` | `/events` feed and `/events/:id` (guests get `PublicEventScreen`, `publicEvents` only) |
 | `CreateGroupScreen` | Name + one sport |
 | `GroupDetailScreen` (+ loader) | Members, create session, info/edit |
 | `GroupEditScreen` / `GroupInfoScreen` | Edit image/name/sport; public info |

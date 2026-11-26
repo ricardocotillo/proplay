@@ -6,9 +6,9 @@ import 'package:proplay/bloc/events_feed/events_feed_bloc.dart';
 import 'package:proplay/bloc/events_feed/events_feed_event.dart';
 import 'package:proplay/bloc/events_feed/events_feed_state.dart';
 import 'package:proplay/models/session_model.dart';
-import 'package:proplay/screens/session_detail_screen.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/theme/app_colors.dart';
+import 'package:proplay/utils/app_paths.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/utils/feed_filters.dart';
 import 'package:proplay/utils/sports.dart';
@@ -360,18 +360,9 @@ class _EmptyFeed extends StatelessWidget {
 }
 
 Future<void> _openEvent(BuildContext context, SessionModel session) async {
-  if (context.isAuthenticated) {
-    final feed = context.read<EventsFeedBloc>();
-    final cancelled = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => SessionDetailScreen(sessionId: session.id),
-      ),
-    );
-    if (cancelled == true) feed.add(EventsFeedEventRemoved(session.id));
-  } else {
-    context.go('/events/${session.id}');
-  }
+  final feed = context.read<EventsFeedBloc>();
+  final cancelled = await context.push<bool>(eventPath(session.id));
+  if (cancelled == true) feed.add(EventsFeedEventRemoved(session.id));
 }
 
 class _EventCards extends StatelessWidget {
