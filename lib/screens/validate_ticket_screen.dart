@@ -7,6 +7,7 @@ import 'package:proplay/bloc/validate_ticket/validate_ticket_event.dart';
 import 'package:proplay/bloc/validate_ticket/validate_ticket_state.dart';
 import 'package:proplay/models/ticket_model.dart';
 import 'package:proplay/services/group_service.dart';
+import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/ticket_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/utils/auth_helper.dart';
@@ -24,6 +25,7 @@ class ValidateTicketScreen extends StatelessWidget {
       create: (context) => ValidateTicketBloc(
         ticketService: TicketService(),
         groupService: GroupService(userService: UserService()),
+        sessionService: SessionService(),
         currentUser: currentUser,
       )..add(LoadTicketByToken(token)),
       child: Scaffold(

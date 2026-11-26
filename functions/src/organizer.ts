@@ -18,8 +18,8 @@ const callerOf = (request: CallableRequest): string => {
   return request.auth.uid;
 };
 
-/** Reads the session and checks the caller may manage it and it hasn't started. */
-async function loadManaged(tx: Transaction, db: Firestore, sessionId: string, uid: string) {
+/** Reads the session and checks the caller may manage it. */
+async function loadSession(tx: Transaction, db: Firestore, sessionId: string, uid: string) {
   const sessionRef = db.doc(`liveSessions/${sessionId}`);
   const snap = await tx.get(sessionRef);
   if (!snap.exists) throw new HttpsError('not-found', 'Evento no encontrado.');
@@ -35,12 +35,18 @@ async function loadManaged(tx: Transaction, db: Firestore, sessionId: string, ui
   })) {
     throw new HttpsError('permission-denied', 'No tienes permiso para gestionar este evento.');
   }
-  const start = session.eventDate?.toDate?.();
+  const players: Player[] = Array.isArray(session.players) ? session.players : [];
+  return {sessionRef, session, players};
+}
+
+/** Same, and the event must not have started (cancel, remove). */
+async function loadManaged(tx: Transaction, db: Firestore, sessionId: string, uid: string) {
+  const loaded = await loadSession(tx, db, sessionId, uid);
+  const start = loaded.session.eventDate?.toDate?.();
   if (!(start instanceof Date) || start.getTime() <= Date.now()) {
     throw new HttpsError('failed-precondition', 'Este evento ya empezó o terminó.');
   }
-  const players: Player[] = Array.isArray(session.players) ? session.players : [];
-  return {sessionRef, session, players};
+  return loaded;
 }
 
 /**
@@ -180,5 +186,42 @@ export const removePlayer = onCall(async (request) => {
     tx.update(sessionRef, {players: remaining, playerCount: remaining.length});
     if (ticket.exists) tx.delete(ticketRef);
     return {refunded: refunds.length > 0, amount: refunds[0]?.amount ?? 0};
+  });
+});
+
+/**
+ * Organizer marks a player present (ticket `used`) or absent (back to `valid`)
+ * from the roster. Idempotent. Works any time: check-in happens while the
+ * event is on. A ticket validated by QR shows as present too.
+ */
+export const checkInPlayer = onCall(async (request) => {
+  const uid = callerOf(request);
+  const sessionId = request.data?.sessionId;
+  const userId = request.data?.userId;
+  const present = request.data?.present;
+  if (!id(sessionId) || !id(userId) || typeof present !== 'boolean') {
+    throw new HttpsError('invalid-argument', 'Solicitud inválida.');
+  }
+  const db = getFirestore();
+  const ticketRef = db.doc(`tickets/${sessionId}_${userId}`);
+
+  return db.runTransaction(async (tx) => {
+    const {players} = await loadSession(tx, db, sessionId, uid);
+    if (!players.some((p) => p?.uid === userId)) {
+      throw new HttpsError('failed-precondition', 'Este jugador ya no está en el evento.');
+    }
+    const ticket = await tx.get(ticketRef);
+    if (!ticket.exists) {
+      throw new HttpsError('failed-precondition', 'Este jugador no tiene ticket.');
+    }
+    const used = ticket.get('status') === 'used';
+    if (present && !used) {
+      tx.update(ticketRef, {
+        status: 'used', usedAt: FieldValue.serverTimestamp(), validatedBy: uid,
+      });
+    } else if (!present && used) {
+      tx.update(ticketRef, {status: 'valid', usedAt: null, validatedBy: null});
+    }
+    return {present};
   });
 });

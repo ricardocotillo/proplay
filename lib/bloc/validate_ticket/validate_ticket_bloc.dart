@@ -4,12 +4,15 @@ import 'package:proplay/bloc/validate_ticket/validate_ticket_state.dart';
 import 'package:proplay/models/ticket_model.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/group_service.dart';
+import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/ticket_service.dart';
+import 'package:proplay/utils/manage_event.dart';
 
 class ValidateTicketBloc
     extends Bloc<ValidateTicketEvent, ValidateTicketState> {
   final TicketService ticketService;
   final GroupService groupService;
+  final SessionService sessionService;
   final UserModel currentUser;
 
   TicketModel? _currentTicket;
@@ -18,6 +21,7 @@ class ValidateTicketBloc
   ValidateTicketBloc({
     required this.ticketService,
     required this.groupService,
+    required this.sessionService,
     required this.currentUser,
   }) : super(const ValidateTicketLoading()) {
     on<LoadTicketByToken>(_onLoadTicketByToken);
@@ -44,25 +48,29 @@ class ValidateTicketBloc
       }
       _currentTicket = ticket;
 
-      // Authorization: group owner, group admin member, or superUser.
-      bool isOwnerOrAdmin = currentUser.superUser;
-      if (!isOwnerOrAdmin) {
+      // Same rule as the event page and the server (`canManageEvent`):
+      // event creator, group owner/admin, or superUser.
+      String? role;
+      String? creatorId;
+      if (!currentUser.superUser) {
         try {
-          final group = await groupService.getGroup(ticket.groupId);
-          if (group != null) {
-            isOwnerOrAdmin = group.createdBy == currentUser.uid;
-            if (!isOwnerOrAdmin) {
-              final role = await groupService.getMemberRole(
-                ticket.groupId,
-                currentUser.uid,
-              );
-              isOwnerOrAdmin = role == 'admin';
-            }
-          }
-        } catch (e) {
-          isOwnerOrAdmin = false;
-        }
+          role = await groupService.getMemberRole(
+            ticket.groupId,
+            currentUser.uid,
+          );
+        } catch (_) {}
+        try {
+          creatorId =
+              (await sessionService.streamSession(ticket.sessionId).first)
+                  .creatorId;
+        } catch (_) {}
       }
+      final isOwnerOrAdmin = canManageEvent(
+        uid: currentUser.uid,
+        creatorId: creatorId,
+        memberRole: role,
+        superUser: currentUser.superUser,
+      );
       _isOwnerOrAdmin = isOwnerOrAdmin;
 
       emit(

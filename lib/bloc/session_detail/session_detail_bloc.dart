@@ -15,6 +15,8 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
   final GroupService groupService;
   final UserModel currentUser;
   StreamSubscription<SessionModel>? _sessionSubscription;
+  StreamSubscription<Set<String>>? _presenceSubscription;
+  Set<String> _presentUids = const {};
   bool _isOwnerOrAdmin = false;
 
   /// Set while cancelEvent runs: the event doc is deleted, so the stream's
@@ -31,6 +33,8 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
     on<CancelParticipation>(_onCancelParticipation);
     on<RemoveUserFromSession>(_onRemoveUserFromSession);
     on<CancelEvent>(_onCancelEvent);
+    on<TogglePresence>(_onTogglePresence);
+    on<_UpdatePresence>(_onUpdatePresence);
     on<_UpdateSessionState>(_onUpdateSessionState);
     on<_SessionError>(_onSessionError);
   }
@@ -66,6 +70,15 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
         memberRole: role,
         superUser: currentUser.superUser,
       );
+
+      // Organizers also follow who is checked in.
+      await _presenceSubscription?.cancel();
+      _presentUids = const {};
+      if (_isOwnerOrAdmin) {
+        _presenceSubscription = sessionService
+            .streamPresentUids(firstSession.id, firstSession.groupId)
+            .listen((uids) => add(_UpdatePresence(uids)), onError: (_) {});
+      }
 
       // Stream the session for real-time updates
       _sessionSubscription = sessionService
@@ -153,8 +166,45 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
         session: event.session,
         isCurrentUserJoined: event.isCurrentUserJoined,
         isOwnerOrAdmin: _isOwnerOrAdmin,
+        presentUids: _presentUids,
       ),
     );
+  }
+
+  Future<void> _onUpdatePresence(
+    _UpdatePresence event,
+    Emitter<SessionDetailState> emit,
+  ) async {
+    _presentUids = event.uids;
+    final current = state;
+    if (current is SessionDetailLoaded) {
+      emit(
+        SessionDetailLoaded(
+          session: current.session,
+          isCurrentUserJoined: current.isCurrentUserJoined,
+          isOwnerOrAdmin: current.isOwnerOrAdmin,
+          presentUids: event.uids,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onTogglePresence(
+    TogglePresence event,
+    Emitter<SessionDetailState> emit,
+  ) async {
+    final current = state;
+    if (current is! SessionDetailLoaded || !_isOwnerOrAdmin) return;
+    try {
+      await sessionService.checkInPlayer(
+        sessionId: current.session.id,
+        userId: event.userId,
+        present: event.present,
+      );
+      // The presence stream updates the roster.
+    } catch (e) {
+      emit(SessionDetailError(userMessage(e), session: current.session));
+    }
   }
 
   Future<void> _onRemoveUserFromSession(
@@ -249,11 +299,21 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
   @override
   Future<void> close() {
     _sessionSubscription?.cancel();
+    _presenceSubscription?.cancel();
     return super.close();
   }
 }
 
 // Internal events for handling stream updates
+class _UpdatePresence extends SessionDetailEvent {
+  final Set<String> uids;
+
+  const _UpdatePresence(this.uids);
+
+  @override
+  List<Object?> get props => [uids];
+}
+
 class _UpdateSessionState extends SessionDetailEvent {
   final SessionModel session;
   final bool isCurrentUserJoined;

@@ -52,6 +52,17 @@ class RemoveUserFromSession extends SessionDetailEvent {
   List<Object?> get props => [userId];
 }
 
+/// Organizer marks a player present or absent (check-in).
+class TogglePresence extends SessionDetailEvent {
+  final String userId;
+  final bool present;
+
+  const TogglePresence(this.userId, {required this.present});
+
+  @override
+  List<Object?> get props => [userId, present];
+}
+
 /// Organizer cancels the whole event (everyone refunded, event deleted).
 class CancelEvent extends SessionDetailEvent {
   const CancelEvent();

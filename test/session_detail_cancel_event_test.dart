@@ -45,6 +45,24 @@ class _FakeSessions implements SessionService {
     }
   }
 
+  final presence = StreamController<Set<String>>.broadcast();
+  final checkIns = <(String, bool)>[];
+  Object? checkInError;
+
+  @override
+  Stream<Set<String>> streamPresentUids(String sessionId, String groupId) =>
+      presence.stream;
+
+  @override
+  Future<void> checkInPlayer({
+    required String sessionId,
+    required String userId,
+    required bool present,
+  }) async {
+    if (checkInError != null) throw checkInError!;
+    checkIns.add((userId, present));
+  }
+
   @override
   Future<({int refunded, double total})> cancelEvent(String sessionId) async {
     deleted = deleteOnCancel;
@@ -190,5 +208,38 @@ void main() {
     expect(canCreateEvent(superUser: true, groupRole: 'member'), isFalse);
     expect(canCreateEvent(superUser: true, groupRole: null), isFalse);
     expect(canCreateEvent(superUser: false, groupRole: 'owner'), isFalse);
+  });
+
+  test('organizer sees who is present and can toggle check-in', () async {
+    final sessions = _FakeSessions();
+    final (bloc, states) = await _loaded(sessions);
+    sessions.presence.add({'p1'});
+    await _settle();
+    expect((states.last as SessionDetailLoaded).presentUids, {'p1'});
+
+    bloc.add(const TogglePresence('p2', present: true));
+    await _settle();
+    expect(sessions.checkIns, [('p2', true)]);
+    await bloc.close();
+  });
+
+  test('a failed check-in shows the error, a member cannot check in', () async {
+    final sessions = _FakeSessions()
+      ..checkInError = Exception('Este jugador ya no está en el evento.');
+    final (bloc, states) = await _loaded(sessions);
+    bloc.add(const TogglePresence('p2', present: true));
+    await _settle();
+    expect(
+      states.whereType<SessionDetailError>().single.message,
+      'Este jugador ya no está en el evento.',
+    );
+    await bloc.close();
+
+    final memberSessions = _FakeSessions();
+    final (member, _) = await _loaded(memberSessions, role: 'member');
+    member.add(const TogglePresence('p2', present: true));
+    await _settle();
+    expect(memberSessions.checkIns, isEmpty);
+    await member.close();
   });
 }

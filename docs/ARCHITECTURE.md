@@ -396,7 +396,7 @@ GroupDetailBloc loads members by fetching each user doc
   owner/admin can toggle admin ↔ member or remove
 ```
 
-`SessionDetailBloc` decides who manages an event with `canManageEvent` (`lib/utils/manage_event.dart`), the same rule as the server (`functions/src/adminPolicy.ts`): the event `creatorId`, a group owner/admin (member role) or a superUser. Keep the two in sync.
+`SessionDetailBloc` and `ValidateTicketBloc` both decide who manages an event with `canManageEvent` (`lib/utils/manage_event.dart`), the same rule as the server (`functions/src/adminPolicy.ts`): the event `creatorId`, a group owner/admin (member role) or a superUser. Keep the two in sync.
 
 ### Sessions
 
@@ -443,6 +443,7 @@ Organizer actions (callables in `functions/src/organizer.ts`, allowed for the gr
 
 - **Cancelar evento** (event menu, `SessionDetailBloc` `CancelEvent` → `cancelEvent`): refunds each current player's latest unrefunded spend in full, deletes all tickets and the event (the mirror trigger drops the public copy), then the screen closes and the group list reloads.
 - **Retirar** a player (`RemoveUserFromSession` → `removePlayer`): frees the seat, deletes the ticket, refunds in full. Refused when the ticket was used.
+- **Presente** (roster check-in): organizers see a "Presente" chip per player and "Asistencia: X/Y presentes" on the event page. `TogglePresence` → `SessionService.checkInPlayer` → callable `checkInPlayer` sets the ticket `used` (present) or back to `valid` (absent); idempotent, allowed any time (not only before the start). A ticket validated by QR shows as present. The roster follows `SessionService.streamPresentUids` (tickets of the event, read as organizer; the query needs the group id for the rules).
 
 Cancel (player):
 
@@ -518,7 +519,7 @@ CreditApprovalScreen (superUser) → CreditApprovalCubit → callable reviewCred
 3. `TicketDetailScreen` shows QR for `TicketUrlBuilder.buildValidationUrl`.
 4. `/validate-ticket?token=` → `ValidateTicketBloc`.
 5. Validator must be group owner, group `admin`, or `superUser`.
-6. `validateTicket` transaction: `valid` → `used` + `usedAt` + `validatedBy`.
+6. `validateTicket` transaction: `valid` → `used` + `usedAt` + `validatedBy`. The rules allow this for the group owner/admin, the event's creator or a superUser; undoing it is the `checkInPlayer` function.
 
 ---
 

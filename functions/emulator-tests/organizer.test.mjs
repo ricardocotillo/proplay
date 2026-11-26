@@ -13,7 +13,7 @@ initializeApp({projectId: 'demo-proplay'});
 const db = getFirestore();
 const {joinSession} = req(FN + '/lib/joinSession.js');
 const {cancelParticipation} = req(FN + '/lib/cancelParticipation.js');
-const {cancelEvent, removePlayer} = req(FN + '/lib/organizer.js');
+const {cancelEvent, checkInPlayer, removePlayer} = req(FN + '/lib/organizer.js');
 const {reviewCreditPurchase} = req(FN + '/lib/reviewCreditPurchase.js');
 
 const H = 3600 * 1000;
@@ -260,6 +260,46 @@ await t('a future-dated forged spend is ignored, refund is the real price', asyn
   await db.doc(`liveSessions/${id}`).update({costPerPlayer: 500}); // legacy price raise
   assert.deepEqual(await run(cancelParticipation, a, {sessionId: id}), {refunded: true, amount: 10});
   assert.equal(await credits(a), '30.00');
+});
+
+// ---- checkInPlayer ----
+const ticketOf = async (id, uid) => (await db.doc(`tickets/${id}_${uid}`).get()).data();
+
+await t('check in marks the ticket used, check out restores it, both idempotent', async () => {
+  const {id, owner, a} = await seedEvent();
+  assert.deepEqual(await run(checkInPlayer, owner, {sessionId: id, userId: a, present: true}), {present: true});
+  let tk = await ticketOf(id, a);
+  assert.equal(tk.status, 'used');
+  assert.equal(tk.validatedBy, owner);
+  assert.ok(tk.usedAt);
+  await run(checkInPlayer, owner, {sessionId: id, userId: a, present: true});
+  assert.equal((await ticketOf(id, a)).validatedBy, owner);
+  await run(checkInPlayer, owner, {sessionId: id, userId: a, present: false});
+  tk = await ticketOf(id, a);
+  assert.equal(tk.status, 'valid');
+  assert.equal(tk.usedAt, null);
+  assert.equal(tk.validatedBy, null);
+  await run(checkInPlayer, owner, {sessionId: id, userId: a, present: false});
+  assert.equal((await ticketOf(id, a)).status, 'valid');
+});
+
+await t('check in works after the event started', async () => {
+  const {id, owner, a} = await seedEvent({hoursAhead: -1});
+  await run(checkInPlayer, owner, {sessionId: id, userId: a, present: true});
+  assert.equal((await ticketOf(id, a)).status, 'used');
+});
+
+await t('check in is for organizers only and validates input', async () => {
+  const {id, owner, a, b, member} = await seedEvent();
+  await rejects(run(checkInPlayer, member, {sessionId: id, userId: a, present: true}), 'permission-denied');
+  await rejects(run(checkInPlayer, a, {sessionId: id, userId: a, present: true}), 'permission-denied');
+  await rejects(run(checkInPlayer, null, {sessionId: id, userId: a, present: true}), 'unauthenticated');
+  await rejects(run(checkInPlayer, owner, {sessionId: id, userId: a, present: 'yes'}), 'invalid-argument');
+  await rejects(run(checkInPlayer, owner, {sessionId: id, userId: 'nobody', present: true}), 'failed-precondition', /ya no está/);
+  await db.doc(`liveSessions/${id}`).update({creatorId: member});
+  await run(checkInPlayer, member, {sessionId: id, userId: b, present: true});
+  assert.equal((await ticketOf(id, b)).status, 'used');
+  assert.equal((await ticketOf(id, a)).status, 'valid');
 });
 
 const failed = results.filter(([, ok]) => !ok);

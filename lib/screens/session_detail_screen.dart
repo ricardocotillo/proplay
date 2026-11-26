@@ -196,6 +196,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
             final isProcessing = state is SessionDetailProcessing;
             final isJoined = isLoaded ? state.isCurrentUserJoined : false;
             final isOwnerOrAdmin = isLoaded ? state.isOwnerOrAdmin : false;
+            final presentUids = isLoaded ? state.presentUids : const <String>{};
 
             final players = session.players ?? [];
             final hasPlayers = players.isNotEmpty;
@@ -349,7 +350,11 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                                     8,
                                   ),
                                   child: Text(
-                                    'Jugadores Confirmados',
+                                    isOwnerOrAdmin
+                                        ? 'Asistencia: '
+                                              '${players.where((p) => presentUids.contains(p.uid)).length}'
+                                              '/${players.length} presentes'
+                                        : 'Jugadores Confirmados',
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleMedium
@@ -367,6 +372,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                                     player,
                                     index + 1,
                                     isOwnerOrAdmin,
+                                    presentUids.contains(player.uid),
                                   );
                                 }),
                               ],
@@ -595,6 +601,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
     SessionUserModel player,
     int position,
     bool isOwnerOrAdmin,
+    bool present,
   ) {
     final initials = '${player.firstName[0]}${player.lastName[0]}'
         .toUpperCase();
@@ -645,34 +652,47 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
         style: TextStyle(fontSize: 12, color: AppColors.muted),
       ),
       trailing: isOwnerOrAdmin
-          ? PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, size: 20),
-              onSelected: (value) {
-                if (value == 'remove') {
-                  _showRemoveUserDialog(context, player);
-                }
-              },
-              itemBuilder: (BuildContext context) {
-                return [
-                  const PopupMenuItem<String>(
-                    value: 'remove',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.remove_circle,
-                          size: 18,
-                          color: AppColors.error,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Retirar',
-                          style: TextStyle(color: AppColors.error),
-                        ),
-                      ],
-                    ),
+          ? Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FilterChip(
+                  label: const Text('Presente'),
+                  selected: present,
+                  showCheckmark: true,
+                  onSelected: (value) => context.read<SessionDetailBloc>().add(
+                    TogglePresence(player.uid, present: value),
                   ),
-                ];
-              },
+                ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, size: 20),
+                  onSelected: (value) {
+                    if (value == 'remove') {
+                      _showRemoveUserDialog(context, player);
+                    }
+                  },
+                  itemBuilder: (BuildContext context) {
+                    return [
+                      const PopupMenuItem<String>(
+                        value: 'remove',
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.remove_circle,
+                              size: 18,
+                              color: AppColors.error,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Retirar',
+                              style: TextStyle(color: AppColors.error),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ];
+                  },
+                ),
+              ],
             )
           : Icon(Icons.check_circle, color: AppColors.success, size: 20),
     );

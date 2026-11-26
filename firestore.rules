@@ -292,10 +292,18 @@ service cloud.firestore {
           && data.validatedBy == request.auth.uid;
       }
 
-      // Read: the ticket holder, an owner/admin of the ticket's group, or a superUser.
+      // The event's creator manages it like a group owner/admin (same rule
+      // as canManageEvent in functions/src/adminPolicy.ts).
+      function isEventCreator(sessionId) {
+        return get(/databases/$(database)/documents/liveSessions/$(sessionId)).data.get('creatorId', '') == request.auth.uid;
+      }
+
+      // Read: the ticket holder, an owner/admin of the ticket's group, the
+      // event's creator, or a superUser.
       allow read: if signedIn() && (
         resource.data.userId == request.auth.uid ||
         isGroupOwnerOrAdmin(resource.data.groupId) ||
+        isEventCreator(resource.data.sessionId) ||
         isSuperUser()
       );
 
@@ -303,9 +311,10 @@ service cloud.firestore {
       // cancelParticipation, cancelEvent, removePlayer).
       allow create: if false;
 
-      // Update: a group owner/admin/superUser marking a valid ticket used.
+      // Update: a group owner/admin, the event's creator or a superUser
+      // marking a valid ticket used (undo is the checkInPlayer function).
       allow update: if signedIn()
-        && (isGroupOwnerOrAdmin(resource.data.groupId) || isSuperUser())
+        && (isGroupOwnerOrAdmin(resource.data.groupId) || isEventCreator(resource.data.sessionId) || isSuperUser())
         && isValidValidationUpdate(request.resource.data);
 
       allow delete: if false;
