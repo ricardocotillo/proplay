@@ -423,14 +423,19 @@ Join:
 
 ```
 SessionDetailBloc.JoinSession
-  → SessionService.joinSession (Firestore transaction)
-      1. reject if the event started, already joined, full, or balance < costPerPlayer
-         (balance read from users/{uid} inside the transaction, not the cached model)
+  → SessionService.joinSession → callable `joinSession` (southamerica-east1)
+      one transaction, all reads before writes; uid from request.auth only:
+      0. already a player → return the existing ticket id (retry-safe, no charge)
+      1. reject (functions/src/joinPolicy.ts): private event and not a group member,
+         event started (server clock), full, or balance (users/{uid}) < costPerPlayer
       2. debit users/{uid}.credits
-      3. write creditHistory spend
-      4. append SessionUserModel to players[], bump playerCount
-      5. write tickets/{sessionId}_{uid}
+      3. creditHistory spend, id `spend_{sessionId}_{uid}_{token}`
+      4. append the player built from users/{uid} (never the payload), bump playerCount
+      5. write tickets/{sessionId}_{uid} (new validationToken, pricePaid, document snapshot)
+  → SessionDetailLoaded(isCurrentUserJoined) → AuthRefreshUserRequested + ticket screen
 ```
+
+Gender/age are a feed filter only; the server does not enforce them. Older app builds still join with the old client transaction until the rules are tightened (plan PR 5); the rules still allow it.
 
 Admin remove only updates `players` / `playerCount`. It does not refund or void the ticket.
 
@@ -463,7 +468,7 @@ Guests tap a card → `/events/:id` (`PublicEventScreen`, "Ingresa para unirte" 
 
 ### Cloud Functions (`functions/`)
 
-TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation` (callable) and `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel` (callable logic), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
+TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation` and `joinSession` (callables) and `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel` and `join` (callable logic, incl. join → cancel → rejoin), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
 
 ### Matchmaking
 
@@ -527,7 +532,7 @@ CreditApprovalScreen (superUser, queries Firestore directly)
 | `StorageService` | `profile_images/`, `group_images/`, `event_banners/` |
 | `ReceiptUploadService` | Pick image + `session_receipts/{sessionId}/` |
 
-Join uses a transaction so seat + debit + ticket stay atomic. Approval of credits in `CreditApprovalScreen` is **not** currently a single transaction — be careful if you extract it.
+Join runs in the `joinSession` callable (one server transaction: seat + debit + ledger + ticket). Approval of credits in `CreditApprovalScreen` is **not** currently a single transaction — be careful if you extract it.
 
 ---
 
@@ -649,7 +654,7 @@ Intended direction (from project guidelines):
 ## 14. Known pitfalls (read before you change money or seats)
 
 1. **Credits are a string on the user**, a double on the ledger. Always go through `UserModel.formatCredits` / `creditsValue`.
-2. **Join is transactional on the client; cancel is server-side.** There is no client `leaveSession` anymore. Admin remove still does not refund or void the ticket.
+2. **Join and cancel are server-side callables** (`joinSession`, `cancelParticipation`); the rules still allow the old client join until PR 5 tightens them. There is no client `leaveSession` anymore. Admin remove still does not refund or void the ticket.
 3. **Players live on the live session document.** Large games will hit document size / contention. A players subcollection (as in `docs/sessions.md`) is the eventual fix.
 4. **Two membership models.** Subcollections are source of truth. Do not revive `streamUserGroups` without writing `groups.members[]`.
 5. **Duplicate sport lists** in `HomeScreen`, `CreateGroupScreen`, `GroupEditScreen`. Extract a constant before adding a sport.

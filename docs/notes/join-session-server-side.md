@@ -1,6 +1,6 @@
 # Note: move `joinSession` (and credit approval) to the server
 
-Status: **future work**, planned for a later build after the events-marketplace PR. Not started.
+Status: **join shipped 2026-11-26** (callable `joinSession`, `functions/src/joinSession.ts`, emulator tests `functions/emulator-tests/join.test.mjs`). Still open: `approveCreditPurchase` (plan PR 4) and the rules tightening (plan PR 5). Decisions taken: gender/age stay a feed filter (not enforced); full stays an error (no waitlist yet).
 Written 2026-11-13, against branch `claude/transform-events-app-84e7e8`.
 
 ## Why

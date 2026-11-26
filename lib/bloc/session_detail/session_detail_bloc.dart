@@ -93,7 +93,7 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
     );
 
     try {
-      await sessionService.joinSession(currentState.session.id, currentUser);
+      await sessionService.joinSession(currentState.session.id);
       // The stream will automatically update the state with the new session data
     } catch (e) {
       emit(SessionDetailError(userMessage(e), session: currentState.session));

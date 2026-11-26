@@ -55,7 +55,7 @@ Services in use: Auth (email/password + Google), Firestore, Storage, Hosting.
 
 **Do not hand-edit:** `lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`.
 
-Rules (`firestore.rules`), indexes and Cloud Functions (`functions/`, TypeScript, region `southamerica-east1`) are in git but **deployed by hand** (order: rules → functions → backfill → hosting; see README). `cancelParticipation` (callable) refunds server-side; `mirrorPublicEvent` (Firestore trigger) projects public `liveSessions` into `publicEvents`. Join and credit approval are still client writes. Treat that as a known risk; do not loosen it further. Identity-document locks live in `documents/` (see docs/ARCHITECTURE.md); `firestore.rules` is the single source for rules, so never deploy it without first diffing against the console.
+Rules (`firestore.rules`), indexes and Cloud Functions (`functions/`, TypeScript, region `southamerica-east1`) are in git but **deployed by hand** (order: rules → functions → backfill → hosting; see README). `joinSession` (callable) joins server-side (balance, seats, ledger, ticket in one transaction); `cancelParticipation` (callable) refunds server-side; `mirrorPublicEvent` (Firestore trigger) projects public `liveSessions` into `publicEvents`. Credit approval is still a client write, and the rules still allow the old client join until they are tightened. Treat that as a known risk; do not loosen it further. Identity-document locks live in `documents/` (see docs/ARCHITECTURE.md); `firestore.rules` is the single source for rules, so never deploy it without first diffing against the console.
 
 ### Collections that exist in code
 
@@ -102,13 +102,13 @@ New primary destinations go in `GoRouter`. Update the table in `docs/ARCHITECTUR
 | Auth | `AuthBloc` + `AuthService` | Email, Google, password reset, optional group code on register |
 | Profile | `UserBloc` | Name, photo, gender/age, sports |
 | Groups | `GroupBloc` / `GroupDetailBloc` / `GroupEditBloc` | Create, join by 6-char code, roles `owner`/`admin`/`member` |
-| Sessions | `CreateSessionBloc`, `SessionBloc`, `SessionDetailBloc` | Template + first live session; join is a Firestore transaction |
+| Sessions | `CreateSessionBloc`, `SessionBloc`, `SessionDetailBloc` | Template + first live session; join is the `joinSession` callable |
 | Matchmaking | `SessionService.getAllUpcomingSessions` | Sport, gender, age, optional geohash radius |
 | Credits | `CreditBloc` + Yape | Pending purchase; `superUser` approves in `CreditApprovalScreen` |
 | Tickets | `TicketService`, `MyTicketsBloc`, `ValidateTicketBloc` | Created atomically on join; validate via token URL; a cancelled ticket is deleted |
 | Events feed | `EventsFeedBloc`, `PublicEventBloc` | Public feed with sport/district/day-part/price/format filters; guests allowed; Home leads with it |
 
-Join transaction (`SessionService.joinSession`): check seats + balance → debit credits → ledger spend → append player → write ticket. Cancel: `SessionDetailBloc` `CancelParticipation` → `SessionService.cancelParticipation` → callable `cancelParticipation` frees the seat, deletes the ticket and refunds in full (once per ledger `spend` row, capped at the event price) when the event is 24 h or more away (server time); otherwise no refund. Cancelling after the event started is rejected. Admin remove (`removeUserFromSession`) does **not** refund. There is no client-side leave.
+Join (`SessionService.joinSession` → callable `joinSession`): server checks access, start time, seats and balance → debit → ledger spend → append player → write ticket; a retry returns the existing ticket. Cancel: `SessionDetailBloc` `CancelParticipation` → `SessionService.cancelParticipation` → callable `cancelParticipation` frees the seat, deletes the ticket and refunds in full (once per ledger `spend` row, capped at the event price) when the event is 24 h or more away (server time); otherwise no refund. Cancelling after the event started is rejected. Admin remove (`removeUserFromSession`) does **not** refund. There is no client-side leave.
 
 Live payment path is **manual Yape**, not the stub `PaymentService` / Mercado Pago samples. Details: [docs/PAYMENT_SYSTEM.md](docs/PAYMENT_SYSTEM.md).
 
@@ -186,6 +186,6 @@ Version: `1.0.7+10` (`pubspec.yaml`). Dart SDK `^3.13.0`.
 
 **Done:** auth (email + Google + reset), profiles, groups + roles, session create/join, matchmaking (sport/gender/age/distance), Yape credits + admin approval, tickets + QR validation, public events feed (guests), cancel with refund (Cloud Function), responsive shell, Firebase Hosting.
 
-**Not done / leftover:** automated payment gateway, recurring sessions, waitlist, refund on organizer deletion / admin removal, email verification, more tests (blocs, widgets), locking `users.credits` / `liveSessions` rules, moving join/credits server-side, aligning remaining screens on GoRouter.
+**Not done / leftover:** automated payment gateway, recurring sessions, waitlist, refund on organizer deletion / admin removal, email verification, more tests (blocs, widgets), locking `users.credits` / `liveSessions` rules, moving credit approval server-side, aligning remaining screens on GoRouter.
 
 Pitfalls and full flows: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).

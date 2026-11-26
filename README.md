@@ -120,6 +120,7 @@ dart run flutter_launcher_icons
 
 `functions/` is a TypeScript (Node 22, Firebase Functions v2) package in region `southamerica-east1`:
 
+- `joinSession` — callable; joins the caller (balance, seats, ledger, ticket in one transaction).
 - `cancelParticipation` — callable; cancels the caller's spot and refunds in full when the event is 24 h or more away.
 - `mirrorPublicEvent` — Firestore trigger; keeps `publicEvents/{id}` (public, no `players`) in sync with public `liveSessions`.
 
@@ -128,7 +129,7 @@ cd functions
 npm install
 npm run build
 npm test            # unit tests
-npm run test:emulator   # emulator tests (needs Java): rules, cancelParticipation, trigger, backfill
+npm run test:emulator   # emulator tests (needs Java): rules, cancelParticipation, joinSession, trigger, backfill
 ```
 
 ## Weekly events script
@@ -182,7 +183,7 @@ android/ ios/ web/          # Platform shells and Firebase / Maps config
 1. Skim `lib/main.dart` — providers, auth redirect, route table.
 2. Read `lib/models/user_model.dart`, `group_model.dart`, `session_model.dart`, `ticket_model.dart`, `credit_history_model.dart`.
 3. Follow one vertical slice end to end, for example **join session**:
-   `SessionDetailScreen` → `SessionDetailBloc` → `SessionService.joinSession` (transaction: credits + players + ticket).
+   `SessionDetailScreen` → `SessionDetailBloc` → `SessionService.joinSession` → callable `joinSession` (server transaction: credits + players + ticket).
 4. Then read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the data model, roles, and current pitfalls.
 
 ## Support / conventions
