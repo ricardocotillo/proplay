@@ -4,9 +4,12 @@ class TicketUrlBuilder {
   // Firebase Hosting default domain for project proplay-eac23.
   static const String _baseUrl = 'https://proplayapp.com';
 
-  static String buildValidationUrl(String validationToken) {
-    return '$_baseUrl/validate-ticket?token=$validationToken';
-  }
+  /// The id lets an organizer read that one ticket: a token-only query can't
+  /// pass the tickets read rule for anyone but a superUser.
+  static String buildValidationUrl(String ticketId, String validationToken) =>
+      Uri.parse('$_baseUrl/validate-ticket')
+          .replace(queryParameters: {'id': ticketId, 'token': validationToken})
+          .toString();
 }
 
 /// Public link to an event (`/events/:id`, readable by guests).

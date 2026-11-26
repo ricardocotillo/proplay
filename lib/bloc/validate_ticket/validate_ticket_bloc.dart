@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:proplay/bloc/validate_ticket/validate_ticket_event.dart';
 import 'package:proplay/bloc/validate_ticket/validate_ticket_state.dart';
@@ -41,7 +42,10 @@ class ValidateTicketBloc
     }
 
     try {
-      final ticket = await ticketService.getTicketByToken(token);
+      final ticket = await ticketService.getTicketByToken(
+        token,
+        ticketId: event.ticketId,
+      );
       if (ticket == null) {
         emit(const ValidateTicketNotFound());
         return;
@@ -93,6 +97,20 @@ class ValidateTicketBloc
 
       emit(
         ValidateTicketLoaded(ticket: ticket, isOwnerOrAdmin: isOwnerOrAdmin),
+      );
+    } on FirebaseException catch (e) {
+      // The rules only let the holder and the event's organizers read a
+      // ticket, and a deleted (cancelled) one is denied the same way, so one
+      // message covers "missing" and "not allowed". An old token-only QR also
+      // lands here for an organizer.
+      emit(
+        ValidateTicketError(
+          e.code == 'permission-denied'
+              ? 'Este ticket no existe, fue cancelado o no tienes permisos '
+                    'para validarlo. Si el QR es antiguo, pide al jugador que '
+                    'abra su ticket de nuevo.'
+              : e.toString(),
+        ),
       );
     } catch (e) {
       emit(ValidateTicketError(e.toString()));

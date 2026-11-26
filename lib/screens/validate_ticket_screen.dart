@@ -13,9 +13,14 @@ import 'package:proplay/services/user_service.dart';
 import 'package:proplay/utils/auth_helper.dart';
 
 class ValidateTicketScreen extends StatelessWidget {
+  final String? ticketId;
   final String? token;
 
-  const ValidateTicketScreen({super.key, required this.token});
+  const ValidateTicketScreen({
+    super.key,
+    required this.ticketId,
+    required this.token,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +32,7 @@ class ValidateTicketScreen extends StatelessWidget {
         groupService: GroupService(userService: UserService()),
         sessionService: SessionService(),
         currentUser: currentUser,
-      )..add(LoadTicketByToken(token)),
+      )..add(LoadTicketByToken(token, ticketId: ticketId)),
       child: Scaffold(
         appBar: AppBar(title: const Text('Validar Ticket')),
         body: BlocConsumer<ValidateTicketBloc, ValidateTicketState>(

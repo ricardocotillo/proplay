@@ -303,6 +303,13 @@ const roster = (uid) => getDocs(query(collection(as(uid), 'tickets'), where('ses
 await t('group owner reads the event roster tickets (query)', () => assertSucceeds(roster('gowner')));
 await t('event creator (plain member) reads the event roster tickets (query)', () => assertSucceeds(roster('creator')));
 await t('a plain member cannot read the roster tickets', () => assertFails(roster('plainm')));
+// The QR scan: a token-only query can't be proven safe for an organizer (rules are not filters),
+// so the QR carries the ticket id and the scanner reads that one document.
+await env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), 'tickets/gt_s_p3'), {...ticket('p3'), sessionId: 'gt_s', groupId: 'gt1', validationToken: 'qr-tok'}));
+await t('[QR] organizer token-only query is denied (old QR lookup)', () => assertFails(getDocs(query(collection(as('gowner'), 'tickets'), where('validationToken', '==', 'qr-tok')))));
+await t('[QR] group owner reads the scanned ticket by id', () => assertSucceeds(getDoc(doc(as('gowner'), 'tickets/gt_s_p3'))));
+await t('[QR] event creator reads the scanned ticket by id', () => assertSucceeds(getDoc(doc(as('creator'), 'tickets/gt_s_p3'))));
+await t('[QR] a plain member cannot read the scanned ticket by id', () => assertFails(getDoc(doc(as('plainm'), 'tickets/gt_s_p3'))));
 await t('event creator validates a valid ticket', () => assertSucceeds(updateDoc(doc(as('creator'), 'tickets/gt_s_p1'), {status: 'used', usedAt: ts(), validatedBy: 'creator'})));
 await t('a plain member cannot validate', () => assertFails(updateDoc(doc(as('plainm'), 'tickets/gt_s_p2'), {status: 'used', usedAt: ts(), validatedBy: 'plainm'})));
 await t('the creator cannot undo a check-in from the client (checkInPlayer does)', () => assertFails(updateDoc(doc(as('creator'), 'tickets/gt_s_p1'), {status: 'valid', usedAt: null, validatedBy: null})));
