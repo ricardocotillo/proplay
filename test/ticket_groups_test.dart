@@ -32,6 +32,14 @@ void main() {
     expect(r.past.map((t) => t.id), ['yesterday', 'lastWeek']);
   });
 
+  test('a game ending exactly now is past', () {
+    final r = splitTickets([
+      ticket('justEnded', now.subtract(const Duration(hours: 2))),
+    ], now);
+    expect(r.upcoming, isEmpty);
+    expect(r.past.single.id, 'justEnded');
+  });
+
   test('a game in progress is still upcoming', () {
     final r = splitTickets([
       ticket('live', now.subtract(const Duration(hours: 1))),

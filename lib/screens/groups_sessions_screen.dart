@@ -147,16 +147,21 @@ class GroupsSessionsScreen extends StatelessWidget {
                           background: Container(
                             alignment: Alignment.centerRight,
                             padding: const EdgeInsets.only(right: 20.0),
-                            color: Colors.red,
-                            child: const Row(
+                            color: AppColors.error,
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                Icon(Icons.delete, color: Colors.white),
-                                SizedBox(width: 8),
+                                Icon(
+                                  Icons.delete,
+                                  color: Theme.of(context).colorScheme.onError,
+                                ),
+                                const SizedBox(width: 8),
                                 Text(
                                   'Eliminar',
                                   style: TextStyle(
-                                    color: Colors.white,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onError,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),

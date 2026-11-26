@@ -160,7 +160,7 @@ class _AvatarMenu extends StatelessWidget {
         const PopupMenuItem(value: 'profile', child: Text('Editar perfil')),
         const PopupMenuItem(
           value: 'history',
-          child: Text('Historial de créditos'),
+          child: Text('Historial de saldo'),
         ),
         if (user.superUser)
           const PopupMenuItem(
@@ -199,6 +199,9 @@ class _AvatarMenu extends StatelessWidget {
             onPressed: () {
               Navigator.pop(dialogContext);
               context.read<AuthBloc>().add(AuthLogoutRequested());
+              // Not `/login?from=<this page>`: the next account must not
+              // land on this user's page. `/` resolves to `/welcome`.
+              context.go('/');
             },
             child: Text(
               'Cerrar Sesión',

@@ -16,6 +16,10 @@ void main() {
       '/login?from=%2Fvalidate-ticket%3Ftoken%3Dabc',
     );
     expect(authRedirect(loggedIn: false, location: '/group/x'), '/login');
+    expect(
+      authRedirect(loggedIn: false, location: '/tickets', target: '//evil.com'),
+      '/login',
+    );
   });
 
   test('guest may see public routes', () {

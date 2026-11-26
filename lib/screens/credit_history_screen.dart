@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:proplay/models/user_model.dart';
 import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/models/credit_history_model.dart';
 import 'package:proplay/utils/auth_helper.dart';
@@ -179,7 +180,7 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Historial de Créditos')),
+      appBar: AppBar(title: const Text('Historial de saldo')),
       body: _creditHistory.isEmpty && !_isLoading
           ? Center(
               child: Column(
@@ -188,7 +189,7 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
                   Icon(Icons.history, size: 64, color: AppColors.muted),
                   const SizedBox(height: 16),
                   Text(
-                    'No hay historial de créditos',
+                    'Aún no tienes movimientos de saldo',
                     style: TextStyle(fontSize: 16, color: AppColors.muted),
                   ),
                 ],
@@ -246,7 +247,7 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
                             ? 'Reembolso: ${history.sessionTitle ?? ""}'
                             : history.entryType == 'adjustment'
                             ? 'Ajuste: ${history.notes ?? ""}'
-                            : '${history.creditAmount} Créditos',
+                            : 'Recarga de S/ ${UserModel.formatCredits(history.creditAmount)}',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -260,7 +261,7 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
                               history.entryType == 'refund' ||
                               history.entryType == 'adjustment')
                             Text(
-                              '${history.creditAmount} créditos',
+                              'S/ ${UserModel.formatCredits(history.creditAmount)}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.w500,
                               ),
