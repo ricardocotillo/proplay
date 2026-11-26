@@ -52,6 +52,16 @@ class RemoveUserFromSession extends SessionDetailEvent {
   List<Object?> get props => [userId];
 }
 
+/// Join the waitlist of a full event (free; nothing is charged yet).
+class JoinWaitlist extends SessionDetailEvent {
+  const JoinWaitlist();
+}
+
+/// Leave the waitlist, or decline a seat that was offered.
+class LeaveWaitlist extends SessionDetailEvent {
+  const LeaveWaitlist();
+}
+
 /// Organizer marks a player present or absent (check-in).
 class TogglePresence extends SessionDetailEvent {
   final String userId;

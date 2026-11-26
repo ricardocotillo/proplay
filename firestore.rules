@@ -262,6 +262,13 @@ service cloud.firestore {
 
       // Delete: only the cancelEvent function (it refunds every player).
       allow delete: if false;
+
+      // Waitlist: server-written (joinWaitlist / leaveWaitlist / joinSession
+      // and the offer logic); a user reads only their own entry. lateCancels
+      // has no rule: server-only.
+      match /waitlist/{uid} {
+        allow read: if signedIn() && request.auth.uid == uid;
+      }
     }
 
     // -------------------------

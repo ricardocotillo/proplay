@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:proplay/bloc/session_detail/session_detail_event.dart';
 import 'package:proplay/bloc/session_detail/session_detail_state.dart';
 import 'package:proplay/models/session_model.dart';
+import 'package:proplay/models/waitlist_entry_model.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/group_service.dart';
@@ -16,6 +18,8 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
   final UserModel currentUser;
   StreamSubscription<SessionModel>? _sessionSubscription;
   StreamSubscription<Set<String>>? _presenceSubscription;
+  StreamSubscription<WaitlistEntryModel?>? _waitlistSubscription;
+  WaitlistEntryModel? _waitlist;
   Set<String> _presentUids = const {};
   bool _presenceAvailable = true;
   bool _isOwnerOrAdmin = false;
@@ -35,6 +39,9 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
     on<RemoveUserFromSession>(_onRemoveUserFromSession);
     on<CancelEvent>(_onCancelEvent);
     on<TogglePresence>(_onTogglePresence);
+    on<JoinWaitlist>(_onJoinWaitlist);
+    on<LeaveWaitlist>(_onLeaveWaitlist);
+    on<_UpdateWaitlist>(_onUpdateWaitlist);
     on<_UpdatePresence>(_onUpdatePresence);
     on<_UpdateSessionState>(_onUpdateSessionState);
     on<_SessionError>(_onSessionError);
@@ -71,6 +78,18 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
         memberRole: role,
         superUser: currentUser.superUser,
       );
+
+      // Everyone follows their own place on the waitlist.
+      await _waitlistSubscription?.cancel();
+      _waitlist = null;
+      _waitlistSubscription = sessionService
+          .streamMyWaitlist(firstSession.id, currentUser.uid)
+          .listen(
+            (w) => add(_UpdateWaitlist(w)),
+            // No entry readable (rules, network): the page then shows the
+            // normal join bar; the server still enforces everything.
+            onError: (Object e) => debugPrint('waitlist stream: $e'),
+          );
 
       // Organizers also follow who is checked in.
       await _presenceSubscription?.cancel();
@@ -173,6 +192,7 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
         isOwnerOrAdmin: _isOwnerOrAdmin,
         presentUids: _presentUids,
         presenceAvailable: _presenceAvailable,
+        waitlist: _waitlist,
       ),
     );
   }
@@ -192,8 +212,57 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
           isOwnerOrAdmin: current.isOwnerOrAdmin,
           presentUids: event.uids,
           presenceAvailable: event.available,
+          waitlist: _waitlist,
         ),
       );
+    }
+  }
+
+  Future<void> _onUpdateWaitlist(
+    _UpdateWaitlist event,
+    Emitter<SessionDetailState> emit,
+  ) async {
+    _waitlist = event.entry;
+    final current = state;
+    if (current is SessionDetailLoaded) {
+      emit(
+        SessionDetailLoaded(
+          session: current.session,
+          isCurrentUserJoined: current.isCurrentUserJoined,
+          isOwnerOrAdmin: current.isOwnerOrAdmin,
+          presentUids: current.presentUids,
+          presenceAvailable: current.presenceAvailable,
+          waitlist: event.entry,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onJoinWaitlist(
+    JoinWaitlist event,
+    Emitter<SessionDetailState> emit,
+  ) => _waitlistCall(emit, (id) => sessionService.joinWaitlist(id));
+
+  Future<void> _onLeaveWaitlist(
+    LeaveWaitlist event,
+    Emitter<SessionDetailState> emit,
+  ) => _waitlistCall(emit, (id) => sessionService.leaveWaitlist(id));
+
+  Future<void> _waitlistCall(
+    Emitter<SessionDetailState> emit,
+    Future<void> Function(String sessionId) call,
+  ) async {
+    final current = state;
+    if (current is! SessionDetailLoaded) return;
+    try {
+      await call(current.session.id);
+      // The waitlist stream updates the page.
+    } catch (e) {
+      // Back to the newest page state (streams may have updated it during
+      // the call), not the one captured before it.
+      final latest = state is SessionDetailLoaded ? state : current;
+      emit(SessionDetailError(userMessage(e), session: current.session));
+      emit(latest);
     }
   }
 
@@ -221,6 +290,7 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
           isOwnerOrAdmin: current.isOwnerOrAdmin,
           presentUids: _presentUids,
           presenceAvailable: _presenceAvailable,
+          waitlist: _waitlist,
         ),
       );
     }
@@ -319,11 +389,21 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
   Future<void> close() {
     _sessionSubscription?.cancel();
     _presenceSubscription?.cancel();
+    _waitlistSubscription?.cancel();
     return super.close();
   }
 }
 
 // Internal events for handling stream updates
+class _UpdateWaitlist extends SessionDetailEvent {
+  final WaitlistEntryModel? entry;
+
+  const _UpdateWaitlist(this.entry);
+
+  @override
+  List<Object?> get props => [entry];
+}
+
 class _UpdatePresence extends SessionDetailEvent {
   final Set<String> uids;
 

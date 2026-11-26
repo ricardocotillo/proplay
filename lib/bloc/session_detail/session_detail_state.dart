@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:proplay/models/session_model.dart';
+import 'package:proplay/models/waitlist_entry_model.dart';
 
 abstract class SessionDetailState extends Equatable {
   const SessionDetailState();
@@ -30,12 +31,16 @@ class SessionDetailLoaded extends SessionDetailState {
   /// False when organizers' attendance could not be loaded.
   final bool presenceAvailable;
 
+  /// The user's place on the waitlist, or null.
+  final WaitlistEntryModel? waitlist;
+
   const SessionDetailLoaded({
     required this.session,
     required this.isCurrentUserJoined,
     this.isOwnerOrAdmin = false,
     this.presentUids = const {},
     this.presenceAvailable = true,
+    this.waitlist,
   });
 
   @override
@@ -45,6 +50,7 @@ class SessionDetailLoaded extends SessionDetailState {
     isOwnerOrAdmin,
     presentUids,
     presenceAvailable,
+    waitlist,
   ];
 }
 

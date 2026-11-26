@@ -5,6 +5,7 @@ import 'package:proplay/utils/error_message.dart';
 import 'package:proplay/models/cancel_result_model.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/session_template_model.dart';
+import 'package:proplay/models/waitlist_entry_model.dart';
 import 'package:proplay/utils/geohash_utils.dart';
 import 'package:proplay/utils/location_utils.dart';
 
@@ -674,6 +675,38 @@ class SessionService {
       }
       return SessionModel.fromMap(doc.id, doc.data()!);
     });
+  }
+
+  /// The user's own waitlist entry for an event, or null when not on it.
+  Stream<WaitlistEntryModel?> streamMyWaitlist(String sessionId, String uid) {
+    return _firestore
+        .collection('liveSessions')
+        .doc(sessionId)
+        .collection('waitlist')
+        .doc(uid)
+        .snapshots()
+        .map(
+          (doc) => doc.exists ? WaitlistEntryModel.fromMap(doc.data()!) : null,
+        );
+  }
+
+  /// Joins the waitlist of a full event (`joinWaitlist`). Nothing is charged
+  /// until a seat is offered and the user confirms with [joinSession].
+  Future<void> joinWaitlist(String sessionId) =>
+      _callWaitlist('joinWaitlist', sessionId);
+
+  /// Leaves the waitlist or declines an offer (`leaveWaitlist`).
+  Future<void> leaveWaitlist(String sessionId) =>
+      _callWaitlist('leaveWaitlist', sessionId);
+
+  Future<void> _callWaitlist(String name, String sessionId) async {
+    try {
+      await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
+          .httpsCallable(name)
+          .call({'sessionId': sessionId});
+    } on FirebaseFunctionsException catch (e) {
+      throw callableError(e);
+    }
   }
 
   /// Who is present: users whose ticket for [sessionId] is `used`. Only

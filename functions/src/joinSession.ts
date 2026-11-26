@@ -2,7 +2,11 @@ import {randomUUID} from 'node:crypto';
 import {onCall, HttpsError} from 'firebase-functions/v2/https';
 import {getFirestore, FieldValue, Timestamp} from 'firebase-admin/firestore';
 import {formatCredits} from './refundPolicy';
+import {getMessaging} from 'firebase-admin/messaging';
 import {joinError, roundCents, spendDocId} from './joinPolicy';
+import {
+  applyLateRefund, holdsOf, LateRefundPlan, notifyLateRefund, readLateRefund, readWaitlist,
+} from './waitlist';
 
 type Player = {uid?: string};
 
@@ -12,6 +16,10 @@ type Player = {uid?: string};
  * then debits the balance, writes the ledger `spend` row, appends the player
  * (built from the user doc, never the payload) and writes the ticket.
  * Retrying after a successful join returns the existing ticket, no charge.
+ *
+ * Waitlist: seats held by live offers count as taken for everyone but the
+ * person they are offered to; that person's join also removes them from the
+ * list and pays back the oldest late canceller (their seat was resold).
  */
 export const joinSession = onCall(async (request) => {
   if (!request.auth) {
@@ -29,7 +37,7 @@ export const joinSession = onCall(async (request) => {
   const ticketId = `${sessionId}_${uid}`;
   const ticketRef = db.doc(`tickets/${ticketId}`);
 
-  return db.runTransaction(async (tx) => {
+  const result = await db.runTransaction(async (tx) => {
     // ---- reads (all before any write) ----
     const sessionSnap = await tx.get(sessionRef);
     if (!sessionSnap.exists) {
@@ -40,9 +48,14 @@ export const joinSession = onCall(async (request) => {
     if (players.some((p) => p?.uid === uid)) {
       // Retry after a successful join: same ticket, no charge. A legacy
       // player without a ticket has nothing to return.
-      if ((await tx.get(ticketRef)).exists) return {ticketId, alreadyJoined: true};
+      if ((await tx.get(ticketRef)).exists) return {ticketId, alreadyJoined: true, lateRefund: null};
       throw new HttpsError('failed-precondition', 'Ya estás inscrito en este evento.');
     }
+
+    const nowMs = Date.now();
+    const waitlist = await readWaitlist(tx, db, sessionId);
+    const holds = holdsOf(waitlist, nowMs, uid);
+    const mine = waitlist.find((e) => e.uid === uid);
 
     const userSnap = await tx.get(userRef);
     if (!userSnap.exists) {
@@ -64,16 +77,20 @@ export const joinSession = onCall(async (request) => {
       typeof session.eventDate?.toDate === 'function' ? session.eventDate.toDate() : null;
     const error = joinError({
       eventDateMs: eventDate?.getTime() ?? null,
-      nowMs: Date.now(),
+      nowMs,
       isPrivate,
       isMember,
-      playerCount: players.length,
+      playerCount: players.length + holds,
       maxPlayers: num(session.maxPlayers),
       balance,
       cost: rawCost,
     });
     if (error) throw new HttpsError(error.code, error.message);
     const cost = roundCents(rawCost);
+    // Filling a seat from the waitlist pays back a late canceller.
+    const lateRefund: LateRefundPlan = mine
+      ? await readLateRefund(tx, db, sessionId, uid, session)
+      : null;
 
     // ---- writes ----
     const token = randomUUID();
@@ -95,7 +112,7 @@ export const joinSession = onCall(async (request) => {
       groupId: session.groupId ?? '',
       balanceBefore: balance,
       balanceAfter: newBalance,
-      notes: `Unirse a pichanga: ${session.title ?? ''}`,
+      notes: `Unirse al evento: ${session.title ?? ''}`,
     });
 
     const updatedPlayers = [
@@ -137,6 +154,11 @@ export const joinSession = onCall(async (request) => {
       userDocumentNumber: user.documentNumber ?? '',
     });
 
-    return {ticketId, alreadyJoined: false};
+    if (mine) tx.delete(mine.ref);
+    applyLateRefund(tx, lateRefund);
+
+    return {ticketId, alreadyJoined: false, lateRefund};
   });
+  if (result.lateRefund) await notifyLateRefund(db, getMessaging(), result.lateRefund);
+  return {ticketId: result.ticketId, alreadyJoined: result.alreadyJoined};
 });

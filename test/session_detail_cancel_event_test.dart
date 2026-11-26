@@ -6,6 +6,7 @@ import 'package:proplay/bloc/session_detail/session_detail_event.dart';
 import 'package:proplay/bloc/session_detail/session_detail_state.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/user_model.dart';
+import 'package:proplay/models/waitlist_entry_model.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/utils/manage_event.dart';
@@ -43,6 +44,26 @@ class _FakeSessions implements SessionService {
       if (deleted) throw Exception('Evento no encontrado.');
       yield _session;
     }
+  }
+
+  final waitlist = StreamController<WaitlistEntryModel?>.broadcast();
+  final waitlistCalls = <String>[];
+  Object? waitlistError;
+
+  @override
+  Stream<WaitlistEntryModel?> streamMyWaitlist(String sessionId, String uid) =>
+      waitlist.stream;
+
+  @override
+  Future<void> joinWaitlist(String sessionId) async {
+    if (waitlistError != null) throw waitlistError!;
+    waitlistCalls.add('join:$sessionId');
+  }
+
+  @override
+  Future<void> leaveWaitlist(String sessionId) async {
+    if (waitlistError != null) throw waitlistError!;
+    waitlistCalls.add('leave:$sessionId');
   }
 
   final presence = StreamController<Set<String>>.broadcast();
@@ -256,5 +277,70 @@ void main() {
     await _settle();
     expect((states.last as SessionDetailLoaded).presenceAvailable, isTrue);
     await bloc.close();
+  });
+
+  test('the user\'s waitlist place flows into the page state', () async {
+    final sessions = _FakeSessions();
+    final (bloc, states) = await _loaded(sessions, role: 'member');
+    expect((states.last as SessionDetailLoaded).waitlist, isNull);
+
+    sessions.waitlist.add(const WaitlistEntryModel(status: 'waiting'));
+    await _settle();
+    expect((states.last as SessionDetailLoaded).waitlist?.status, 'waiting');
+
+    final until = DateTime.now().add(const Duration(minutes: 30));
+    sessions.waitlist.add(
+      WaitlistEntryModel(status: 'offered', offerExpiresAt: until),
+    );
+    await _settle();
+    final entry = (states.last as SessionDetailLoaded).waitlist!;
+    expect(entry.isHolding(DateTime.now()), isTrue);
+
+    sessions.waitlist.add(null); // joined or left
+    await _settle();
+    expect((states.last as SessionDetailLoaded).waitlist, isNull);
+    await bloc.close();
+  });
+
+  test(
+    'join and leave the waitlist call the server; errors keep the page',
+    () async {
+      final sessions = _FakeSessions();
+      final (bloc, states) = await _loaded(sessions, role: 'member');
+      bloc.add(const JoinWaitlist());
+      bloc.add(const LeaveWaitlist());
+      await _settle();
+      expect(sessions.waitlistCalls, ['join:s1', 'leave:s1']);
+
+      sessions.waitlistError = Exception('Aún hay cupos: únete directamente.');
+      bloc.add(const JoinWaitlist());
+      await _settle();
+      expect(
+        states.whereType<SessionDetailError>().last.message,
+        'Aún hay cupos: únete directamente.',
+      );
+      expect(states.last, isA<SessionDetailLoaded>());
+      // the page keeps showing the newest waitlist data after the error
+      sessions.waitlistError = null;
+      sessions.waitlist.add(const WaitlistEntryModel(status: 'waiting'));
+      await _settle();
+      expect((states.last as SessionDetailLoaded).waitlist?.status, 'waiting');
+      await bloc.close();
+    },
+  );
+
+  test('an offer holds a seat only until it expires', () {
+    final now = DateTime(2026, 11, 26, 12);
+    final live = WaitlistEntryModel(
+      status: 'offered',
+      offerExpiresAt: now.add(const Duration(minutes: 1)),
+    );
+    expect(live.isHolding(now), isTrue);
+    expect(live.isHolding(now.add(const Duration(minutes: 2))), isFalse);
+    expect(const WaitlistEntryModel(status: 'waiting').isHolding(now), isFalse);
+    expect(
+      WaitlistEntryModel.fromMap({'status': 'waiting'}).offerExpiresAt,
+      isNull,
+    );
   });
 }

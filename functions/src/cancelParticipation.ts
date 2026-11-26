@@ -1,4 +1,6 @@
 import {onCall, HttpsError} from 'firebase-functions/v2/https';
+import {getMessaging} from 'firebase-admin/messaging';
+import {applyOffer, notifyOffer, planOffer, readWaitlist, recordLateCancel} from './waitlist';
 import {getFirestore, FieldValue} from 'firebase-admin/firestore';
 import {
   formatCredits,
@@ -34,7 +36,7 @@ export const cancelParticipation = onCall(async (request) => {
   const ticketRef = db.doc(`tickets/${sessionId}_${uid}`);
   const userRef = db.doc(`users/${uid}`);
 
-  return db.runTransaction(async (tx) => {
+  const result = await db.runTransaction(async (tx) => {
     // ---- reads (all before any write) ----
     const sessionSnap = await tx.get(sessionRef);
     if (!sessionSnap.exists) {
@@ -66,7 +68,11 @@ export const cancelParticipation = onCall(async (request) => {
     let userCredits = 0;
     let spendRef: FirebaseFirestore.DocumentReference | null = null;
     let refundRef: FirebaseFirestore.DocumentReference | null = null;
-    if (refundable) {
+    let lateSpendId: string | null = null;
+    // The seat that frees up may go to the waitlist.
+    const nowMs = now.getTime();
+    const waitlist = await readWaitlist(tx, db, sessionId);
+    {
       // The ticket's pricePaid and token are client-written, so the refund is
       // keyed to the ledger `spend` row instead and each row refunds once.
       const spends = await tx.get(
@@ -83,7 +89,8 @@ export const cancelParticipation = onCall(async (request) => {
         refunded: d.get('refundedAt') != null,
       }));
       const spend = pickUnrefundedSpend(rows);
-      if (spend) {
+      if (spend && !refundable) lateSpendId = spend.id; // paid back if the waitlist fills it
+      if (spend && refundable) {
         const ref = db.doc(`creditHistory/${refundDocId(spend.id)}`);
         if (!isPaidRefund((await tx.get(ref)).data(), uid)) {
           amount = refundAmount(spend.creditAmount, session.costPerPlayer);
@@ -97,9 +104,19 @@ export const cancelParticipation = onCall(async (request) => {
       }
     }
 
-    // ---- writes ----
     const remaining = players.filter((p) => p?.uid !== uid);
+    const offer = await planOffer(tx, db, waitlist, {
+      maxPlayers: Number(session.maxPlayers) || 0,
+      playersAfter: remaining.length,
+      eventMs: eventDate.getTime(),
+      nowMs,
+      cost: Number(session.costPerPlayer) || 0,
+    });
+
+    // ---- writes ----
     tx.update(sessionRef, {players: remaining, playerCount: remaining.length});
+    applyOffer(tx, offer, nowMs);
+    if (lateSpendId) recordLateCancel(tx, db, sessionId, uid, lateSpendId);
 
     // Deleted (not marked cancelled): a holder cannot revive a cancelled ticket.
     if (ticket) tx.delete(ticketRef);
@@ -126,6 +143,8 @@ export const cancelParticipation = onCall(async (request) => {
       });
     }
 
-    return {refunded: amount > 0, amount};
+    return {refunded: amount > 0, amount, offer, title: String(session.title ?? '')};
   });
+  await notifyOffer(db, getMessaging(), result.offer, sessionId, result.title, Date.now());
+  return {refunded: result.refunded, amount: result.amount};
 });
