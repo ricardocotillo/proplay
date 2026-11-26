@@ -13,6 +13,6 @@ class EventScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => context.watchUser != null
-      ? SessionDetailScreen(sessionId: eventId)
+      ? SessionDetailScreen(key: ValueKey(eventId), sessionId: eventId)
       : PublicEventScreen(eventId: eventId);
 }

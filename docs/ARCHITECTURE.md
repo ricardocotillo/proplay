@@ -125,7 +125,7 @@ While `AuthBloc` is still `AuthInitial`, a spinner `MaterialApp` is shown (no ro
 | `/events` | `events` | `EventsFeedScreen` — public feed, **open to guests** |
 | `/events/:id` | `event-detail` | `EventScreen` — the one event page: `SessionDetailScreen` (players, join, cancel, organizer tools) when signed in, `PublicEventScreen` (read-only `publicEvents`) for guests; **open to guests** |
 | `/tickets/:id` | `ticket-detail` | `TicketDetailScreen` (ticket id `{sessionId}_{userId}`) |
-| `/group/:id/create-event` | `create-event` | `CreateSessionScreen` (group owners who are superUsers) |
+| `/group/:id/create-event` | `create-event` | `CreateSessionScreen` (superUsers who are owner/admin of the group; others see "Publicar eventos está disponible…" with a back button; `canCreateEvent` in `lib/utils/manage_event.dart`) |
 | `/create-group` | `create-group` | `CreateGroupScreen` |
 | `/edit-profile` | `edit-profile` | `EditProfileScreen` |
 | `/purchase-credits` | `purchase-credits` | `PurchaseCreditsScreen` |
@@ -218,7 +218,7 @@ Defined in `lib/utils/auth_helper.dart`. After a write that changes the user doc
 `responsive_framework` breakpoints in `main.dart` (Tailwind-ish): mobile `<640`, SM, tablet, desktop `>=1024`, XL, 2XL, 4K.
 
 - Mobile: `AppDrawer` (end drawer).
-- Desktop (above tablet): `AppShell` renders `AppTopBar` (brand, Inicio / Eventos / Mis tickets, wallet, avatar menu; guests get Ingresar / Crear cuenta) above every page of the `ShellRoute`; pages keep their own app bar, flattened by the shell. Below desktop the shell renders the page unchanged.
+- Desktop (above tablet): `AppShell` renders `AppTopBar` (brand, Inicio / Eventos / Mis partidos, wallet, avatar menu; guests get Ingresar / Crear cuenta) above every page of the `ShellRoute`; pages keep their own app bar, flattened by the shell. Below desktop the shell renders the page unchanged.
 - Sport photos: `assets/images/sports/{sport}-{1..3}.webp` (sources in `CREDITS.md` there); `sportPhoto(sport, seed)` in `lib/utils/sports.dart` picks a stable variant per event id for events without a banner.
 - Helpers: `ResponsiveLayout`, `ResponsiveConstrainedBox` in `lib/widgets/responsive_layout.dart`.
 

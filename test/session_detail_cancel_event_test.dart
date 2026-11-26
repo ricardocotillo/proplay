@@ -183,4 +183,12 @@ void main() {
     expect(can(role: 'admin'), isTrue);
     expect(can(su: true), isTrue);
   });
+
+  test('canCreateEvent needs a superUser who is owner or admin', () {
+    expect(canCreateEvent(superUser: true, groupRole: 'owner'), isTrue);
+    expect(canCreateEvent(superUser: true, groupRole: 'admin'), isTrue);
+    expect(canCreateEvent(superUser: true, groupRole: 'member'), isFalse);
+    expect(canCreateEvent(superUser: true, groupRole: null), isFalse);
+    expect(canCreateEvent(superUser: false, groupRole: 'owner'), isFalse);
+  });
 }

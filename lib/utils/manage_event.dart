@@ -11,3 +11,8 @@ bool canManageEvent({
     (creatorId != null && creatorId.isNotEmpty && creatorId == uid) ||
     memberRole == 'owner' ||
     memberRole == 'admin';
+
+/// Publishing is curated: a verified organizer (superUser) who is owner or
+/// admin of the group. Rules and functions stay the real guard.
+bool canCreateEvent({required bool superUser, required String? groupRole}) =>
+    superUser && (groupRole == 'owner' || groupRole == 'admin');

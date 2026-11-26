@@ -1,8 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:proplay/bloc/session/session_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:proplay/bloc/session/session_bloc.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
@@ -11,6 +11,7 @@ import 'package:proplay/utils/ticket_url_builder.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:proplay/utils/app_paths.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/utils/manage_event.dart';
 
 class GroupsSessionsScreen extends StatelessWidget {
   final String groupId;
@@ -34,9 +35,10 @@ class GroupsSessionsScreen extends StatelessWidget {
               builder: (context, state) {
                 // Only show add button if user is superUser AND owner or admin
                 if (state is SessionLoaded &&
-                    currentUser?.superUser == true &&
-                    (state.currentUserRole == 'owner' ||
-                        state.currentUserRole == 'admin')) {
+                    canCreateEvent(
+                      superUser: currentUser?.superUser == true,
+                      groupRole: state.currentUserRole,
+                    )) {
                   return Builder(
                     builder: (builderContext) => TextButton(
                       child: Text(
