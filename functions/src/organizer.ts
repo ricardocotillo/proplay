@@ -154,6 +154,10 @@ export const removePlayer = onCall(async (request) => {
   if (!id(sessionId) || !id(userId)) {
     throw new HttpsError('invalid-argument', 'Solicitud inválida.');
   }
+  // Leaving yourself goes through cancelParticipation (24 h refund window).
+  if (userId === uid) {
+    throw new HttpsError('failed-precondition', 'Usa «Cancelar inscripción» para salir del evento.');
+  }
   const db = getFirestore();
   const ticketRef: DocumentReference = db.doc(`tickets/${sessionId}_${userId}`);
 

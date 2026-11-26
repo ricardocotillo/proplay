@@ -23,8 +23,11 @@ export const reviewError = (entry: Record<string, unknown> | undefined): ReviewE
     return {code: 'failed-precondition', message: 'Esta solicitud ya fue revisada.'};
   }
   const amount = entry.creditAmount;
+  const paid = entry.amountPaid;
+  // Packages charge a fee on top, so saldo never exceeds what was paid.
   if (entry.entryType !== 'purchase' || typeof entry.userId !== 'string' || !entry.userId ||
-      typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
+      typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0 ||
+      typeof paid !== 'number' || !(paid >= amount)) {
     return {code: 'failed-precondition', message: 'Esta solicitud no es válida.'};
   }
   return null;

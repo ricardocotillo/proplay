@@ -19,6 +19,16 @@ class EventsFeedStarted extends EventsFeedEvent {
   List<Object?> get props => [lat, lng];
 }
 
+/// Drop an event from the loaded feed (the organizer just cancelled it).
+class EventsFeedEventRemoved extends EventsFeedEvent {
+  final String eventId;
+
+  const EventsFeedEventRemoved(this.eventId);
+
+  @override
+  List<Object?> get props => [eventId];
+}
+
 class EventsFeedFiltersChanged extends EventsFeedEvent {
   final FeedFilters filters;
 

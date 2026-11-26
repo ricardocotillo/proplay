@@ -163,12 +163,19 @@ class _Details extends StatelessWidget {
               const SizedBox(width: 12),
               if (signedIn)
                 FilledButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => SessionDetailScreen(sessionId: event.id),
-                    ),
-                  ),
+                  onPressed: () async {
+                    final cancelled = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            SessionDetailScreen(sessionId: event.id),
+                      ),
+                    );
+                    // The event no longer exists: back to the feed.
+                    if (cancelled == true && context.mounted) {
+                      context.go('/events');
+                    }
+                  },
                   child: const Text('Ver evento y unirme'),
                 )
               else

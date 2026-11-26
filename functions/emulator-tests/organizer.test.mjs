@@ -212,6 +212,14 @@ await t('remove refuses a used ticket, a member caller and a started event', asy
   assert.equal(await credits(a), '20.00');
 });
 
+await t('organizer cannot remove themselves (late-cancel refund bypass)', async () => {
+  const {id, a} = await seedEvent({hoursAhead: 2});
+  await db.doc(`liveSessions/${id}`).update({creatorId: a});
+  await rejects(run(removePlayer, a, {sessionId: id, userId: a}),
+    'failed-precondition', /Cancelar inscripción/);
+  assert.equal(await credits(a), '20.00');
+});
+
 await t('remove on a free event refunds nothing', async () => {
   const {id, owner, a} = await seedEvent({cost: 0});
   assert.deepEqual(await run(removePlayer, owner, {sessionId: id, userId: a}),

@@ -21,6 +21,10 @@ class EventsFeedBloc extends Bloc<EventsFeedEvent, EventsFeedState> {
     : super(const EventsFeedLoading()) {
     on<EventsFeedStarted>(_onStarted);
     on<EventsFeedFiltersChanged>(_onFiltersChanged);
+    on<EventsFeedEventRemoved>((event, emit) {
+      _all = _all.where((s) => s.id != event.eventId).toList();
+      if (state is EventsFeedLoaded) emit(_build());
+    });
   }
 
   Future<void> _onStarted(

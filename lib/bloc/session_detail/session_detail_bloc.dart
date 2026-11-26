@@ -8,6 +8,7 @@ import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/utils/error_message.dart';
+import 'package:proplay/utils/manage_event.dart';
 
 class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
   final SessionService sessionService;
@@ -49,16 +50,22 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
           .streamSession(event.sessionId)
           .first;
 
-      // Check if current user is owner/admin of the group
+      // Same rule as the server: creator, group owner/admin or superUser.
+      String? role;
       try {
-        final group = await groupService.getGroup(firstSession.groupId);
-        if (group != null) {
-          _isOwnerOrAdmin = group.createdBy == currentUser.uid;
-        }
-      } catch (e) {
-        // If we can't fetch group, default to false
-        _isOwnerOrAdmin = false;
+        role = await groupService.getMemberRole(
+          firstSession.groupId,
+          currentUser.uid,
+        );
+      } catch (_) {
+        role = null;
       }
+      _isOwnerOrAdmin = canManageEvent(
+        uid: currentUser.uid,
+        creatorId: firstSession.creatorId,
+        memberRole: role,
+        superUser: currentUser.superUser,
+      );
 
       // Stream the session for real-time updates
       _sessionSubscription = sessionService
@@ -210,6 +217,23 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
         ),
       );
     } catch (e) {
+      // A timeout can arrive after the server already deleted the event; its
+      // stream error was swallowed above, so check before showing the error.
+      final gone = await sessionService
+          .streamSession(currentState.session.id)
+          .first
+          .then((_) => false, onError: (_) => true);
+      if (gone) {
+        await _sessionSubscription?.cancel();
+        emit(
+          SessionDetailEventCancelled(
+            session: currentState.session,
+            refunded: 0,
+            total: 0,
+          ),
+        );
+        return;
+      }
       _cancellingEvent = false;
       emit(SessionDetailError(userMessage(e), session: currentState.session));
     }

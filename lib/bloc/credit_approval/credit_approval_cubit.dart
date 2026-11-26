@@ -67,9 +67,14 @@ class CreditApprovalCubit extends Cubit<CreditApprovalState> {
         ),
       );
     } catch (e) {
+      // Another admin may have reviewed it: reload so the row doesn't linger.
+      var items = state.items;
+      try {
+        items = await _service.getPendingPurchases();
+      } catch (_) {}
       emit(
         CreditApprovalState(
-          items: state.items,
+          items: items,
           message: userMessage(e),
           isError: true,
         ),

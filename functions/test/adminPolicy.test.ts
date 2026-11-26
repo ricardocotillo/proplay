@@ -14,8 +14,9 @@ test('creator, group owner/admin and superUser manage; members and strangers do 
 });
 
 test('only a valid pending purchase can be reviewed', () => {
-  const ok = {status: 'pending', entryType: 'purchase', userId: 'u1', creditAmount: 20};
+  const ok = {status: 'pending', entryType: 'purchase', userId: 'u1', creditAmount: 20, amountPaid: 21};
   assert.equal(reviewError(ok), null);
+  assert.equal(reviewError({...ok, amountPaid: 20}), null);
   assert.equal(reviewError(undefined)?.code, 'not-found');
   for (const status of ['approved', 'rejected', 'completed']) {
     assert.match(reviewError({...ok, status})!.message, /ya fue revisada/);
@@ -23,6 +24,7 @@ test('only a valid pending purchase can be reviewed', () => {
   for (const bad of [
     {entryType: 'spend'}, {userId: ''}, {userId: 7}, {creditAmount: 0},
     {creditAmount: -5}, {creditAmount: '20'}, {creditAmount: NaN},
+    {amountPaid: 10}, {amountPaid: undefined}, {amountPaid: '21'},
   ]) {
     assert.match(reviewError({...ok, ...bad})!.message, /no es válida/, JSON.stringify(bad));
   }

@@ -398,7 +398,7 @@ GroupDetailBloc loads members by fetching each user doc
   owner/admin can toggle admin ↔ member or remove
 ```
 
-`SessionDetailBloc` treats "owner/admin" as `group.createdBy == currentUser.uid` only. Ticket validation is stricter and also accepts `role == admin` and `superUser`. Align these if you change permissions.
+`SessionDetailBloc` decides who manages an event with `canManageEvent` (`lib/utils/manage_event.dart`), the same rule as the server (`functions/src/adminPolicy.ts`): the event `creatorId`, a group owner/admin (member role) or a superUser. Keep the two in sync.
 
 ### Sessions
 
@@ -539,7 +539,7 @@ CreditApprovalScreen (superUser) → CreditApprovalCubit → callable reviewCred
 | `StorageService` | `profile_images/`, `group_images/`, `event_banners/` |
 | `ReceiptUploadService` | Pick image + `session_receipts/{sessionId}/` |
 
-Join runs in the `joinSession` callable (one server transaction: seat + debit + ledger + ticket). Credit approval runs in the `reviewCreditPurchase` callable (one transaction; a second approve fails with "ya fue revisada").
+Join runs in the `joinSession` callable (one server transaction: seat + debit + ledger + ticket). Credit approval runs in the `reviewCreditPurchase` callable (one transaction; a second approve fails with "ya fue revisada"). Old builds still approve from the client; the rules allow that only while the row is `pending`, so they can never credit an already-reviewed row. `reviewCreditPurchase` also rejects a row whose `creditAmount` exceeds `amountPaid`.
 
 ---
 
