@@ -31,7 +31,10 @@ TicketModel _ticket() => TicketModel(
 
 class _Tickets implements TicketService {
   @override
-  Future<TicketModel?> getTicketByToken(String token) async => _ticket();
+  Future<TicketModel?> getTicketByToken(
+    String token, {
+    String? ticketId,
+  }) async => _ticket();
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

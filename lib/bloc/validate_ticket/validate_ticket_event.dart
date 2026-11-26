@@ -7,14 +7,16 @@ abstract class ValidateTicketEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-/// Look up a ticket by the token encoded in the scanned QR URL
+/// Look up a ticket by the id and token encoded in the scanned QR URL.
+/// Old QR codes carry only the token.
 class LoadTicketByToken extends ValidateTicketEvent {
   final String? token;
+  final String? ticketId;
 
-  const LoadTicketByToken(this.token);
+  const LoadTicketByToken(this.token, {this.ticketId});
 
   @override
-  List<Object?> get props => [token];
+  List<Object?> get props => [token, ticketId];
 }
 
 /// Mark the loaded ticket as used (owner/admin only)

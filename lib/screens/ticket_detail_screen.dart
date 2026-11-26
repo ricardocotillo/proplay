@@ -29,6 +29,7 @@ class TicketDetailScreen extends StatelessWidget {
           }
 
           final url = TicketUrlBuilder.buildValidationUrl(
+            ticket.id,
             ticket.validationToken,
           );
 

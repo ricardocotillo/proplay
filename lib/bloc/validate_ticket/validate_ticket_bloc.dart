@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:proplay/bloc/validate_ticket/validate_ticket_event.dart';
 import 'package:proplay/bloc/validate_ticket/validate_ticket_state.dart';
@@ -41,7 +42,10 @@ class ValidateTicketBloc
     }
 
     try {
-      final ticket = await ticketService.getTicketByToken(token);
+      final ticket = await ticketService.getTicketByToken(
+        token,
+        ticketId: event.ticketId,
+      );
       if (ticket == null) {
         emit(const ValidateTicketNotFound());
         return;
@@ -93,6 +97,15 @@ class ValidateTicketBloc
 
       emit(
         ValidateTicketLoaded(ticket: ticket, isOwnerOrAdmin: isOwnerOrAdmin),
+      );
+    } on FirebaseException catch (e) {
+      // The rules only let the holder and the event's organizers read it.
+      emit(
+        ValidateTicketError(
+          e.code == 'permission-denied'
+              ? 'No tienes permisos para validar este ticket'
+              : e.toString(),
+        ),
       );
     } catch (e) {
       emit(ValidateTicketError(e.toString()));

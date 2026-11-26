@@ -33,7 +33,19 @@ class TicketService {
         });
   }
 
-  Future<TicketModel?> getTicketByToken(String token) async {
+  /// With [ticketId] (current QR) reads that one ticket, which the rules
+  /// allow for the event's organizers; the token must match. Without it (old
+  /// QR) queries by token, which the rules allow only for a superUser.
+  Future<TicketModel?> getTicketByToken(
+    String token, {
+    String? ticketId,
+  }) async {
+    if (ticketId != null && ticketId.isNotEmpty) {
+      final doc = await ticketRef(ticketId).get();
+      final data = doc.data();
+      if (data == null || data['validationToken'] != token) return null;
+      return TicketModel.fromMap(doc.id, data);
+    }
     try {
       final snapshot = await _firestore
           .collection(ticketsCollection)

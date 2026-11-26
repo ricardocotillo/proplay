@@ -54,7 +54,7 @@ import 'package:proplay/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Real paths (/events/x, /validate-ticket?token=) instead of /#/...: the
+  // Real paths (/events/x, /validate-ticket?id=&token=) instead of /#/...: the
   // ticket QR and shared event links are plain URLs.
   usePathUrlStrategy();
   // Google sign-in shows the authDomain to the user. Serve the auth handler
@@ -239,6 +239,7 @@ class _MyAppState extends State<MyApp> {
                           path: 'validate-ticket',
                           name: 'validate-ticket',
                           builder: (context, state) => ValidateTicketScreen(
+                            ticketId: state.uri.queryParameters['id'],
                             token: state.uri.queryParameters['token'],
                           ),
                         ),

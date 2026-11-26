@@ -16,7 +16,7 @@ ProPlay connects athletes in Peru with group and public sports sessions.
 | **Session template** | The "recipe" written when someone creates an event. |
 | **Live session** | The joinable instance shown on Home / Sessions / group pages. |
 | **Saldo** (credits) | In-app balance stored on the user; 1 credit = S/ 1. Users only ever see "saldo" in S/ (formerly "pro coins"). Packages are sold by Yape with a fee ("incluye comisión"). Support WhatsApp for organizer verification: `AppConstants.supportWhatsApp`. |
-| **Ticket** | Proof of join. QR + `https://proplayapp.com/validate-ticket?token=...`. |
+| **Ticket** | Proof of join. QR + `https://proplayapp.com/validate-ticket?id=...&token=...`. |
 | **Super user** | Admin flag on the user document. Can approve Yape purchases and validate any ticket. |
 
 Supported sports (canonical `value` strings — keep them identical everywhere):
@@ -105,7 +105,7 @@ Feature BLoCs (`SessionBloc`, `SessionDetailBloc`, `CreateSessionBloc`, `GroupDe
 
 Redirect rules:
 
-- Unauthenticated users may only visit `/welcome`, `/login` and `/registration`. A guest on `/` goes to `/welcome`; a guest on any other gated deep link (e.g. the ticket QR `/validate-ticket?token=`) goes to `/login?from=<that link>` and returns to it after signing in.
+- Unauthenticated users may only visit `/welcome`, `/login` and `/registration`. A guest on `/` goes to `/welcome`; a guest on any other gated deep link (e.g. the ticket QR `/validate-ticket?id=&token=`) goes to `/login?from=<that link>` and returns to it after signing in.
 - URLs are real paths (`usePathUrlStrategy()` in `main`), not `/#/...`: the ticket QR and shared event links (`https://proplayapp.com/events/<id>`) depend on it. Hosting rewrites `**` to `index.html`.
 - Authenticated users hitting those three routes go to `?from=` when it is a safe in-app path (`safeFrom` in `lib/utils/auth_redirect.dart`), else `/`. Build auth links with `authPath('/login' | '/registration', from: ...)`: the guest event CTA and the desktop top bar (on `/events/:id`) do, so a guest returns to the event after signing up or in.
 - Custom scheme `proplay://success|pending|failure` remaps to `/payment/...` (Mercado Pago return path; not the live Yape flow).
@@ -137,7 +137,7 @@ While `AuthBloc` is still `AuthInitial`, a spinner `MaterialApp` is shown (no ro
 | `/payment/pending` | `payment-pending` | `PaymentPendingScreen` |
 | `/payment/failure` | `payment-failure` | `PaymentFailureScreen` |
 | `/tickets` | `tickets` | `MyTicketsScreen` ("Mis partidos") |
-| `/validate-ticket` | `validate-ticket` | `ValidateTicketScreen` (`?token=`) |
+| `/validate-ticket` | `validate-ticket` | `ValidateTicketScreen` (`?id=&token=`) |
 | `/group/:id` | `group-detail` | `GroupDetailScreenLoader` |
 | `/group/:id/edit` | `group-edit` | `GroupEditScreenLoader` |
 | `/group/:id/info` | `group-info` | `GroupInfoScreenLoader` |
@@ -155,7 +155,7 @@ Only `SessionMapScreen` (a one-off map view). Event, ticket and create-event pag
 
 When you add a new primary destination, register it in `GoRouter` and navigate with `context.go` / `context.push`. Keep `Navigator.push` only for true one-off sheets if you must.
 
-Ticket validation URL builder: `lib/utils/ticket_url_builder.dart` → `https://proplayapp.com/validate-ticket?token=<uuid>`. Same file: `eventShareUrl` / `whatsappShareUri` for `ShareEventButton` (public events only; private ones have no guest page).
+Ticket validation URL builder: `lib/utils/ticket_url_builder.dart` → `https://proplayapp.com/validate-ticket?id=<ticketId>&token=<uuid>`. The scanner reads the ticket by id (the rules let organizers `get` it) and checks the token; a token-only query is allowed only for a superUser (rules are not filters), so old token-only QRs work only for a superUser. Same file: `eventShareUrl` / `whatsappShareUri` for `ShareEventButton` (public events only; private ones have no guest page).
 
 ---
 
@@ -570,7 +570,7 @@ CreditApprovalScreen (superUser) → CreditApprovalCubit → callable reviewCred
 1. Built by `TicketService.buildTicketForJoin` (pure) during join.
 2. `MyTicketsBloc` streams the user's tickets.
 3. `TicketDetailScreen` shows QR for `TicketUrlBuilder.buildValidationUrl`.
-4. `/validate-ticket?token=` → `ValidateTicketBloc`.
+4. `/validate-ticket?id=&token=` → `ValidateTicketBloc`.
 5. Validator must be the event creator, group owner, group `admin`, or `superUser` (`canManageEvent`). If the role or event lookup fails, the screen says so and asks to retry instead of showing "no permission".
 6. `validateTicket` transaction: `valid` → `used` + `usedAt` + `validatedBy`. The rules allow this for the group owner/admin, the event's creator or a superUser; undoing it is the `checkInPlayer` function.
 
