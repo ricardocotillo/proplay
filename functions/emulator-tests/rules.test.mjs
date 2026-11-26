@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {initializeTestEnvironment, assertSucceeds, assertFails} from '@firebase/rules-unit-testing';
-import {doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, Timestamp, writeBatch, serverTimestamp} from 'firebase/firestore';
+import {collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, Timestamp, writeBatch, serverTimestamp} from 'firebase/firestore';
 
 const RULES = fileURLToPath(new URL('../../firestore.rules', import.meta.url));
 const env = await initializeTestEnvironment({
@@ -263,6 +263,17 @@ await t('top-up as a debit denied', () => assertFails(setDoc(doc(alice, 'creditH
 await t('top-up in another currency denied', () => assertFails(setDoc(doc(alice, 'creditHistory/p_usd'), purchase({currency: 'USD'}))));
 await seedTicket('s1_v3', ticket('v3'));
 await t('staff validation still works under the lock', () => assertSucceeds(updateDoc(doc(owner, 'tickets/s1_v3'), {status: 'used', usedAt: ts(), validatedBy: 'owner1'})));
+
+// --- "De tus grupos" query: events of the groups the user belongs to ---
+await env.withSecurityRulesDisabled(async (c) => {
+  const d = c.firestore();
+  await setDoc(doc(d, 'groups/gq1/members/qmember'), {role: 'member'});
+  await setDoc(doc(d, 'liveSessions/gq_priv'), {groupId: 'gq1', isPrivate: true, eventDate: Timestamp.fromMillis(Date.now() + 1e7)});
+  await setDoc(doc(d, 'liveSessions/gq_other'), {groupId: 'gq2', isPrivate: true, eventDate: Timestamp.fromMillis(Date.now() + 1e7)});
+});
+const groupEvents = (uid, ids) => getDocs(query(collection(as(uid), 'liveSessions'), where('groupId', 'in', ids), where('eventDate', '>=', Timestamp.now())));
+await t('member can query upcoming events of their own groups (incl. private)', () => assertSucceeds(groupEvents('qmember', ['gq1'])));
+await t('querying a group the user is not in is denied', () => assertFails(groupEvents('qmember', ['gq1', 'gq2'])));
 
 await env.cleanup();
 const failed = results.filter((r) => !r).length;

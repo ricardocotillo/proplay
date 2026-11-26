@@ -62,7 +62,7 @@ class GroupInfoScreen extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.calendar_today),
-            title: const Text('Sesiones'),
+            title: const Text('Eventos'),
             onTap: () {
               Navigator.push(
                 context,

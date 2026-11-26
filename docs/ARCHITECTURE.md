@@ -126,6 +126,8 @@ While `AuthBloc` is still `AuthInitial`, a spinner `MaterialApp` is shown (no ro
 | `/events/:id` | `event-detail` | `EventScreen` — the one event page: `SessionDetailScreen` (players, join, cancel, organizer tools) when signed in, `PublicEventScreen` (read-only `publicEvents`) for guests; **open to guests** |
 | `/tickets/:id` | `ticket-detail` | `TicketDetailScreen` (ticket id `{sessionId}_{userId}`) |
 | `/group/:id/create-event` | `create-event` | `CreateSessionScreen` (superUsers who are owner/admin of the group; others see "Publicar eventos está disponible…" with a back button; `canCreateEvent` in `lib/utils/manage_event.dart`) |
+| `/groups` | `groups` | `GroupsScreen` — the user's groups, create and join by code |
+| `/profile` | `profile` | `ProfileScreen` — saldo, edit profile, saldo history, approve saldo (superUser), log out |
 | `/create-group` | `create-group` | `CreateGroupScreen` |
 | `/edit-profile` | `edit-profile` | `EditProfileScreen` |
 | `/purchase-credits` | `purchase-credits` | `PurchaseCreditsScreen` |
@@ -217,8 +219,8 @@ Defined in `lib/utils/auth_helper.dart`. After a write that changes the user doc
 
 `responsive_framework` breakpoints in `main.dart` (Tailwind-ish): mobile `<640`, SM, tablet, desktop `>=1024`, XL, 2XL, 4K.
 
-- Mobile: `AppDrawer` (end drawer).
-- Desktop (above tablet): `AppShell` renders `AppTopBar` (brand, Inicio / Eventos / Mis partidos, wallet, avatar menu; guests get Ingresar / Crear cuenta) above every page of the `ShellRoute`; pages keep their own app bar, flattened by the shell. Below desktop the shell renders the page unchanged.
+- Mobile and tablet: `AppBottomNav` for signed-in users on the top level of a destination (`showsBottomNav`); no drawer. Destinations: Explorar, Mis partidos, Grupos, Perfil (`lib/utils/shell_nav.dart`).
+- Desktop (above tablet): `AppShell` renders `AppTopBar` (brand, the four destinations, wallet, avatar menu; guests get Ingresar / Crear cuenta) above every page of the `ShellRoute`; pages keep their own app bar, flattened by the shell.
 - Sport photos: `assets/images/sports/{sport}-{1..3}.webp` (sources in `CREDITS.md` there); `sportPhoto(sport, seed)` in `lib/utils/sports.dart` picks a stable variant per event id for events without a banner.
 - Helpers: `ResponsiveLayout`, `ResponsiveConstrainedBox` in `lib/widgets/responsive_layout.dart`.
 
@@ -467,7 +469,7 @@ EventsFeedBloc.EventsFeedStarted → SessionService.getPublicEvents (publicEvent
     gender/age only for signed-in users) → sortFeed (distance if GPS, else date)
 ```
 
-Guests tap a card → `/events/:id` (`PublicEventScreen`, "Ingresa para unirte" → `/login?from=/events/:id`; login's "Regístrate" link keeps `from`, so sign-in and sign-up both return to the event). Signed-in users get the full page at the same URL (`EventScreen` switches on `watchUser`, so a guest who signs in lands on it); its bottom bar shows Unirse / Evento finalizado / Evento lleno / "Te faltan S/ X" + Recargar (`joinBlock` in `lib/utils/join_availability.dart`, display only). Errors reach the UI through `userMessage` (`lib/utils/error_message.dart`). Home leads with the same `EventsFeedView`, independent of the groups load; "Mis grupos" sits below it.
+Guests tap a card → `/events/:id` (`PublicEventScreen`, "Ingresa para unirte" → `/login?from=/events/:id`; login's "Regístrate" link keeps `from`, so sign-in and sign-up both return to the event). Signed-in users get the full page at the same URL (`EventScreen` switches on `watchUser`, so a guest who signs in lands on it); its bottom bar shows Unirse / Evento finalizado / Evento lleno / "Te faltan S/ X" + Recargar (`joinBlock` in `lib/utils/join_availability.dart`, display only). Errors reach the UI through `userMessage` (`lib/utils/error_message.dart`). Home leads with the same `EventsFeedView`, independent of the groups load; "De tus grupos" (the next events of the user's groups, `GroupEventsRow`) sits below it; the groups list lives on the Grupos tab.
 
 ### Cloud Functions (`functions/`)
 
@@ -562,7 +564,7 @@ Join runs in the `joinSession` callable (one server transaction: seat + debit + 
 | `CreditHistoryScreen` | User ledger (direct Firestore) |
 | `CreditApprovalScreen` | Super-user queue of pending Yape top-ups: approve / reject (`CreditApprovalCubit`) |
 
-Shared widgets: `AppDrawer`, `AppShell`, `AppTopBar`, `Brand`, `WalletIndicator` (balance in S/, plus Yape top-ups awaiting approval via `PendingCreditsCubit`), `ShareEventButton`, `UpcomingEvents`, `CachedImage` (`PlatformCachedImage`), `LocationPicker`, `StepIndicator`.
+Shared widgets: `AppShell`, `AppTopBar`, `AppBottomNav`, `GroupEventsRow` ("De tus grupos" on Home), `Brand`, `WalletIndicator` (balance in S/, plus Yape top-ups awaiting approval via `PendingCreditsCubit`), `ShareEventButton`, `UpcomingEvents`, `CachedImage` (`PlatformCachedImage`), `LocationPicker`, `StepIndicator`.
 
 ---
 

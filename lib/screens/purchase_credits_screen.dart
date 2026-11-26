@@ -505,7 +505,7 @@ class _PackageSelectionView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Elige cuánto saldo quieres recargar (1 crédito = S/ 1).',
+            'Elige cuánto saldo quieres recargar.',
             style: Theme.of(context).textTheme.bodyMedium
                 ?.copyWith(color: AppColors.muted),
           ),

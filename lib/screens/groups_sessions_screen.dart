@@ -29,7 +29,7 @@ class GroupsSessionsScreen extends StatelessWidget {
       )..add(LoadSessions(groupId)),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Pichangas'),
+          title: const Text('Eventos'),
           actions: [
             BlocBuilder<SessionBloc, SessionState>(
               builder: (context, state) {
@@ -82,7 +82,7 @@ class GroupsSessionsScreen extends StatelessWidget {
                   children: [
                     if (showNotice) const _CuratedNotice(),
                     const Expanded(
-                      child: Center(child: Text('No hay próximas pichangas.')),
+                      child: Center(child: Text('No hay próximos eventos.')),
                     ),
                   ],
                 );
@@ -125,7 +125,7 @@ class GroupsSessionsScreen extends StatelessWidget {
               return Center(child: Text('Error: ${state.message}'));
             }
             return const Center(
-              child: Text('Las próximas pichangas se mostrarán aquí.'),
+              child: Text('Los próximos eventos se mostrarán aquí.'),
             );
           },
         ),

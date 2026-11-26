@@ -1,3 +1,5 @@
+> **Historical plan.** `AppDrawer` and `lib/mp.dart` no longer exist (navigation is the bottom bar / top bar, saldo approval is on the Perfil tab). Kept for the gateway work; re-check file names before following it.
+
 # Plan: Migrate from Manual Credit Approval to Payment Gateway
 
 ## Context

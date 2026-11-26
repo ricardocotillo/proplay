@@ -34,7 +34,7 @@ class CreditHistoryService {
         'confirmationCode': confirmationCode,
       });
     } catch (e) {
-      throw Exception('Error al crear solicitud de crédito: $e');
+      throw Exception('Error al crear la solicitud de recarga: $e');
     }
   }
 

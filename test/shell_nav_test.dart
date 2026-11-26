@@ -2,29 +2,118 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:proplay/utils/shell_nav.dart';
 
 void main() {
-  group('activeNavPath', () {
-    test('root', () => expect(activeNavPath('/'), '/'));
-    test('events, detail and the /sessions alias', () {
-      for (final l in ['/events', '/events/abc', '/sessions']) {
-        expect(activeNavPath(l), '/events', reason: l);
+  group('activeSection', () {
+    test('explore: home, feed, event pages and the /sessions alias', () {
+      for (final l in ['/', '/events', '/events/abc', '/sessions']) {
+        expect(activeSection(l), 'explore', reason: l);
       }
     });
-    test('tickets', () => expect(activeNavPath('/tickets'), '/tickets'));
-    test('other pages and look-alike prefixes have no active item', () {
+    test('tickets', () {
+      expect(activeSection('/tickets'), 'tickets');
+      expect(activeSection('/tickets/s_u'), 'tickets');
+    });
+    test('groups: list, create, group pages', () {
       for (final l in [
+        '/groups',
+        '/create-group',
         '/group/1',
+        '/group/1/create-event',
+        '/group/1/edit',
+      ]) {
+        expect(activeSection(l), 'groups', reason: l);
+      }
+    });
+    test('profile: hub, edit, saldo pages', () {
+      for (final l in [
+        '/profile',
         '/edit-profile',
         '/purchase-credits',
+        '/credit-history',
+        '/credit-approval',
+      ]) {
+        expect(activeSection(l), 'profile', reason: l);
+      }
+    });
+    test('look-alike prefixes belong to no section', () {
+      for (final l in [
         '/eventsfoo',
         '/tickets-x',
+        '/groupsfoo',
+        '/validate-ticket',
       ]) {
-        expect(activeNavPath(l), isNull, reason: l);
+        expect(activeSection(l), isNull, reason: l);
       }
     });
   });
 
-  test('guests only see Eventos', () {
-    expect(navFor(signedIn: false).map((e) => e.path), ['/events']);
-    expect(navFor(signedIn: true), hasLength(3));
+  test('signed-in users get the four destinations, in order', () {
+    expect(navFor(signedIn: true).map((e) => e.label), [
+      'Explorar',
+      'Mis partidos',
+      'Grupos',
+      'Perfil',
+    ]);
+  });
+
+  test('guests only get Explorar, pointing at the public feed', () {
+    final nav = navFor(signedIn: false);
+    expect(nav.map((e) => e.path), ['/events']);
+    expect(nav.single.section, 'explore');
+  });
+
+  test('every destination has a unique section and a route-shaped path', () {
+    final nav = navFor(signedIn: true);
+    expect(nav.map((e) => e.section).toSet(), hasLength(4));
+    for (final item in nav) {
+      expect(item.path, startsWith('/'));
+      expect(activeSection(item.path), item.section);
+    }
+  });
+
+  test('bottom bar only on the top level of each destination', () {
+    for (final l in [
+      '/',
+      '/events',
+      '/sessions',
+      '/tickets',
+      '/groups',
+      '/profile',
+    ]) {
+      expect(showsBottomNav(l), isTrue, reason: l);
+    }
+    for (final l in [
+      '/events/a',
+      '/tickets/a',
+      '/group/1',
+      '/edit-profile',
+      '/purchase-credits',
+    ]) {
+      expect(showsBottomNav(l), isFalse, reason: l);
+    }
+  });
+
+  test('a trailing slash is the same location', () {
+    expect(activeSection('/tickets/'), 'tickets');
+    expect(activeSection('/groups/'), 'groups');
+    expect(showsBottomNav('/tickets/'), isTrue);
+    expect(showsBottomNav('/'), isTrue);
+    expect(activeSection('/'), 'explore');
+  });
+
+  test('every location that shows the bottom bar has a section', () {
+    for (final l in [
+      '/',
+      '/events',
+      '/sessions',
+      '/tickets',
+      '/groups',
+      '/profile',
+    ]) {
+      expect(showsBottomNav(l) && activeSection(l) != null, isTrue, reason: l);
+    }
+    for (final l in ['/validate-ticket', '/payment/success']) {
+      expect(showsBottomNav(l), isFalse, reason: l);
+      expect(activeSection(l), isNull, reason: l);
+    }
   });
 }

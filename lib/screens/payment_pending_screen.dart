@@ -30,7 +30,7 @@ class PaymentPendingScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Cuando se confirme, tus créditos aparecerán automáticamente en tu cuenta.',
+                'Cuando se confirme, tu saldo aparecerá automáticamente en tu cuenta.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.muted),
               ),
@@ -47,7 +47,7 @@ class PaymentPendingScreen extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () => context.go('/purchase-credits'),
-                  child: const Text('Volver a comprar créditos'),
+                  child: const Text('Volver a recargar saldo'),
                 ),
               ),
             ],

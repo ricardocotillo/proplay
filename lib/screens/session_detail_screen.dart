@@ -48,7 +48,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
       )..add(LoadSessionDetail(widget.sessionId)),
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Detalles de la Pichanga'),
+          title: const Text('Detalles del evento'),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () =>
@@ -428,7 +428,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                                   ),
                                   SizedBox(width: 8),
                                   Text(
-                                    'Ya estás inscrito en esta pichanga',
+                                    'Ya estás inscrito en este evento',
                                     style: TextStyle(
                                       color: AppColors.success,
                                       fontWeight: FontWeight.bold,
@@ -553,7 +553,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
         return ElevatedButton.icon(
           onPressed: () => _showJoinConfirmationDialog(context, session),
           icon: const Icon(Icons.add),
-          label: const Text('Unirse a la Pichanga'),
+          label: const Text('Unirse al evento'),
           style: buttonStyle,
         );
     }
@@ -703,7 +703,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Unirse a la Pichanga'),
+        title: const Text('Unirse al evento'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -825,8 +825,8 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Retirar jugador'),
         content: Text(
-          'Se retirará a ${player.firstName} ${player.lastName} de esta '
-          'pichanga y se le devolverá lo que pagó. No se puede deshacer.',
+          'Se retirará a ${player.firstName} ${player.lastName} de este '
+          'evento y se le devolverá lo que pagó. No se puede deshacer.',
         ),
         actions: [
           TextButton(

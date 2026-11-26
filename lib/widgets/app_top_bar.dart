@@ -1,8 +1,5 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:proplay/bloc/auth/auth_bloc.dart';
-import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
@@ -10,6 +7,7 @@ import 'package:proplay/utils/auth_redirect.dart';
 import 'package:proplay/utils/shell_nav.dart';
 import 'package:proplay/widgets/brand.dart';
 import 'package:proplay/widgets/cached_image.dart';
+import 'package:proplay/widgets/logout_dialog.dart';
 import 'package:proplay/widgets/wallet_indicator.dart';
 
 /// Desktop navigation bar shown on every screen by [AppShell].
@@ -24,7 +22,7 @@ class AppTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watchUser;
-    final active = activeNavPath(location);
+    final active = activeSection(location);
     return Container(
       height: 64,
       decoration: const BoxDecoration(
@@ -43,7 +41,7 @@ class AppTopBar extends StatelessWidget {
                 for (final item in navFor(signedIn: user != null))
                   _NavLink(
                     label: item.label,
-                    active: item.path == active,
+                    active: item.section == active,
                     onTap: () => context.go(item.path),
                   ),
                 const Spacer(),
@@ -147,26 +145,23 @@ class _AvatarMenu extends StatelessWidget {
       onSelected: (value) {
         switch (value) {
           case 'profile':
-            context.push('/edit-profile');
+            context.go('/profile');
           case 'history':
             context.push('/credit-history');
           case 'approval':
             context.push('/credit-approval');
           case 'logout':
-            _confirmLogout(context);
+            confirmLogout(context);
         }
       },
       itemBuilder: (_) => [
-        const PopupMenuItem(value: 'profile', child: Text('Editar perfil')),
+        const PopupMenuItem(value: 'profile', child: Text('Perfil')),
         const PopupMenuItem(
           value: 'history',
           child: Text('Historial de saldo'),
         ),
         if (user.superUser)
-          const PopupMenuItem(
-            value: 'approval',
-            child: Text('Aprobar créditos'),
-          ),
+          const PopupMenuItem(value: 'approval', child: Text('Aprobar saldo')),
         const PopupMenuDivider(),
         const PopupMenuItem(value: 'logout', child: Text('Cerrar sesión')),
       ],
@@ -181,35 +176,6 @@ class _AvatarMenu extends StatelessWidget {
               placeholder: (_, _) => fallback,
               errorWidget: (_, _, _) => fallback,
             ),
-    );
-  }
-
-  void _confirmLogout(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Cerrar Sesión'),
-        content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              context.read<AuthBloc>().add(AuthLogoutRequested());
-              // Not `/login?from=<this page>`: the next account must not
-              // land on this user's page. `/` resolves to `/welcome`.
-              context.go('/');
-            },
-            child: Text(
-              'Cerrar Sesión',
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -42,7 +42,7 @@ void main() {
   });
 
   test('nav highlights the section of an event or ticket page', () {
-    expect(activeNavPath(eventPath('e1')), activeNavPath('/events'));
-    expect(activeNavPath(ticketPath('e1_u1')), '/tickets');
+    expect(activeSection(eventPath('e1')), 'explore');
+    expect(activeSection(ticketPath('e1_u1')), 'tickets');
   });
 }

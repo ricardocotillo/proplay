@@ -35,6 +35,8 @@ import 'package:proplay/screens/group_edit_screen_loader.dart';
 import 'package:proplay/screens/group_info_screen_loader.dart';
 import 'package:proplay/screens/events_feed_screen.dart';
 import 'package:proplay/screens/event_screen.dart';
+import 'package:proplay/screens/groups_screen.dart';
+import 'package:proplay/screens/profile_screen.dart';
 import 'package:proplay/screens/create_session_screen.dart';
 import 'package:proplay/screens/ticket_detail_screen.dart';
 import 'package:proplay/screens/purchase_credits_screen.dart';
@@ -143,6 +145,16 @@ class _MyAppState extends State<MyApp> {
                           path: 'sessions',
                           name: 'sessions',
                           builder: (context, state) => const EventsFeedScreen(),
+                        ),
+                        GoRoute(
+                          path: 'groups',
+                          name: 'groups',
+                          builder: (context, state) => const GroupsScreen(),
+                        ),
+                        GoRoute(
+                          path: 'profile',
+                          name: 'profile',
+                          builder: (context, state) => const ProfileScreen(),
                         ),
                         GoRoute(
                           path: 'create-group',

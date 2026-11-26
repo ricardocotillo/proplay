@@ -85,11 +85,11 @@ Full field lists: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#7-firestore-data-m
 
 `go_router` in `lib/main.dart` is auth-gated. Unauthenticated users only see `/welcome` (landing), `/login`, `/registration` and the public feed `/events` + `/events/:id` (read-only, `publicEvents` only). Other deep links send guests to `/login?from=<link>`. URLs are real paths (`usePathUrlStrategy`), not `/#/`.
 
-Primary routes: `/welcome`, `/`, `/events`, `/events/:id`, `/sessions` (same feed), `/create-group`, `/edit-profile`, `/purchase-credits`, `/credit-history`, `/credit-approval` (super user), `/tickets`, `/tickets/:id`, `/validate-ticket`, `/group/:id`, `/group/:id/create-event`, `/group/:id/edit`, `/group/:id/info`, `/payment/{success,pending,failure}`.
+Primary routes: `/welcome`, `/`, `/events`, `/events/:id`, `/sessions` (same feed), `/create-group`, `/edit-profile`, `/groups`, `/profile`, `/purchase-credits`, `/credit-history`, `/credit-approval` (super user), `/tickets`, `/tickets/:id`, `/validate-ticket`, `/group/:id`, `/group/:id/create-event`, `/group/:id/edit`, `/group/:id/info`, `/payment/{success,pending,failure}`.
 
 `/events/:id` is the one event page (`EventScreen`): the full view (`SessionDetailScreen`) when signed in, the read-only public view for guests, switching in place on sign-in. Link to events, tickets and event creation with `eventPath` / `ticketPath` / `createEventPath` (`lib/utils/app_paths.dart`) and `context.push`. Only the session map is still `Navigator.push`.
 
-On desktop `/` and `/events*` render inside a `ShellRoute` (`AppShell` + `AppTopBar`); mobile keeps the drawer and per-screen app bars.
+Every primary route is inside a `ShellRoute` (`AppShell`): desktop gets `AppTopBar`, mobile gets a bottom bar (`AppBottomNav`) for signed-in users on the top level of each destination. The four destinations are Explorar (`/`, `/events`), Mis partidos (`/tickets`), Grupos (`/groups`), Perfil (`/profile`), defined once in `lib/utils/shell_nav.dart`. There is no drawer.
 
 New primary destinations go in `GoRouter`. Update the table in `docs/ARCHITECTURE.md`.
 
@@ -133,7 +133,7 @@ Flutter → package imports → `package:proplay/...`
 
 - `BlocBuilder` for rebuilds, `BlocListener` for snackbars/navigation, `BlocConsumer` when both.
 - Product copy is Spanish. Developer docs are English.
-- Theme primary: `#BA1B1D`. Dark theme only (`AppTheme.dark`). Responsive via `responsive_framework` (`ResponsiveLayout`, drawer on mobile vs `AppTopBar` on desktop).
+- Theme primary: `#BA1B1D`. Dark theme only (`AppTheme.dark`). Responsive via `responsive_framework` (`ResponsiveLayout`, bottom bar on mobile vs `AppTopBar` on desktop).
 - Before building or restyling UI read [docs/DESIGN.md](docs/DESIGN.md): colors and text come from the theme, headings use the bundled display font, event cards and skeletons share size constants.
 
 ### Adding work
