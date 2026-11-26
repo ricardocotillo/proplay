@@ -220,9 +220,11 @@ service cloud.firestore {
       // Read:
       // - If public session: any signed-in user can read
       // - If private session: only group members can read
+      // - The event's creator can always read it (door staff who left the group)
       allow read: if signedIn() && (
         resource.data.isPrivate == false ||
-        isGroupMember(resource.data.groupId)
+        isGroupMember(resource.data.groupId) ||
+        resource.data.get('creatorId', '') == request.auth.uid
       );
 
       // Create: only group owners (usually from template creation), empty,

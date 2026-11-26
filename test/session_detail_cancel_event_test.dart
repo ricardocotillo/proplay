@@ -233,6 +233,9 @@ void main() {
       states.whereType<SessionDetailError>().single.message,
       'Este jugador ya no está en el evento.',
     );
+    // The roster comes straight back: organizer controls stay available.
+    final last = states.last as SessionDetailLoaded;
+    expect(last.isOwnerOrAdmin, isTrue);
     await bloc.close();
 
     final memberSessions = _FakeSessions();
@@ -241,5 +244,17 @@ void main() {
     await _settle();
     expect(memberSessions.checkIns, isEmpty);
     await member.close();
+  });
+
+  test('a failed attendance stream marks it unavailable', () async {
+    final sessions = _FakeSessions();
+    final (bloc, states) = await _loaded(sessions);
+    sessions.presence.addError(Exception('denied'));
+    await _settle();
+    expect((states.last as SessionDetailLoaded).presenceAvailable, isFalse);
+    sessions.presence.add({'p1'});
+    await _settle();
+    expect((states.last as SessionDetailLoaded).presenceAvailable, isTrue);
+    await bloc.close();
   });
 }

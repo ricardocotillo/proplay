@@ -39,10 +39,14 @@ class _Tickets implements TicketService {
 
 class _Groups implements GroupService {
   final String? role;
-  _Groups(this.role);
+  final bool fail;
+  _Groups(this.role, {this.fail = false});
 
   @override
-  Future<String?> getMemberRole(String groupId, String userId) async => role;
+  Future<String?> getMemberRole(String groupId, String userId) async {
+    if (fail) throw Exception('network');
+    return role;
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -118,4 +122,36 @@ void main() {
       expect(await _canValidate(superUser: true), isTrue);
     },
   );
+
+  test('a failed lookup asks to retry; a real allow still wins', () async {
+    ValidateTicketBloc build({required bool failGroups, String? role}) =>
+        ValidateTicketBloc(
+          ticketService: _Tickets(),
+          groupService: _Groups(role, fail: failGroups),
+          sessionService: _Sessions(null),
+          currentUser: _user(),
+        );
+
+    final failing = build(failGroups: true)
+      ..add(const LoadTicketByToken('tok'));
+    final state = await failing.stream.firstWhere(
+      (s) => s is ValidateTicketError || s is ValidateTicketLoaded,
+    );
+    expect(state, isA<ValidateTicketError>());
+    expect((state as ValidateTicketError).message, contains('Inténtalo'));
+    await failing.close();
+
+    // Role lookup failed but the creator check still allows: no error.
+    final creator = ValidateTicketBloc(
+      ticketService: _Tickets(),
+      groupService: _Groups(null, fail: true),
+      sessionService: _Sessions('u1'),
+      currentUser: _user(),
+    )..add(const LoadTicketByToken('tok'));
+    final ok = await creator.stream.firstWhere(
+      (s) => s is ValidateTicketError || s is ValidateTicketLoaded,
+    );
+    expect((ok as ValidateTicketLoaded).isOwnerOrAdmin, isTrue);
+    await creator.close();
+  });
 }

@@ -275,6 +275,14 @@ const groupEvents = (uid, ids) => getDocs(query(collection(as(uid), 'liveSession
 await t('member can query upcoming events of their own groups (incl. private)', () => assertSucceeds(groupEvents('qmember', ['gq1'])));
 await t('querying a group the user is not in is denied', () => assertFails(groupEvents('qmember', ['gq1', 'gq2'])));
 
+// --- event creator reads their own event even outside the group ---
+await env.withSecurityRulesDisabled(async (c) => {
+  const d = c.firestore();
+  await setDoc(doc(d, 'liveSessions/cr_priv'), {groupId: 'gcr', isPrivate: true, creatorId: 'ex-member', costPerPlayer: 5});
+});
+await t('creator reads their private event without group membership', () => assertSucceeds(getDoc(doc(as('ex-member'), 'liveSessions/cr_priv'))));
+await t('a stranger still cannot read that private event', () => assertFails(getDoc(doc(as('stranger'), 'liveSessions/cr_priv'))));
+
 // --- event creator manages tickets like an owner/admin ---
 await env.withSecurityRulesDisabled(async (c) => {
   const d = c.firestore();

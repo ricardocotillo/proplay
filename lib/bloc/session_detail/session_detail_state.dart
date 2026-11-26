@@ -27,11 +27,15 @@ class SessionDetailLoaded extends SessionDetailState {
   /// Users checked in at the door (organizers only; empty for everyone else).
   final Set<String> presentUids;
 
+  /// False when organizers' attendance could not be loaded.
+  final bool presenceAvailable;
+
   const SessionDetailLoaded({
     required this.session,
     required this.isCurrentUserJoined,
     this.isOwnerOrAdmin = false,
     this.presentUids = const {},
+    this.presenceAvailable = true,
   });
 
   @override
@@ -40,6 +44,7 @@ class SessionDetailLoaded extends SessionDetailState {
     isCurrentUserJoined,
     isOwnerOrAdmin,
     presentUids,
+    presenceAvailable,
   ];
 }
 

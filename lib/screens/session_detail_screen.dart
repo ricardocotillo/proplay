@@ -197,6 +197,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
             final isJoined = isLoaded ? state.isCurrentUserJoined : false;
             final isOwnerOrAdmin = isLoaded ? state.isOwnerOrAdmin : false;
             final presentUids = isLoaded ? state.presentUids : const <String>{};
+            final presenceAvailable = !isLoaded || state.presenceAvailable;
 
             final players = session.players ?? [];
             final hasPlayers = players.isNotEmpty;
@@ -350,7 +351,9 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                                     8,
                                   ),
                                   child: Text(
-                                    isOwnerOrAdmin
+                                    isOwnerOrAdmin && !presenceAvailable
+                                        ? 'Asistencia no disponible'
+                                        : isOwnerOrAdmin
                                         ? 'Asistencia: '
                                               '${players.where((p) => presentUids.contains(p.uid)).length}'
                                               '/${players.length} presentes'
@@ -656,6 +659,9 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 FilterChip(
+                  tooltip: present
+                      ? 'Marcar ausente a ${player.firstName}'
+                      : 'Marcar presente a ${player.firstName}',
                   label: const Text('Presente'),
                   selected: present,
                   showCheckmark: true,

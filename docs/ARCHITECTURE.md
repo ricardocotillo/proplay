@@ -518,7 +518,7 @@ CreditApprovalScreen (superUser) → CreditApprovalCubit → callable reviewCred
 2. `MyTicketsBloc` streams the user's tickets.
 3. `TicketDetailScreen` shows QR for `TicketUrlBuilder.buildValidationUrl`.
 4. `/validate-ticket?token=` → `ValidateTicketBloc`.
-5. Validator must be group owner, group `admin`, or `superUser`.
+5. Validator must be the event creator, group owner, group `admin`, or `superUser` (`canManageEvent`). If the role or event lookup fails, the screen says so and asks to retry instead of showing "no permission".
 6. `validateTicket` transaction: `valid` → `used` + `usedAt` + `validatedBy`. The rules allow this for the group owner/admin, the event's creator or a superUser; undoing it is the `checkInPlayer` function.
 
 ---
