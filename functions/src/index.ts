@@ -11,3 +11,4 @@ export {cancelEvent, checkInPlayer, removePlayer} from './organizer';
 export {reviewCreditPurchase} from './reviewCreditPurchase';
 export {claimDeviceToken, notifyCreditApproved, sendReminders} from './reminders';
 export {expireWaitlistOffers, joinWaitlist, leaveWaitlist} from './waitlistCallables';
+export {autoCancelUnderfilled} from './minPlayers';

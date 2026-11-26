@@ -77,6 +77,7 @@ class SessionService {
       status: 'OPEN',
       playerCount: 0,
       maxPlayers: template.maxPlayers,
+      minPlayers: template.minPlayers,
       costPerPlayer: template.costPerPlayer ?? 0,
       isPrivate: template.isPrivate,
       sport: template.sport,

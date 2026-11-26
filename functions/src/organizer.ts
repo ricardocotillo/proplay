@@ -5,8 +5,8 @@ import {
 import {getMessaging} from 'firebase-admin/messaging';
 import {canManageEvent} from './adminPolicy';
 import {
-  applyLateRefund, applyOffer, notifyLateRefund, notifyOffer, planLateRefund, planOffer,
-  readLateCancels, readWaitlist,
+  applyLateRefund, applyOffer, LateRefundPlan, notifyLateRefund, notifyOffer, planLateRefund,
+  planOffer, readLateCancels, readWaitlist,
 } from './waitlist';
 import {roundCents} from './joinPolicy';
 import {
@@ -126,19 +126,30 @@ function applyRefunds(
   }
 }
 
-/**
- * Organizer cancels an event before it starts: every player gets their price
- * back, tickets are deleted, the event is deleted (the mirror trigger drops
- * the public copy).
- */
-export const cancelEvent = onCall(async (request) => {
-  const uid = callerOf(request);
-  const sessionId = request.data?.sessionId;
-  if (!id(sessionId)) throw new HttpsError('invalid-argument', 'Solicitud inválida.');
-  const db = getFirestore();
+export type CancelOutcome = {
+  refunded: number; total: number; late: LateRefundPlan[];
+  title: string; creatorId?: string;
+  /** Who was refunded, with how much (to tell them). */
+  refundedBy: {uid: string; amount: number}[];
+  waitlistUids: string[];
+};
 
-  const out = await db.runTransaction(async (tx) => {
-    const {sessionRef, session, players} = await loadManaged(tx, db, sessionId, uid);
+/**
+ * Cancels a whole event in one transaction: every player gets their price
+ * back, tickets are deleted, the waitlist ends, late cancellers are paid
+ * back, and the event is deleted (the mirror trigger drops the public copy).
+ * `load` decides who may do it and may throw to abort (the organizer check,
+ * or the auto-cancel "still underfilled" re-check).
+ */
+export async function cancelEventTx(
+  db: Firestore, sessionId: string,
+  load: (tx: Transaction) => Promise<{
+    sessionRef: DocumentReference; session: DocumentData; players: Player[];
+  }>,
+  notes: (session: DocumentData) => string,
+): Promise<CancelOutcome> {
+  return db.runTransaction(async (tx) => {
+    const {sessionRef, session, players} = await load(tx);
     const tickets = await tx.get(db.collection('tickets').where('sessionId', '==', sessionId));
     const uids = [...new Set(players.map((p) => p?.uid).filter(id))];
     // ponytail: one transaction, fine for pickup sizes (4 writes per player);
@@ -156,8 +167,7 @@ export const cancelEvent = onCall(async (request) => {
       if (r && l.amount > 0) l.balance = roundCents(r.balance + r.amount);
     }
 
-    applyRefunds(tx, db, sessionId, session, refunds,
-      `Reembolso: evento cancelado (${session.title ?? ''})`);
+    applyRefunds(tx, db, sessionId, session, refunds, notes(session));
     late.forEach((l) => applyLateRefund(tx, l));
     tickets.docs.forEach((d) => tx.delete(d.ref));
     waitlist.forEach((w) => tx.delete(w.ref));
@@ -167,8 +177,28 @@ export const cancelEvent = onCall(async (request) => {
       refunded: refunds.length,
       total: roundCents(refunds.reduce((s, r) => s + r.amount, 0)),
       late,
+      title: String(session.title ?? ''),
+      creatorId: typeof session.creatorId === 'string' ? session.creatorId : undefined,
+      refundedBy: refunds.map((r) => ({uid: r.uid, amount: r.amount})),
+      waitlistUids: waitlist.map((w) => w.uid),
     };
   });
+}
+
+/**
+ * Organizer cancels an event before it starts: every player gets their price
+ * back, tickets are deleted, the event is deleted.
+ */
+export const cancelEvent = onCall(async (request) => {
+  const uid = callerOf(request);
+  const sessionId = request.data?.sessionId;
+  if (!id(sessionId)) throw new HttpsError('invalid-argument', 'Solicitud inválida.');
+  const db = getFirestore();
+
+  const out = await cancelEventTx(
+    db, sessionId, (tx) => loadManaged(tx, db, sessionId, uid),
+    (s) => `Reembolso: evento cancelado (${s.title ?? ''})`,
+  );
   await Promise.all(out.late.map((l) => notifyLateRefund(db, getMessaging(), l)));
   return {refunded: out.refunded, total: out.total};
 });

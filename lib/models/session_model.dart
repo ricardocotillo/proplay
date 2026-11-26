@@ -13,6 +13,10 @@ class SessionModel extends Equatable {
   final String status;
   final int playerCount;
   final int maxPlayers;
+
+  /// Optional: below this many players 24 h before the start, the server
+  /// cancels the event and refunds everyone.
+  final int? minPlayers;
   final double costPerPlayer;
   final bool isPrivate;
   final List<SessionUserModel>? players;
@@ -46,6 +50,7 @@ class SessionModel extends Equatable {
     required this.status,
     required this.playerCount,
     required this.maxPlayers,
+    this.minPlayers,
     required this.costPerPlayer,
     this.isPrivate = false,
     this.players,
@@ -74,6 +79,7 @@ class SessionModel extends Equatable {
     status,
     playerCount,
     maxPlayers,
+    minPlayers,
     costPerPlayer,
     isPrivate,
     players,
@@ -101,6 +107,7 @@ class SessionModel extends Equatable {
     String? status,
     int? playerCount,
     int? maxPlayers,
+    int? minPlayers,
     double? costPerPlayer,
     bool? isPrivate,
     List<SessionUserModel>? players,
@@ -127,6 +134,7 @@ class SessionModel extends Equatable {
       status: status ?? this.status,
       playerCount: playerCount ?? this.playerCount,
       maxPlayers: maxPlayers ?? this.maxPlayers,
+      minPlayers: minPlayers ?? this.minPlayers,
       costPerPlayer: costPerPlayer ?? this.costPerPlayer,
       isPrivate: isPrivate ?? this.isPrivate,
       players: players ?? this.players,
@@ -155,6 +163,7 @@ class SessionModel extends Equatable {
       'status': status,
       'playerCount': playerCount,
       'maxPlayers': maxPlayers,
+      if (minPlayers != null) 'minPlayers': minPlayers,
       'costPerPlayer': costPerPlayer,
       'isPrivate': isPrivate,
       if (players != null) 'players': players!.map((p) => p.toMap()).toList(),
@@ -188,6 +197,7 @@ class SessionModel extends Equatable {
       status: map['status'] as String,
       playerCount: map['playerCount'] as int,
       maxPlayers: map['maxPlayers'] as int,
+      minPlayers: map['minPlayers'] as int?,
       costPerPlayer: (map['costPerPlayer'] as num).toDouble(),
       isPrivate: map['isPrivate'] as bool? ?? false,
       players: map['players'] != null

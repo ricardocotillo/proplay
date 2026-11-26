@@ -11,6 +11,7 @@ import 'package:proplay/utils/app_paths.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/utils/auth_redirect.dart';
 import 'package:proplay/utils/join_availability.dart';
+import 'package:proplay/utils/min_players.dart';
 import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/event_format.dart';
 import 'package:proplay/widgets/event_bottom_bar.dart';
@@ -123,6 +124,14 @@ class _Details extends StatelessWidget {
                             row(Icons.view_module, event.format!),
                           if (event.groupName != null)
                             row(Icons.flag, 'Organiza: ${event.groupName}'),
+                          if (minPlayersNote(
+                                minPlayers: event.minPlayers,
+                                playerCount: event.playerCount,
+                                eventDate: event.eventDate,
+                                now: DateTime.now(),
+                              )
+                              case final note?)
+                            row(Icons.groups_outlined, note),
                         ],
                       ),
                     ),

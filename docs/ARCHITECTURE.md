@@ -306,6 +306,7 @@ Same scheduling / matchmaking / location fields, plus:
 | `templateId` | string | Parent template |
 | `status` | string | First session is `'OPEN'` |
 | `playerCount` | int | Denormalized length of `players` |
+| `minPlayers` | int? | Optional minimum (whole number ≥ 2, ≤ `maxPlayers`). Below it 24 h before the start the server cancels the event and refunds everyone (see *Minimum players*). Also on the template and the public projection |
 | `players` | `SessionUserModel[]` | Embedded, not a subcollection |
 | `g` | string | Geohash |
 | `l` | `[lat, lng]` | GeoFirestore pair |
@@ -478,7 +479,15 @@ Guests tap a card → `/events/:id` (`PublicEventScreen`, "Ingresa para unirte" 
 
 ### Cloud Functions (`functions/`)
 
-TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation`, `joinSession`, `joinWaitlist`, `leaveWaitlist` (and the scheduled `expireWaitlistOffers`) and the organizer / credit callables, `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`), and for web push `sendReminders` (scheduled), `notifyCreditApproved` and `claimDeviceToken` (triggers). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel`, `join` (callable logic, incl. join → cancel → rejoin), `organizer` (credit review, cancel/remove event, check-in) and `reminders` (push sending with a fake sender), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
+TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation`, `joinSession`, `joinWaitlist`, `leaveWaitlist` (and the scheduled `expireWaitlistOffers`, `autoCancelUnderfilled`) and the organizer / credit callables, `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`), and for web push `sendReminders` (scheduled), `notifyCreditApproved` and `claimDeviceToken` (triggers). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel`, `join` (callable logic, incl. join → cancel → rejoin), `organizer` (credit review, cancel/remove event, check-in) and `reminders` (push sending with a fake sender), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
+
+### Minimum players (auto-cancel)
+
+An organizer can set an optional **Mínimo de jugadores** when creating an event (`minPlayers`, validated by `minPlayersError`: whole number ≥ 2, at most the maximum, and the event must start 25 h or more ahead, because the check is not run later). The event page tells everyone the rule and how many are missing (`minPlayersNote`).
+
+- **Check:** `autoCancelUnderfilled` (scheduled every 10 min, `runAutoCancel`) looks at events starting in the hour after the 24 h mark (23 h < time left ≤ 24 h, the free-cancel deadline; `minPlayersPolicy.ts`). If `players < minPlayers` it cancels with the same transaction as the organizer's "Cancelar evento" (`cancelEventTx` in `organizer.ts`): every player is refunded in full, tickets and the waitlist are deleted, late cancellers are paid back, the event is deleted. The underfilled test is repeated inside the transaction, so a late join wins. Several runs fall in the window, so a missed run is harmless; an event created inside the last 24 h is never checked.
+- **Messages** (push, once per person via `claim`): players "Evento cancelado… Te devolvimos S/ X", waitlisted people "No se te cobró nada", the creator "Cancelamos tu evento". The ledger note says "por falta de jugadores".
+- Decisions: deadline 24 h before the start (not configurable per event); the minimum is optional and off by default.
 
 ### Waitlist
 
