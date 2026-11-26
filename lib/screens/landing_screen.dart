@@ -26,8 +26,8 @@ const _steps = <({String title, String body, IconData icon})>[
     icon: Icons.person_add_alt_1,
   ),
   (
-    title: 'Recarga pro coins',
-    body: 'Compra coins con Yape para reservar tu lugar.',
+    title: 'Recarga tu saldo',
+    body: 'Recarga saldo con Yape para reservar tu lugar.',
     icon: Icons.account_balance_wallet_outlined,
   ),
   (
@@ -228,7 +228,7 @@ class _Hero extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Únete a grupos, reserva tu lugar con pro coins y juega cerca de ti.',
+                    'Únete a grupos, reserva tu lugar con tu saldo y juega cerca de ti.',
                     style: theme.textTheme.titleMedium?.copyWith(
                       color: AppColors.text,
                     ),
@@ -258,7 +258,7 @@ class _Hero extends StatelessWidget {
                     runSpacing: 12,
                     children: [
                       _Stat('${kSports.length}', 'deportes'),
-                      const _Stat('Yape', 'recarga tus pro coins'),
+                      const _Stat('Yape', 'recarga tu saldo'),
                       const _Stat('QR', 'check-in con ticket'),
                     ],
                   ),

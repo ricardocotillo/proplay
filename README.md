@@ -1,6 +1,6 @@
 # ProPlay
 
-ProPlay is a Flutter app for organizing and discovering amateur sports sessions ("pichangas") in Peru. Players join groups, find nearby public sessions that match their sport / age / gender, pay with **pro coins**, and check in with a QR ticket.
+ProPlay is a Flutter app for organizing and discovering amateur sports sessions ("pichangas") in Peru. Players join groups, find nearby public sessions that match their sport / age / gender, pay from their **saldo** (S/), and check in with a QR ticket.
 
 This README is the onboarding entry point. Architecture, data model, and how-to-change-the-app live in the living guide:
 
@@ -12,7 +12,7 @@ This README is the onboarding entry point. Architecture, data model, and how-to-
 - **Groups**: create or join with a 6-character code. Owners/admins manage members and sessions.
 - **Sessions**: multi-step create flow (location, date/time, details). Templates write the first `liveSession`.
 - **Matchmaking**: upcoming list is filtered by sport, gender, age, group membership, and geohash distance.
-- **Credits ("pro coins")**: users buy packages via **Yape** and wait for a `superUser` to approve. Joining a session debit-charges credits.
+- **Credits (shown to users as "saldo" in S/, 1 credit = S/ 1)**: users buy packages via **Yape** and wait for a `superUser` to approve. Joining a session debit-charges credits.
 - **Tickets**: joining a session creates a ticket with a QR / shareable validation URL. Group owners, admins, and super users can mark tickets used.
 
 UI language is Spanish. Currency is PEN.

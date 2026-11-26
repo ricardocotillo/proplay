@@ -8,6 +8,8 @@ import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/theme/app_colors.dart';
+import 'package:proplay/utils/ticket_url_builder.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:proplay/utils/auth_helper.dart';
 
 class GroupsSessionsScreen extends StatelessWidget {
@@ -222,10 +224,26 @@ class _CuratedNotice extends StatelessWidget {
           const Icon(Icons.verified_outlined, color: AppColors.muted),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              'Publicar eventos está disponible para organizadores '
-              'verificados. Escríbenos para verificar tu grupo.',
-              style: Theme.of(context).textTheme.bodyMedium,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Publicar eventos está disponible para organizadores '
+                  'verificados.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                TextButton.icon(
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  onPressed: () => launchUrl(
+                    supportWhatsAppUri(
+                      'Hola, quiero verificar mi grupo en ProPlay para publicar eventos.',
+                    ),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                  icon: const Icon(Icons.chat_outlined, size: 18),
+                  label: const Text('Escríbenos por WhatsApp'),
+                ),
+              ],
             ),
           ),
         ],

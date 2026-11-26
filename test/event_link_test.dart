@@ -14,4 +14,9 @@ void main() {
       'Pichanga & más\nhttps://proplayapp.com/events/abc',
     );
   });
+
+  test('support whatsapp link uses the configured number', () {
+    final uri = supportWhatsAppUri('Hola');
+    expect(uri.toString(), 'https://wa.me/51960326190?text=Hola');
+  });
 }

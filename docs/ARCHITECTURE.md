@@ -15,7 +15,7 @@ ProPlay connects athletes in Peru with group and public sports sessions.
 | **Group** | A club/community around one sport. Join via a 6-character code. |
 | **Session template** | The "recipe" written when someone creates an event. |
 | **Live session** | The joinable instance shown on Home / Sessions / group pages. |
-| **Pro coins** | In-app credits stored on the user. Currency of purchase is PEN. |
+| **Saldo** (credits) | In-app balance stored on the user; 1 credit = S/ 1. Users only ever see "saldo" in S/ (formerly "pro coins"). Packages are sold by Yape with a fee ("incluye comisión"). Support WhatsApp for organizer verification: `AppConstants.supportWhatsApp`. |
 | **Ticket** | Proof of join. QR + `https://proplayapp.com/validate-ticket?token=...`. |
 | **Super user** | Admin flag on the user document. Can approve Yape purchases and validate any ticket. |
 

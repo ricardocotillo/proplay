@@ -1,6 +1,6 @@
 # ProPlay — Agent Working Guide
 
-ProPlay is a Flutter + Firebase app for organizing and discovering sports sessions in Peru. Users join groups, match into nearby sessions, spend **pro coins**, and check in with QR tickets.
+ProPlay is a Flutter + Firebase app for organizing and discovering sports sessions in Peru. Users join groups, match into nearby sessions, pay from their **saldo** (credits, 1 credit = S/ 1), and check in with QR tickets. User-facing copy says "saldo" in S/, never "pro coins".
 
 **Human onboarding:** [README.md](README.md)
 **Living architecture (update this when the app changes):** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
