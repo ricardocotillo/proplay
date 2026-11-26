@@ -117,7 +117,10 @@ service cloud.firestore {
       // Only user can edit own profile (never the document). Only a superUser
       // can change superUser (legacy docs without the field count as false),
       // so nobody can promote themselves.
+      // credits (saldo) is written only by Cloud Functions (join, cancel,
+      // refunds, credit approval), never by any client.
       allow update: if (isOwner(userId) || isSuperUser()) && documentUnchanged()
+        && request.resource.data.get('credits', '0.00') == resource.data.get('credits', '0.00')
         && (request.resource.data.get('superUser', false) == resource.data.get('superUser', false)
             || isSuperUser());
 
@@ -170,13 +173,25 @@ service cloud.firestore {
       // User can see their own history
       allow read: if signedIn() && (resource.data.userId == request.auth.uid || isSuperUser());
 
-      // User can create their own credit request
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      // A client may only open its own pending Yape top-up. Spends, refunds
+      // and approvals are written by Cloud Functions (reviewCreditPurchase,
+      // joinSession, cancelParticipation, cancelEvent, removePlayer).
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly([
+            'userId', 'creditAmount', 'amountPaid', 'currency', 'createdAt',
+            'status', 'entryType', 'direction', 'sourceType', 'sourceId',
+            'transactionId', 'paymentMethod', 'paymentGateway',
+            'confirmationCode', 'phoneNumber', 'receiptUrl'
+          ])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.entryType == 'purchase'
+        && request.resource.data.creditAmount is number
+        && request.resource.data.creditAmount > 0
+        && request.resource.data.amountPaid is number
+        && request.resource.data.amountPaid >= request.resource.data.creditAmount;
 
-      // Approval runs in the reviewCreditPurchase function. Old app builds
-      // still approve from the client: only while the row is pending, so a
-      // row the server already reviewed can't be credited a second time.
-      allow update, delete: if signedIn() && isSuperUser() && resource.data.status == 'pending';
+      allow update, delete: if false;
     }
 
     // -------------------------
@@ -203,29 +218,29 @@ service cloud.firestore {
         isGroupMember(resource.data.groupId)
       );
 
-      // Create: only group owners (usually from template creation)
-      allow create: if signedIn() && isGroupOwner(request.resource.data.groupId);
+      // Create: only group owners (usually from template creation), empty,
+      // and as the event's creator.
+      allow create: if signedIn() && isGroupOwner(request.resource.data.groupId)
+        && request.resource.data.get('playerCount', 0) == 0
+        && request.resource.data.get('players', []).size() == 0
+        && request.resource.data.get('creatorId', request.auth.uid) == request.auth.uid;
 
-      // Update:
-      // - groupId is immutable (otherwise a user could re-point a session to a group
-      //   they own and then pass the owner check below).
-      // - The owner of the session's group may change anything else (isPrivate, title,
-      //   place, price...). Those fields feed the public projection (publicEvents, readable
-      //   by guests), so nobody else may touch them.
-      // - Any other signed-in user may only write players and playerCount: joinSession,
-      //   uploadReceipt and admin removal do exactly that from the client. This is a known
-      //   gap (players is still client-written, so a user can add or remove entries);
-      //   moving join server-side is the durable fix.
+      // Update: only the owner of the session's group, and never groupId,
+      // creatorId or the seats. players / playerCount are written only by
+      // Cloud Functions (joinSession, cancelParticipation, removePlayer), so a
+      // seat always matches a debit and a ticket.
       // diff().affectedKeys() lists only changed fields, so legacy docs without isPrivate work.
       allow update: if signedIn()
-        && request.resource.data.groupId == resource.data.groupId
-        && (
-          isGroupOwner(resource.data.groupId)
-          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['players', 'playerCount'])
-        );
+        && isGroupOwner(resource.data.groupId)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+              .hasAny(['groupId', 'creatorId', 'players', 'playerCount'])
+        // Refunds are capped at the current price, so it can't drop below
+        // what joined players paid.
+        && (resource.data.get('playerCount', 0) == 0
+            || request.resource.data.get('costPerPlayer', 0) >= resource.data.get('costPerPlayer', 0));
 
-      // Delete: owner or admin of the session's group (the Sessions UI lets both delete).
-      allow delete: if isGroupStaff(resource.data.groupId);
+      // Delete: only the cancelEvent function (it refunds every player).
+      allow delete: if false;
     }
 
     // -------------------------
@@ -259,52 +274,6 @@ service cloud.firestore {
           && get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role in ["owner", "admin"];
       }
 
-      // Full-schema validator, used for both ticket creation and a ticket holder
-      // re-issuing their own ticket (e.g. after leaving and rejoining a session).
-      function isValidTicketData(data) {
-        return data.keys().hasOnly([
-            'sessionId', 'groupId', 'userId', 'validationToken', 'status',
-            'createdAt', 'usedAt', 'validatedBy', 'eventTitle', 'eventDate',
-            'eventEndDate', 'eventLocationAddress', 'eventLocationLat',
-            'eventLocationLng', 'sport',
-            'userFirstName', 'userLastName', 'userProfileImageUrl',
-            'userDocumentType', 'userDocumentNumber',
-            'pricePaid'
-          ])
-          && data.userId is string && data.userId == request.auth.uid
-          && data.sessionId is string && data.sessionId.size() > 0 && data.sessionId.size() < 200
-          && data.groupId is string && data.groupId.size() > 0 && data.groupId.size() < 200
-          && data.validationToken is string && data.validationToken.size() > 0 && data.validationToken.size() < 200
-          && (!('pricePaid' in data) || (
-                data.pricePaid is number && data.pricePaid >= 0
-                // pricePaid drives the server refund: it can never exceed the event price.
-                && data.pricePaid <= get(/databases/$(database)/documents/liveSessions/$(data.sessionId)).data.costPerPlayer
-              ))
-          && data.status == 'valid'
-          && data.createdAt is timestamp
-          && data.usedAt == null
-          && data.validatedBy == null
-          && data.eventTitle is string && data.eventTitle.size() < 300
-          && data.eventDate is timestamp
-          && data.eventEndDate is timestamp
-          && (data.eventLocationAddress == null ||
-              (data.eventLocationAddress is string && data.eventLocationAddress.size() < 500))
-          && (data.eventLocationLat == null || data.eventLocationLat is number)
-          && (data.eventLocationLng == null || data.eventLocationLng is number)
-          && data.sport is string && data.sport.size() < 100
-          && data.userFirstName is string && data.userFirstName.size() < 100
-          && data.userLastName is string && data.userLastName.size() < 100
-          && (data.userProfileImageUrl == null ||
-              (data.userProfileImageUrl is string && data.userProfileImageUrl.size() < 1000))
-          // The document snapshot must be the holder's real one (cannot be forged).
-          && data.get('userDocumentType', '') == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('documentType', '')
-          && data.get('userDocumentNumber', '') == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('documentNumber', '')
-          // The ticket must correspond to a real session, and its groupId must
-          // match that session's actual group (prevents fabricated tickets).
-          && exists(/databases/$(database)/documents/liveSessions/$(data.sessionId))
-          && get(/databases/$(database)/documents/liveSessions/$(data.sessionId)).data.groupId == data.groupId;
-      }
-
       // A validator (group owner/admin/superUser) flipping a valid ticket to
       // used, and changing nothing else.
       function isValidValidationUpdate(data) {
@@ -322,17 +291,14 @@ service cloud.firestore {
         isSuperUser()
       );
 
-      // Create: only the ticket holder themself, and only as a fresh, valid
-      // ticket tied to a real session/group.
-      allow create: if signedIn() && isValidTicketData(request.resource.data);
+      // Tickets are created and deleted only by Cloud Functions (joinSession,
+      // cancelParticipation, cancelEvent, removePlayer).
+      allow create: if false;
 
-      // Update: either the ticket holder re-issuing their own ticket (e.g. after
-      // leaving and rejoining the session), or a group owner/admin/superUser
-      // marking a valid ticket used.
-      allow update: if signedIn() && (
-        (resource.data.userId == request.auth.uid && resource.data.status == 'valid' && isValidTicketData(request.resource.data)) ||
-        ((isGroupOwnerOrAdmin(resource.data.groupId) || isSuperUser()) && isValidValidationUpdate(request.resource.data))
-      );
+      // Update: a group owner/admin/superUser marking a valid ticket used.
+      allow update: if signedIn()
+        && (isGroupOwnerOrAdmin(resource.data.groupId) || isSuperUser())
+        && isValidValidationUpdate(request.resource.data);
 
       allow delete: if false;
     }

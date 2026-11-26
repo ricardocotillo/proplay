@@ -439,7 +439,7 @@ SessionDetailBloc.JoinSession
   → SessionDetailLoaded(isCurrentUserJoined) → AuthRefreshUserRequested + ticket screen
 ```
 
-Gender/age are a feed filter only; the server does not enforce them. Older app builds still join with the old client transaction until the rules are tightened (plan PR 5); the rules still allow it.
+Gender/age are a feed filter only; the server does not enforce them. The rules deny any client write to seats, tickets, balances and ledger rows (plan PR 5), so app builds older than the callables can no longer join, cancel, approve or delete.
 
 Organizer actions (callables in `functions/src/organizer.ts`, allowed for the group owner/admin, the event's `creatorId` or a superUser, only before the event starts; `canManageEvent` in `adminPolicy.ts`):
 
@@ -511,7 +511,7 @@ CreditApprovalScreen (superUser) → CreditApprovalCubit → callable reviewCred
   → reject: status=rejected, no credit
 ```
 
-`CreditPurchaseRequested` + `StubPaymentService` is the unfinished automated path. `PaymentService` is the interface for a future gateway. [PAYMENT_GATEWAY_MIGRATION_PLAN.md](PAYMENT_GATEWAY_MIGRATION_PLAN.md) and `lib/mp.dart` are not the production checkout.
+`StubPaymentService` is the unfinished automated path (the client-side `CreditPurchaseRequested` crediting was removed; `/payment/success` only shows a message). `PaymentService` is the interface for a future gateway. [PAYMENT_GATEWAY_MIGRATION_PLAN.md](PAYMENT_GATEWAY_MIGRATION_PLAN.md) and `lib/mp.dart` are not the production checkout.
 
 ### Tickets
 
@@ -661,7 +661,7 @@ Intended direction (from project guidelines):
 ## 14. Known pitfalls (read before you change money or seats)
 
 1. **Credits are a string on the user**, a double on the ledger. Always go through `UserModel.formatCredits` / `creditsValue`.
-2. **Join and cancel are server-side callables** (`joinSession`, `cancelParticipation`); the rules still allow the old client join until PR 5 tightens them. There is no client `leaveSession` anymore. Credit approval, event cancel and player removal are callables too (`reviewCreditPurchase`, `cancelEvent`, `removePlayer`); the rules still allow the old client writes until PR 5.
+2. **Every money or seat write is a callable** (`joinSession`, `cancelParticipation`, `reviewCreditPurchase`, `cancelEvent`, `removePlayer`). The rules deny client writes to `users.credits`, `players` / `playerCount`, tickets (except staff validation) and `creditHistory` (except a user's own pending Yape top-up), and a `liveSessions` delete. An owner may not lower `costPerPlayer` once players joined, because refunds are capped at the current price.
 3. **Players live on the live session document.** Large games will hit document size / contention. A players subcollection (as in `docs/sessions.md`) is the eventual fix.
 4. **Two membership models.** Subcollections are source of truth. Do not revive `streamUserGroups` without writing `groups.members[]`.
 5. **Duplicate sport lists** in `HomeScreen`, `CreateGroupScreen`, `GroupEditScreen`. Extract a constant before adding a sport.

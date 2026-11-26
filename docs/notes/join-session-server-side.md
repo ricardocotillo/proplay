@@ -1,6 +1,6 @@
 # Note: move `joinSession` (and credit approval) to the server
 
-Status: **join shipped 2026-11-26** (callable `joinSession`, `functions/src/joinSession.ts`, emulator tests `functions/emulator-tests/join.test.mjs`). Credit approval shipped in plan PR 4 as `reviewCreditPurchase` (approve or reject), with organizer `cancelEvent` / `removePlayer` refunds (`functions/emulator-tests/organizer.test.mjs`). Still open: the rules tightening (plan PR 5). Decisions taken: gender/age stay a feed filter (not enforced); full stays an error (no waitlist yet).
+Status: **join shipped 2026-11-26** (callable `joinSession`, `functions/src/joinSession.ts`, emulator tests `functions/emulator-tests/join.test.mjs`). Credit approval shipped in plan PR 4 as `reviewCreditPurchase` (approve or reject), with organizer `cancelEvent` / `removePlayer` refunds (`functions/emulator-tests/organizer.test.mjs`). Rules tightened in plan PR 5 (every `[known hole]` test now expects a denial). This note is complete. Decisions taken: gender/age stay a feed filter (not enforced); full stays an error (no waitlist yet).
 Written 2026-11-13, against branch `claude/transform-events-app-84e7e8`.
 
 ## Why

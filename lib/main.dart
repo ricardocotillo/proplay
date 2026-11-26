@@ -175,12 +175,8 @@ class _MyAppState extends State<MyApp> {
                         GoRoute(
                           path: 'payment/success',
                           name: 'payment-success',
-                          builder: (context, state) => PaymentSuccessScreen(
-                            preferenceId:
-                                state.uri.queryParameters['preference_id'] ??
-                                state.uri.queryParameters['pref_id'] ??
-                                state.uri.queryParameters['id'],
-                          ),
+                          builder: (context, state) =>
+                              const PaymentSuccessScreen(),
                         ),
                         GoRoute(
                           path: 'payment/pending',

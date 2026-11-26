@@ -8,21 +8,6 @@ abstract class CreditEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class CreditPurchaseRequested extends CreditEvent {
-  final String userId;
-  final CreditPackage package;
-  final PaymentResult paymentResult;
-
-  const CreditPurchaseRequested({
-    required this.userId,
-    required this.package,
-    required this.paymentResult,
-  });
-
-  @override
-  List<Object?> get props => [userId, package, paymentResult];
-}
-
 class CreditYapePurchaseRequested extends CreditEvent {
   final String userId;
   final CreditPackage package;

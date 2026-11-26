@@ -7,8 +7,6 @@ import 'package:proplay/models/payment_result_model.dart';
 import 'package:proplay/bloc/credit/credit_bloc.dart';
 import 'package:proplay/bloc/credit/credit_event.dart';
 import 'package:proplay/bloc/credit/credit_state.dart';
-import 'package:proplay/bloc/auth/auth_bloc.dart';
-import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/widgets/responsive_layout.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/services/yape_service.dart';
@@ -41,18 +39,7 @@ class _PurchaseCreditsScreenState extends State<PurchaseCreditsScreen> {
   Widget build(BuildContext context) {
     return BlocListener<CreditBloc, CreditState>(
       listener: (context, state) {
-        if (state is CreditPurchaseSuccess) {
-          context.read<AuthBloc>().add(const AuthRefreshUserRequested());
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Recarga aplicada. Nuevo saldo: S/ ${state.newBalance}',
-              ),
-              backgroundColor: AppColors.success,
-            ),
-          );
-          context.pop();
-        } else if (state is CreditPurchasePending) {
+        if (state is CreditPurchasePending) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(

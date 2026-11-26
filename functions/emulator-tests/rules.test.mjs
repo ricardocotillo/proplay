@@ -67,29 +67,16 @@ await t('guest cannot read users', () => assertFails(getDoc(doc(anon, 'users/ali
 await t('signed-in reads public liveSession (unchanged)', () => assertSucceeds(getDoc(doc(bob, 'liveSessions/s1'))));
 await t('non-member cannot read private liveSession (unchanged)', () => assertFails(getDoc(doc(bob, 'liveSessions/priv'))));
 
-// --- ticket create ---
-await t('join: create ticket with pricePaid == cost', () => assertSucceeds(setDoc(doc(bob, 'tickets/s1_bob'), ticket('bob', {pricePaid: 10}))));
-await t('join: create ticket with pricePaid < cost', () => assertSucceeds(setDoc(doc(as('c1'), 'tickets/s1_c1'), ticket('c1', {pricePaid: 4.5}))));
-await t('join: create legacy ticket WITHOUT pricePaid (old app)', () => assertSucceeds(setDoc(doc(as('c2'), 'tickets/s1_c2'), ticket('c2'))));
-await t('forged pricePaid 500 denied', () => assertFails(setDoc(doc(as('c3'), 'tickets/s1_c3'), ticket('c3', {pricePaid: 500}))));
-await t('negative pricePaid denied', () => assertFails(setDoc(doc(as('c4'), 'tickets/s1_c4'), ticket('c4', {pricePaid: -1}))));
-await t('string pricePaid denied', () => assertFails(setDoc(doc(as('c5'), 'tickets/s1_c5'), ticket('c5', {pricePaid: '5'}))));
-await t('ticket with extra key cancelledAt denied', () => assertFails(setDoc(doc(as('c6'), 'tickets/s1_c6'), ticket('c6', {cancelledAt: ts()}))));
-await t('ticket with extra key refunded denied', () => assertFails(setDoc(doc(as('c7'), 'tickets/s1_c7'), ticket('c7', {refunded: true}))));
+// --- tickets are server-written (joinSession / cancel / organizer functions) ---
+await t('holder cannot create a ticket (join is the joinSession function)', () => assertFails(setDoc(doc(bob, 'tickets/s1_bob'), ticket('bob', {pricePaid: 10}))));
+await t('legacy ticket without pricePaid (old app) denied', () => assertFails(setDoc(doc(as('c2'), 'tickets/s1_c2'), ticket('c2'))));
 await t('ticket as someone else denied', () => assertFails(setDoc(doc(bob, 'tickets/s1_zed'), ticket('zed'))));
-await t('ticket with status used on create denied', () => assertFails(setDoc(doc(as('c8'), 'tickets/s1_c8'), ticket('c8', {status: 'used'}))));
-
-// --- H1: revive / tamper ---
 await seedTicket('s1_u9', {...ticket('u9'), status: 'used', usedAt: ts(), validatedBy: 'owner1'});
 await t('H1: holder cannot revive a USED ticket', () => assertFails(setDoc(doc(as('u9'), 'tickets/s1_u9'), ticket('u9'))));
 await seedTicket('s1_u10', ticket('u10', {pricePaid: 10}));
-await t('holder can re-issue own still-valid ticket (rejoin after admin removal)', () => assertSucceeds(setDoc(doc(as('u10'), 'tickets/s1_u10'), ticket('u10', {pricePaid: 10}))));
+await t('holder cannot re-issue own valid ticket', () => assertFails(setDoc(doc(as('u10'), 'tickets/s1_u10'), ticket('u10', {pricePaid: 10}))));
 await t('holder cannot mark own ticket cancelled', () => assertFails(updateDoc(doc(as('u10'), 'tickets/s1_u10'), {status: 'cancelled'})));
 await t('holder cannot delete own ticket (function does it)', () => assertFails(deleteDoc(doc(as('u10'), 'tickets/s1_u10'))));
-await t('after function deletes ticket, holder can create a fresh one (rejoin)', async () => {
-  await env.withSecurityRulesDisabled((c) => deleteDoc(doc(c.firestore(), 'tickets/s1_u10')));
-  await assertSucceeds(setDoc(doc(as('u10'), 'tickets/s1_u10'), ticket('u10', {pricePaid: 10})));
-});
 
 // --- validation ---
 await seedTicket('s1_v1', ticket('v1'));
@@ -111,9 +98,9 @@ await t('bypass step 1: non-owner cannot re-point groupId to a group they own', 
 await t('bypass in one write: re-point groupId AND flip isPrivate denied', () => assertFails(updateDoc(doc(mallory, 'liveSessions/priv2'), {groupId: 'g2', isPrivate: false})));
 await t('nobody can change groupId, not even the group owner', () => assertFails(updateDoc(doc(owner, 'liveSessions/priv2'), {groupId: 'g2'})));
 await t('group owner CAN flip isPrivate', () => assertSucceeds(updateDoc(doc(owner, 'liveSessions/priv2'), {isPrivate: false})));
-await t('join-style update (players + playerCount) on a private event still works for a non-owner', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/priv'), {players: [{uid: 'bob'}], playerCount: 1})));
-await t('join-style update on a public event still works', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/s1'), {players: [{uid: 'bob'}], playerCount: 1})));
-await t('legacy doc without isPrivate: join-style update still works', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/legacy'), {playerCount: 1})));
+await t('client join-style update on a private event denied', () => assertFails(updateDoc(doc(bob, 'liveSessions/priv'), {players: [{uid: 'bob'}], playerCount: 1})));
+await t('client join-style update on a public event denied', () => assertFails(updateDoc(doc(bob, 'liveSessions/s1'), {players: [{uid: 'bob'}], playerCount: 1})));
+await t('legacy doc: client playerCount update denied', () => assertFails(updateDoc(doc(bob, 'liveSessions/legacy'), {playerCount: 1})));
 await t('legacy doc without isPrivate: a non-owner cannot ADD isPrivate:false', () => assertFails(updateDoc(doc(bob, 'liveSessions/legacy'), {isPrivate: false})));
 await t('owner can still create a session for their group', () => assertSucceeds(setDoc(doc(owner, 'liveSessions/new1'), {groupId: 'g1', isPrivate: false, costPerPlayer: 5})));
 await t('non-owner cannot create a session for a group they do not own', () => assertFails(setDoc(doc(bob, 'liveSessions/new2'), {groupId: 'g1', isPrivate: false})));
@@ -130,9 +117,9 @@ for (const [name, patch] of Object.entries(fieldAttempts))
 await t('non-owner cannot smuggle a title change inside a join-style write', () => assertFails(updateDoc(doc(bob, 'liveSessions/f1'), {players: [{uid: 'bob'}], playerCount: 1, title: 'HACKED'})));
 await t('owner of another group cannot change the title', () => assertFails(updateDoc(doc(mallory, 'liveSessions/f1'), {title: 'HACKED'})));
 await t('group admin (not owner) cannot change the title', () => assertFails(updateDoc(doc(admin1, 'liveSessions/f1'), {title: 'HACKED'})));
-await t('group admin CAN remove a player (players + playerCount)', () => assertSucceeds(updateDoc(doc(admin1, 'liveSessions/f2'), {players: [], playerCount: 0})));
-await t('join: players + playerCount allowed for any signed-in user', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/f3'), {players: [{uid: 'bob', firstName: 'B'}], playerCount: 1})));
-await t('receipt upload: players only allowed', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/f4'), {players: [{uid: 'bob', receiptUrl: 'r', isConfirmed: true}]})));
+await t('group admin cannot remove a player from the client (removePlayer refunds)', () => assertFails(updateDoc(doc(admin1, 'liveSessions/f2'), {players: [], playerCount: 0})));
+await t('client players + playerCount write denied', () => assertFails(updateDoc(doc(bob, 'liveSessions/f3'), {players: [{uid: 'bob', firstName: 'B'}], playerCount: 1})));
+await t('client players-only write denied', () => assertFails(updateDoc(doc(bob, 'liveSessions/f4'), {players: [{uid: 'bob', receiptUrl: 'r', isConfirmed: true}]})));
 await t('owner CAN change title', () => assertSucceeds(updateDoc(doc(owner, 'liveSessions/f5'), {title: 'Nuevo titulo'})));
 await t('owner CAN change location and price', () => assertSucceeds(updateDoc(doc(owner, 'liveSessions/f6'), {locationLat: -12.2, locationAddress: 'Av. Y', costPerPlayer: 12})));
 await t('owner still cannot change groupId', () => assertFails(updateDoc(doc(owner, 'liveSessions/f7'), {groupId: 'g2'})));
@@ -141,12 +128,12 @@ await t('owner still cannot change groupId', () => assertFails(updateDoc(doc(own
 await t('random signed-in user cannot delete a session', () => assertFails(deleteDoc(doc(bob, 'liveSessions/del1'))));
 await t('owner of ANOTHER group cannot delete a session', () => assertFails(deleteDoc(doc(mallory, 'liveSessions/del1'))));
 await t('guest cannot delete a session', () => assertFails(deleteDoc(doc(anon, 'liveSessions/del1'))));
-await t('group admin CAN delete a session', () => assertSucceeds(deleteDoc(doc(admin1, 'liveSessions/del2'))));
-await t('group owner CAN delete a session', () => assertSucceeds(deleteDoc(doc(owner, 'liveSessions/del3'))));
+await t('group admin cannot delete a session (cancelEvent refunds)', () => assertFails(deleteDoc(doc(admin1, 'liveSessions/del2'))));
+await t('group owner cannot delete a session (cancelEvent refunds)', () => assertFails(deleteDoc(doc(owner, 'liveSessions/del3'))));
 
 // --- accepted pre-existing holes (should still be open; documenting, NOT regressions) ---
-await t('[known hole] user can still edit own credits', () => assertSucceeds(updateDoc(doc(alice, 'users/alice'), {credits: '999.00'})));
-await t('[known hole] any signed-in user can still write players/playerCount of any liveSession (join is client-side)', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/s1'), {playerCount: 0})));
+await t('user cannot edit own credits', () => assertFails(updateDoc(doc(alice, 'users/alice'), {credits: '999.00'})));
+await t('nobody can write playerCount from the client', () => assertFails(updateDoc(doc(bob, 'liveSessions/s1'), {playerCount: 0})));
 
 
 // --- identity-document rules from the other task must still hold in the merged file ---
@@ -221,15 +208,37 @@ await env.withSecurityRulesDisabled(async (ctx) => {
   await setDoc(doc(d, 'creditHistory/pend1'), {userId: 'alice', status: 'pending', entryType: 'purchase', creditAmount: 20, amountPaid: 21});
   await setDoc(doc(d, 'creditHistory/done1'), {userId: 'alice', status: 'approved', entryType: 'purchase', creditAmount: 20, amountPaid: 21});
 });
-await t('old-build approve: superUser may update a pending row', () => assertSucceeds(updateDoc(doc(as('su1'), 'creditHistory/pend1'), {status: 'approved'})));
+await t('client approve of a pending row denied (reviewCreditPurchase only)', () => assertFails(updateDoc(doc(as('su1'), 'creditHistory/pend1'), {status: 'approved'})));
 await t('old-build approve of an already-reviewed row denied (no double credit)', () => assertFails(updateDoc(doc(as('su1'), 'creditHistory/done1'), {status: 'approved'})));
 await t('non-superUser cannot approve own pending row', async () => {
   await env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), 'creditHistory/pend2'), {userId: 'alice', status: 'pending', entryType: 'purchase', creditAmount: 20}));
   await assertFails(updateDoc(doc(alice, 'creditHistory/pend2'), {status: 'approved'}));
 });
 
-await t('[known hole] a non-owner can still inflate playerCount (join is client-side)', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/f8'), {players: [], playerCount: 999})));
-await t('[known hole] a non-owner can still remove other players', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/f9'), {players: [], playerCount: 0})));
+await t('non-owner cannot inflate playerCount', () => assertFails(updateDoc(doc(bob, 'liveSessions/f8'), {players: [], playerCount: 999})));
+await t('non-owner cannot remove other players', () => assertFails(updateDoc(doc(bob, 'liveSessions/f9'), {players: [], playerCount: 0})));
+
+// --- PR 5: seats, price, ledger, credits locked ---
+await t('owner cannot write players directly', () => assertFails(updateDoc(doc(owner, 'liveSessions/f10'), {players: [{uid: 'x'}], playerCount: 1})));
+await t('owner cannot create a session with players', () => assertFails(setDoc(doc(owner, 'liveSessions/new3'), {groupId: 'g1', isPrivate: false, costPerPlayer: 5, players: [{uid: 'x'}], playerCount: 1})));
+await t('owner cannot create a session as someone else', () => assertFails(setDoc(doc(owner, 'liveSessions/new4'), {groupId: 'g1', costPerPlayer: 5, creatorId: 'zed'})));
+await t('owner cannot change creatorId', () => assertFails(updateDoc(doc(owner, 'liveSessions/f11'), {creatorId: 'zed'})));
+await env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), 'liveSessions/paid1'), {groupId: 'g1', isPrivate: false, costPerPlayer: 10, playerCount: 2, players: [{uid: 'a'}, {uid: 'b'}]}));
+await t('owner cannot lower the price once players joined (refund cap)', () => assertFails(updateDoc(doc(owner, 'liveSessions/paid1'), {costPerPlayer: 0})));
+await t('owner can raise the price with players', () => assertSucceeds(updateDoc(doc(owner, 'liveSessions/paid1'), {costPerPlayer: 12})));
+await t('owner can lower the price with no players', () => assertSucceeds(updateDoc(doc(owner, 'liveSessions/f6'), {costPerPlayer: 1})));
+const purchase = (extra = {}) => ({userId: 'alice', creditAmount: 15, amountPaid: 17, currency: 'PEN', createdAt: ts(),
+  status: 'pending', entryType: 'purchase', direction: 'credit', sourceType: 'payment', sourceId: null,
+  transactionId: null, paymentMethod: 'yape', paymentGateway: 'yape', confirmationCode: '123456', ...extra});
+await t('user can open own pending Yape top-up', () => assertSucceeds(setDoc(doc(alice, 'creditHistory/p_ok'), purchase())));
+await t('forged spend row denied', () => assertFails(setDoc(doc(alice, 'creditHistory/p_spend'), purchase({entryType: 'spend', status: 'completed'}))));
+await t('self-approved top-up denied', () => assertFails(setDoc(doc(alice, 'creditHistory/p_appr'), purchase({status: 'approved'}))));
+await t('top-up worth more than paid denied', () => assertFails(setDoc(doc(alice, 'creditHistory/p_big'), purchase({creditAmount: 1000}))));
+await t('top-up with refundedAt denied', () => assertFails(setDoc(doc(alice, 'creditHistory/p_ref'), purchase({refundedAt: ts()}))));
+await t('top-up for someone else denied', () => assertFails(setDoc(doc(bob, 'creditHistory/p_other'), purchase())));
+await t('user cannot edit own ledger row', () => assertFails(updateDoc(doc(alice, 'creditHistory/p_ok'), {creditAmount: 50})));
+await t('superUser cannot edit a user balance from the client', () => assertFails(updateDoc(doc(as('root'), 'users/alice'), {credits: '100.00'})));
+await t('user still edits profile fields', () => assertSucceeds(updateDoc(doc(alice, 'users/alice'), {firstName: 'Ana B'})));
 
 await env.cleanup();
 const failed = results.filter((r) => !r).length;

@@ -676,51 +676,6 @@ class SessionService {
     });
   }
 
-  /// Upload receipt and update user's confirmation status
-  Future<void> uploadReceipt({
-    required String sessionId,
-    required String userId,
-    required String receiptUrl,
-  }) async {
-    try {
-      await _firestore.runTransaction((transaction) async {
-        final sessionRef = _firestore.collection('liveSessions').doc(sessionId);
-        final sessionDoc = await transaction.get(sessionRef);
-
-        if (!sessionDoc.exists) {
-          throw Exception('Evento no encontrado.');
-        }
-
-        final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
-
-        final players = session.players ?? [];
-
-        // Find the user in either players or waiting list and update
-        bool found = false;
-
-        // Check players list
-        final updatedPlayers = players.map((player) {
-          if (player.uid == userId) {
-            found = true;
-            return player.copyWith(receiptUrl: receiptUrl, isConfirmed: true);
-          }
-          return player;
-        }).toList();
-
-        if (!found) {
-          throw Exception('Este jugador ya no está en el evento.');
-        }
-
-        // Update Firestore
-        transaction.update(sessionRef, {
-          'players': updatedPlayers.map((p) => p.toMap()).toList(),
-        });
-      });
-    } catch (e) {
-      rethrow;
-    }
-  }
-
   /// Organizer removes a player via the `removePlayer` Cloud Function: seat
   /// freed, ticket deleted, price refunded in full.
   Future<CancelResultModel> removeUserFromSession({
