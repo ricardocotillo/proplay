@@ -46,9 +46,9 @@ class _PurchaseCreditsScreenState extends State<PurchaseCreditsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '${state.creditsAdded} créditos agregados. Nuevo saldo: ${state.newBalance}',
+                'Recarga aplicada. Nuevo saldo: S/ ${state.newBalance}',
               ),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
             ),
           );
           context.pop();
@@ -56,9 +56,9 @@ class _PurchaseCreditsScreenState extends State<PurchaseCreditsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Solicitud de ${state.creditsPending} créditos enviada. Pendiente de aprobación.',
+                'Recarga de S/ ${state.creditsPending} enviada. La verás en tu saldo cuando sea aprobada.',
               ),
-              backgroundColor: Colors.orange,
+              backgroundColor: AppColors.warning,
             ),
           );
           context.pop();
@@ -67,14 +67,17 @@ class _PurchaseCreditsScreenState extends State<PurchaseCreditsScreen> {
             _isProcessing = false;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: AppColors.error,
+            ),
           );
         }
       },
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            _selectedPackage == null ? 'Comprar Créditos' : 'Datos de Pago',
+            _selectedPackage == null ? 'Recargar saldo' : 'Datos de Pago',
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -515,7 +518,7 @@ class _PackageSelectionView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Elige la cantidad de créditos que deseas comprar.',
+            'Elige cuánto saldo quieres recargar (1 crédito = S/ 1).',
             style: Theme.of(context).textTheme.bodyMedium
                 ?.copyWith(color: AppColors.muted),
           ),
@@ -565,7 +568,7 @@ class _PackageCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${package.credits} pro coins',
+                      'S/ ${package.credits} de saldo',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -573,7 +576,7 @@ class _PackageCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'S/ ${package.price.toStringAsFixed(2)}',
+                      'Pagas S/ ${package.price.toStringAsFixed(2)} (incluye comisión)',
                       style: TextStyle(
                         fontSize: 16,
                         color: Theme.of(context).colorScheme.primary,

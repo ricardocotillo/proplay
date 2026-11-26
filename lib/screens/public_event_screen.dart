@@ -16,6 +16,7 @@ import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/event_format.dart';
 import 'package:proplay/widgets/event_bottom_bar.dart';
 import 'package:proplay/widgets/event_hero.dart';
+import 'package:proplay/widgets/share_event_button.dart';
 
 /// Read-only event detail at `/events/:id`. Safe for guests: it reads the
 /// `publicEvents` projection, which never contains the players list.
@@ -38,6 +39,16 @@ class PublicEventScreen extends StatelessWidget {
             onPressed: () =>
                 context.canPop() ? context.pop() : context.go('/events'),
           ),
+          actions: [
+            BlocBuilder<PublicEventBloc, PublicEventState>(
+              builder: (context, state) => state is PublicEventLoaded
+                  ? ShareEventButton(
+                      eventId: state.event.id,
+                      title: state.event.title,
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
         ),
         body: BlocBuilder<PublicEventBloc, PublicEventState>(
           builder: (context, state) {

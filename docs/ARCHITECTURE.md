@@ -105,7 +105,8 @@ Feature BLoCs (`SessionBloc`, `SessionDetailBloc`, `CreateSessionBloc`, `GroupDe
 
 Redirect rules:
 
-- Unauthenticated users may only visit `/welcome`, `/login` and `/registration`; anything else redirects to `/welcome`.
+- Unauthenticated users may only visit `/welcome`, `/login` and `/registration`. A guest on `/` goes to `/welcome`; a guest on any other gated deep link (e.g. the ticket QR `/validate-ticket?token=`) goes to `/login?from=<that link>` and returns to it after signing in.
+- URLs are real paths (`usePathUrlStrategy()` in `main`), not `/#/...`: the ticket QR and shared event links (`https://proplayapp.com/events/<id>`) depend on it. Hosting rewrites `**` to `index.html`.
 - Authenticated users hitting those three routes go to `?from=` when it is a safe in-app path (`safeFrom` in `lib/utils/auth_redirect.dart`), else `/`. Build auth links with `authPath('/login' | '/registration', from: ...)`: the guest event CTA and the desktop top bar (on `/events/:id`) do, so a guest returns to the event after signing up or in.
 - Custom scheme `proplay://success|pending|failure` remaps to `/payment/...` (Mercado Pago return path; not the live Yape flow).
 
@@ -131,7 +132,7 @@ While `AuthBloc` is still `AuthInitial`, a spinner `MaterialApp` is shown (no ro
 | `/payment/success` | `payment-success` | `PaymentSuccessScreen` |
 | `/payment/pending` | `payment-pending` | `PaymentPendingScreen` |
 | `/payment/failure` | `payment-failure` | `PaymentFailureScreen` |
-| `/tickets` | `tickets` | `MyTicketsScreen` |
+| `/tickets` | `tickets` | `MyTicketsScreen` ("Mis partidos") |
 | `/validate-ticket` | `validate-ticket` | `ValidateTicketScreen` (`?token=`) |
 | `/group/:id` | `group-detail` | `GroupDetailScreenLoader` |
 | `/group/:id/edit` | `group-edit` | `GroupEditScreenLoader` |
@@ -155,7 +156,7 @@ These screens are **not** in the route table. Deep links will not open them.
 
 When you add a new primary destination, register it in `GoRouter` and navigate with `context.go` / `context.push`. Keep `Navigator.push` only for true one-off sheets if you must.
 
-Ticket validation URL builder: `lib/utils/ticket_url_builder.dart` → `https://proplayapp.com/validate-ticket?token=<uuid>`.
+Ticket validation URL builder: `lib/utils/ticket_url_builder.dart` → `https://proplayapp.com/validate-ticket?token=<uuid>`. Same file: `eventShareUrl` / `whatsappShareUri` for `ShareEventButton` (public events only; private ones have no guest page).
 
 ---
 
@@ -416,7 +417,7 @@ LoadAllUserSessions → getAllUpcomingSessions
   sort: distance if GPS available, else eventDate
 ```
 
-Home asks for location (`geolocator`) and prompts for sports / gender / age when missing.
+Home asks for location (`geolocator`) and offers (never forces) a sports / gender / age dialog once, when missing and not dismissed.
 
 Join:
 
@@ -548,12 +549,12 @@ Join uses a transaction so seat + debit + ticket stay atomic. Approval of credit
 | `EditProfileScreen` | Name + photo |
 | `PurchaseCreditsScreen` | Yape wizard |
 | `PaymentSuccess/Pending/Failure` | Gateway return placeholders |
-| `MyTicketsScreen` / `TicketDetailScreen` | Wallet of tickets + QR |
+| `MyTicketsScreen` / `TicketDetailScreen` | "Mis partidos": upcoming (with free-cancel deadline) and past games (`splitTickets`), ticket QR |
 | `ValidateTicketScreen` | Staff check-in |
 | `CreditHistoryScreen` | User ledger (direct Firestore) |
 | `CreditApprovalScreen` | Super-user queue (direct Firestore) |
 
-Shared widgets: `AppDrawer`, `AppShell`, `AppTopBar`, `Brand`, `WalletIndicator`, `UpcomingEvents`, `CachedImage` (`PlatformCachedImage`), `LocationPicker`, `StepIndicator`.
+Shared widgets: `AppDrawer`, `AppShell`, `AppTopBar`, `Brand`, `WalletIndicator` (balance in S/, plus Yape top-ups awaiting approval via `PendingCreditsCubit`), `ShareEventButton`, `UpcomingEvents`, `CachedImage` (`PlatformCachedImage`), `LocationPicker`, `StepIndicator`.
 
 ---
 

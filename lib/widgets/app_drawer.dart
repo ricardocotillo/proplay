@@ -99,7 +99,7 @@ class AppDrawer extends StatelessWidget {
                 ),
                 ListTile(
                   leading: const Icon(Icons.qr_code),
-                  title: const Text('Mis Tickets'),
+                  title: const Text('Mis partidos'),
                   onTap: () {
                     context.pop(); // Close drawer
                     Navigator.push(

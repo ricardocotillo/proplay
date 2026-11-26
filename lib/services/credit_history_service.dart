@@ -121,6 +121,22 @@ class CreditHistoryService {
     }
   }
 
+  /// Total of the user's Yape purchases still waiting for approval.
+  Stream<double> streamPendingCredits(String userId) {
+    return _firestore
+        .collection('creditHistory')
+        .where('userId', isEqualTo: userId)
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs.fold<double>(
+            0,
+            (sum, doc) =>
+                sum + ((doc.data()['creditAmount'] as num?)?.toDouble() ?? 0),
+          ),
+        );
+  }
+
   /// Stream of user's credit history
   Stream<List<CreditHistoryModel>> streamUserCreditHistory(String userId) {
     return _firestore

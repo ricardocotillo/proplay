@@ -2,7 +2,7 @@
 const kShellNav = <({String label, String path})>[
   (label: 'Inicio', path: '/'),
   (label: 'Eventos', path: '/events'),
-  (label: 'Mis tickets', path: '/tickets'),
+  (label: 'Mis partidos', path: '/tickets'),
 ];
 
 /// Nav items visible to the current visitor.

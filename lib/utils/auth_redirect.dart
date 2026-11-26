@@ -30,14 +30,19 @@ String authPath(String path, {String? from}) {
 
 /// Auth gate for GoRouter: public routes for guests, `/` (or the `from`
 /// target) for signed-in users, `/events` and `/events/:id` open to both.
+/// A guest opening a deep link ([target], e.g. a ticket QR) signs in first
+/// and comes back to it; a guest on `/` gets the landing page.
 String? authRedirect({
   required bool loggedIn,
   required String location,
   String? from,
+  String? target,
 }) {
   if (_isOpen(location)) return null;
   final isPublic = _publicRoutes.contains(location);
-  if (!loggedIn && !isPublic) return '/welcome';
+  if (!loggedIn && !isPublic) {
+    return location == '/' ? '/welcome' : authPath('/login', from: target);
+  }
   if (loggedIn && isPublic) return safeFrom(from) ?? '/';
   return null;
 }
