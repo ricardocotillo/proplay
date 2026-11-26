@@ -676,6 +676,38 @@ class SessionService {
     });
   }
 
+  /// Who is present: users whose ticket for [sessionId] is `used`. Only
+  /// organizers can read these tickets (the rules need the group id too).
+  Stream<Set<String>> streamPresentUids(String sessionId, String groupId) {
+    return _firestore
+        .collection('tickets')
+        .where('sessionId', isEqualTo: sessionId)
+        .where('groupId', isEqualTo: groupId)
+        .snapshots()
+        .map(
+          (snap) => {
+            for (final d in snap.docs)
+              if (d.data()['status'] == 'used') d.data()['userId'] as String,
+          },
+        );
+  }
+
+  /// Organizer marks a player present or absent via the `checkInPlayer`
+  /// Cloud Function (ticket `used` / `valid`).
+  Future<void> checkInPlayer({
+    required String sessionId,
+    required String userId,
+    required bool present,
+  }) async {
+    try {
+      await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
+          .httpsCallable('checkInPlayer')
+          .call({'sessionId': sessionId, 'userId': userId, 'present': present});
+    } on FirebaseFunctionsException catch (e) {
+      throw callableError(e);
+    }
+  }
+
   /// Organizer removes a player via the `removePlayer` Cloud Function: seat
   /// freed, ticket deleted, price refunded in full.
   Future<CancelResultModel> removeUserFromSession({

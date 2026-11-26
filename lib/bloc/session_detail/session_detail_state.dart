@@ -24,14 +24,28 @@ class SessionDetailLoaded extends SessionDetailState {
   final bool isCurrentUserJoined;
   final bool isOwnerOrAdmin;
 
+  /// Users checked in at the door (organizers only; empty for everyone else).
+  final Set<String> presentUids;
+
+  /// False when organizers' attendance could not be loaded.
+  final bool presenceAvailable;
+
   const SessionDetailLoaded({
     required this.session,
     required this.isCurrentUserJoined,
     this.isOwnerOrAdmin = false,
+    this.presentUids = const {},
+    this.presenceAvailable = true,
   });
 
   @override
-  List<Object?> get props => [session, isCurrentUserJoined, isOwnerOrAdmin];
+  List<Object?> get props => [
+    session,
+    isCurrentUserJoined,
+    isOwnerOrAdmin,
+    presentUids,
+    presenceAvailable,
+  ];
 }
 
 /// Processing join/cancel action

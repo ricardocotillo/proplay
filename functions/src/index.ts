@@ -7,5 +7,5 @@ setGlobalOptions({region: 'southamerica-east1', maxInstances: 10});
 export {cancelParticipation} from './cancelParticipation';
 export {joinSession} from './joinSession';
 export {mirrorPublicEvent} from './publicEvents';
-export {cancelEvent, removePlayer} from './organizer';
+export {cancelEvent, checkInPlayer, removePlayer} from './organizer';
 export {reviewCreditPurchase} from './reviewCreditPurchase';

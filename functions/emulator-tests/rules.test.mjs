@@ -275,6 +275,33 @@ const groupEvents = (uid, ids) => getDocs(query(collection(as(uid), 'liveSession
 await t('member can query upcoming events of their own groups (incl. private)', () => assertSucceeds(groupEvents('qmember', ['gq1'])));
 await t('querying a group the user is not in is denied', () => assertFails(groupEvents('qmember', ['gq1', 'gq2'])));
 
+// --- event creator reads their own event even outside the group ---
+await env.withSecurityRulesDisabled(async (c) => {
+  const d = c.firestore();
+  await setDoc(doc(d, 'liveSessions/cr_priv'), {groupId: 'gcr', isPrivate: true, creatorId: 'ex-member', costPerPlayer: 5});
+});
+await t('creator reads their private event without group membership', () => assertSucceeds(getDoc(doc(as('ex-member'), 'liveSessions/cr_priv'))));
+await t('a stranger still cannot read that private event', () => assertFails(getDoc(doc(as('stranger'), 'liveSessions/cr_priv'))));
+
+// --- event creator manages tickets like an owner/admin ---
+await env.withSecurityRulesDisabled(async (c) => {
+  const d = c.firestore();
+  await setDoc(doc(d, 'groups/gt1'), {name: 'GT', createdBy: 'gowner'});
+  await setDoc(doc(d, 'groups/gt1/members/gowner'), {role: 'owner'});
+  await setDoc(doc(d, 'groups/gt1/members/creator'), {role: 'member'});
+  await setDoc(doc(d, 'groups/gt1/members/plainm'), {role: 'member'});
+  await setDoc(doc(d, 'liveSessions/gt_s'), {groupId: 'gt1', isPrivate: false, costPerPlayer: 5, creatorId: 'creator', players: [], playerCount: 0});
+  await setDoc(doc(d, 'tickets/gt_s_p1'), {...ticket('p1'), sessionId: 'gt_s', groupId: 'gt1'});
+  await setDoc(doc(d, 'tickets/gt_s_p2'), {...ticket('p2'), sessionId: 'gt_s', groupId: 'gt1'});
+});
+const roster = (uid) => getDocs(query(collection(as(uid), 'tickets'), where('sessionId', '==', 'gt_s'), where('groupId', '==', 'gt1')));
+await t('group owner reads the event roster tickets (query)', () => assertSucceeds(roster('gowner')));
+await t('event creator (plain member) reads the event roster tickets (query)', () => assertSucceeds(roster('creator')));
+await t('a plain member cannot read the roster tickets', () => assertFails(roster('plainm')));
+await t('event creator validates a valid ticket', () => assertSucceeds(updateDoc(doc(as('creator'), 'tickets/gt_s_p1'), {status: 'used', usedAt: ts(), validatedBy: 'creator'})));
+await t('a plain member cannot validate', () => assertFails(updateDoc(doc(as('plainm'), 'tickets/gt_s_p2'), {status: 'used', usedAt: ts(), validatedBy: 'plainm'})));
+await t('the creator cannot undo a check-in from the client (checkInPlayer does)', () => assertFails(updateDoc(doc(as('creator'), 'tickets/gt_s_p1'), {status: 'valid', usedAt: null, validatedBy: null})));
+
 await env.cleanup();
 const failed = results.filter((r) => !r).length;
 console.log(`\nrules: ${results.length - failed}/${results.length} passed`);

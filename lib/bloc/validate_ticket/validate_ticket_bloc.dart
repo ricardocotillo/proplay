@@ -4,12 +4,15 @@ import 'package:proplay/bloc/validate_ticket/validate_ticket_state.dart';
 import 'package:proplay/models/ticket_model.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/group_service.dart';
+import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/ticket_service.dart';
+import 'package:proplay/utils/manage_event.dart';
 
 class ValidateTicketBloc
     extends Bloc<ValidateTicketEvent, ValidateTicketState> {
   final TicketService ticketService;
   final GroupService groupService;
+  final SessionService sessionService;
   final UserModel currentUser;
 
   TicketModel? _currentTicket;
@@ -18,6 +21,7 @@ class ValidateTicketBloc
   ValidateTicketBloc({
     required this.ticketService,
     required this.groupService,
+    required this.sessionService,
     required this.currentUser,
   }) : super(const ValidateTicketLoading()) {
     on<LoadTicketByToken>(_onLoadTicketByToken);
@@ -44,26 +48,48 @@ class ValidateTicketBloc
       }
       _currentTicket = ticket;
 
-      // Authorization: group owner, group admin member, or superUser.
-      bool isOwnerOrAdmin = currentUser.superUser;
-      if (!isOwnerOrAdmin) {
+      // Same rule as the event page and the server (`canManageEvent`):
+      // event creator, group owner/admin, or superUser.
+      String? role;
+      String? creatorId;
+      var lookupFailed = false;
+      if (!currentUser.superUser) {
         try {
-          final group = await groupService.getGroup(ticket.groupId);
-          if (group != null) {
-            isOwnerOrAdmin = group.createdBy == currentUser.uid;
-            if (!isOwnerOrAdmin) {
-              final role = await groupService.getMemberRole(
-                ticket.groupId,
-                currentUser.uid,
-              );
-              isOwnerOrAdmin = role == 'admin';
-            }
+          role = await groupService.getMemberRole(
+            ticket.groupId,
+            currentUser.uid,
+          );
+        } catch (_) {
+          lookupFailed = true;
+        }
+        // The creator only matters when the role doesn't already allow it.
+        if (role != 'owner' && role != 'admin') {
+          try {
+            creatorId =
+                (await sessionService.streamSession(ticket.sessionId).first)
+                    .creatorId;
+          } catch (_) {
+            lookupFailed = true;
           }
-        } catch (e) {
-          isOwnerOrAdmin = false;
         }
       }
+      final isOwnerOrAdmin = canManageEvent(
+        uid: currentUser.uid,
+        creatorId: creatorId,
+        memberRole: role,
+        superUser: currentUser.superUser,
+      );
       _isOwnerOrAdmin = isOwnerOrAdmin;
+      // A failed lookup is not "not allowed": ask the user to retry instead
+      // of telling a real organizer they have no permission.
+      if (!isOwnerOrAdmin && lookupFailed) {
+        emit(
+          const ValidateTicketError(
+            'No pudimos comprobar tus permisos. Inténtalo de nuevo.',
+          ),
+        );
+        return;
+      }
 
       emit(
         ValidateTicketLoaded(ticket: ticket, isOwnerOrAdmin: isOwnerOrAdmin),
