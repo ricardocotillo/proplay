@@ -178,6 +178,43 @@ await t('[COMPAT] ticket WITHOUT userDocument* (our current client) denied for a
   await assertFails(setDoc(doc(bob, 'tickets/s1_bob_nodoc'), t0));
 });
 
+// --- superUser and group roles (forgeable before: self-promotion) ---
+await env.withSecurityRulesDisabled(async (ctx) => {
+  const d = ctx.firestore();
+  await setDoc(doc(d, 'users/root'), {credits: '0.00', superUser: true});
+  await setDoc(doc(d, 'users/plain'), {credits: '0.00', superUser: false});
+  await setDoc(doc(d, 'groups/g3'), {name: 'G3', createdBy: 'carol'});
+  await setDoc(doc(d, 'groups/g3/members/carol'), {role: 'owner'});
+  await setDoc(doc(d, 'groups/g3/members/mem1'), {role: 'member'});
+  await setDoc(doc(d, 'groups/g3/members/mem2'), {role: 'member'});
+});
+const carol = as('carol');
+await t('user cannot make themselves superUser', () => assertFails(updateDoc(doc(as('plain'), 'users/plain'), {superUser: true})));
+await t('legacy user without the field cannot add superUser: true', () => assertFails(updateDoc(doc(bob, 'users/bob'), {superUser: true})));
+await t('legacy user may write superUser: false (profile save)', () => assertSucceeds(updateDoc(doc(as('c8'), 'users/c8'), {superUser: false, firstName: 'X'})));
+await t('user keeps editing profile with superUser unchanged', () => assertSucceeds(updateDoc(doc(as('plain'), 'users/plain'), {superUser: false, firstName: 'Y'})));
+await t('superUser can grant superUser', () => assertSucceeds(updateDoc(doc(as('root'), 'users/plain'), {superUser: true})));
+await t('join by code: own member doc as member', () => assertSucceeds(setDoc(doc(as('j1'), 'groups/g3/members/j1'), {role: 'member', joinedAt: serverTimestamp()})));
+await t('cannot join as admin', () => assertFails(setDoc(doc(as('j2'), 'groups/g3/members/j2'), {role: 'admin'})));
+await t('cannot claim owner of a group you did not create', () => assertFails(setDoc(doc(as('j3'), 'groups/g3/members/j3'), {role: 'owner'})));
+await t('cannot add someone else as member', () => assertFails(setDoc(doc(bob, 'groups/g3/members/zed'), {role: 'member'})));
+await t('create group: creator claims owner', async () => {
+  await assertSucceeds(setDoc(doc(as('nina'), 'groups/g4'), {name: 'G4', createdBy: 'nina'}));
+  await assertSucceeds(setDoc(doc(as('nina'), 'groups/g4/members/nina'), {role: 'owner'}));
+});
+await t('cannot create a group in someone else\'s name', () => assertFails(setDoc(doc(bob, 'groups/g5'), {name: 'G5', createdBy: 'carol'})));
+await t('member cannot rewrite createdBy', () => assertFails(updateDoc(doc(as('mem1'), 'groups/g3'), {createdBy: 'mem1'})));
+await t('member can still edit group name', () => assertSucceeds(updateDoc(doc(as('mem1'), 'groups/g3'), {name: 'G3b'})));
+await t('member cannot promote themselves', () => assertFails(updateDoc(doc(as('mem1'), 'groups/g3/members/mem1'), {role: 'owner'})));
+await t('leave then re-claim owner is denied', async () => {
+  await assertSucceeds(deleteDoc(doc(as('mem2'), 'groups/g3/members/mem2')));
+  await assertFails(setDoc(doc(as('mem2'), 'groups/g3/members/mem2'), {role: 'owner'}));
+});
+await t('owner promotes a member to admin', () => assertSucceeds(updateDoc(doc(carol, 'groups/g3/members/mem1'), {role: 'admin'})));
+await t('owner cannot set an unknown role', () => assertFails(updateDoc(doc(carol, 'groups/g3/members/mem1'), {role: 'god'})));
+await t('non-owner cannot remove another member', () => assertFails(deleteDoc(doc(as('j1'), 'groups/g3/members/mem1'))));
+await t('owner removes a member', () => assertSucceeds(deleteDoc(doc(carol, 'groups/g3/members/j1'))));
+
 await t('[known hole] a non-owner can still inflate playerCount (join is client-side)', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/f8'), {players: [], playerCount: 999})));
 await t('[known hole] a non-owner can still remove other players', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/f9'), {players: [], playerCount: 0})));
 

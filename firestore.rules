@@ -114,8 +114,12 @@ service cloud.firestore {
       // Needed for sign-up ("create users/{uid}" on register / first Google sign-in).
       allow create: if isOwner(userId) && isValidNewUser(userId, request.resource.data);
 
-      // Only user can edit own profile (never the document)
-      allow update: if (isOwner(userId) || isSuperUser()) && documentUnchanged();
+      // Only user can edit own profile (never the document). Only a superUser
+      // can change superUser (legacy docs without the field count as false),
+      // so nobody can promote themselves.
+      allow update: if (isOwner(userId) || isSuperUser()) && documentUnchanged()
+        && (request.resource.data.get('superUser', false) == resource.data.get('superUser', false)
+            || isSuperUser());
 
       allow delete: if isOwner(userId) || isSuperUser();
 
@@ -130,19 +134,32 @@ service cloud.firestore {
     // -------------------------
     match /groups/{groupId} {
       allow read: if signedIn();
-      allow create: if signedIn();
+      // createdBy is who may claim the owner role (members create below), so it
+      // is set to the creator and never changes.
+      allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
 
-      allow update: if isGroupMember(groupId);
+      allow update: if isGroupMember(groupId)
+        && request.resource.data.get('createdBy', '') == resource.data.get('createdBy', '');
       allow delete: if isGroupOwner(groupId);
 
+      // Roles here authorize organizer actions (rules and Cloud Functions).
       match /members/{memberId} {
         allow read: if signedIn();
 
-        allow create: if signedIn();
+        // Join by code: your own doc as "member". Create group: the creator's
+        // own doc as "owner".
+        allow create: if isOwner(memberId) && (
+          request.resource.data.role == 'member'
+          || (request.resource.data.role == 'owner'
+              && get(/databases/$(database)/documents/groups/$(groupId)).data.createdBy == request.auth.uid)
+        );
 
-        allow update: if signedIn();
+        // Only the group owner grants or changes roles.
+        allow update: if isGroupOwner(groupId)
+          && request.resource.data.role in ['owner', 'admin', 'member'];
 
-        allow delete: if signedIn();
+        // The owner removes members; anyone may leave.
+        allow delete: if isOwner(memberId) || isGroupOwner(groupId);
       }
     }
 
