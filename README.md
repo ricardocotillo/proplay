@@ -148,20 +148,19 @@ npm run events:create -- --week 2026-12-07 --apply   # write
 - `--week` is any date in the target week (default: next week). Times are Lima (UTC-5).
 - `key` is the identity (`rec_{key}_{date}`). Never rename it or it becomes a new series. Re-runs are idempotent.
 - Events with players keep their price and players; seat or price changes that would break them only warn.
-- Removing an event is manual (delete it in the app). `publicEvents` is filled by the existing trigger.
+- To remove an event, use "Cancelar evento" in the app (it refunds every player). `publicEvents` is filled by the existing trigger.
 
 ## Deploy order
 
-Run by hand from the repo root, **in this order** (rules are additive, so the old app keeps working until step 4):
+Run by hand from the repo root, **in this order**. The rules deny every client write that the Cloud Functions replaced (balances, seats, tickets, ledger), so they go **last**, once mobile users run a build that uses the functions:
 
 ```bash
-npx -y firebase-tools@latest deploy --only firestore:rules,firestore:indexes   # 1. rules
-npx -y firebase-tools@latest deploy --only functions                           # 2. functions
-(cd functions && npx tsx scripts/backfillPublicEvents.ts)                      # 3. copy existing public events (gcloud auth application-default login first)
-flutter build web && npx -y firebase-tools@latest deploy --only hosting       # 4. web app
-```
-
-Mobile apps ship after step 4. Local testing: `npx -y firebase-tools@latest emulators:start --only firestore,functions,auth`.
+npx -y firebase-tools@latest deploy --only functions                           # 1. functions
+(cd functions && npx tsx scripts/backfillPublicEvents.ts)                      # 2. copy existing public events (gcloud auth application-default login first)
+flutter build web && npx -y firebase-tools@latest deploy --only hosting       # 3. web app (ship mobile builds too)
+(cd functions && npx tsx scripts/auditLedger.ts)                               # 4. read-only: review flagged creditHistory rows
+npx -y firebase-tools@latest deploy --only firestore:rules,firestore:indexes   # 5. rules (diff against the console first)
+``` Local testing: `npx -y firebase-tools@latest emulators:start --only firestore,functions,auth`.
 
 ## Repo layout
 

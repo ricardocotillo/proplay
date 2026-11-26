@@ -55,7 +55,7 @@ Services in use: Auth (email/password + Google), Firestore, Storage, Hosting.
 
 **Do not hand-edit:** `lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`.
 
-Rules (`firestore.rules`), indexes and Cloud Functions (`functions/`, TypeScript, region `southamerica-east1`) are in git but **deployed by hand** (order: rules → functions → backfill → hosting; see README). `joinSession` (callable) joins server-side (balance, seats, ledger, ticket in one transaction); `cancelParticipation` (callable) refunds server-side; `reviewCreditPurchase` (callable, superUser) approves or rejects a Yape top-up in one transaction; `cancelEvent` / `removePlayer` (callables, organizer) refund every player / the removed player in full; `mirrorPublicEvent` (Firestore trigger) projects public `liveSessions` into `publicEvents`. The rules still allow the old client join, credit approval, event delete and player removal (old app builds) until they are tightened (plan PR 5). Treat that as a known risk; do not loosen it further. Identity-document locks live in `documents/` (see docs/ARCHITECTURE.md); `firestore.rules` is the single source for rules, so never deploy it without first diffing against the console.
+Rules (`firestore.rules`), indexes and Cloud Functions (`functions/`, TypeScript, region `southamerica-east1`) are in git but **deployed by hand** (order: functions → backfill → hosting → rules, once mobile users are on the current build; see README). `joinSession` (callable) joins server-side (balance, seats, ledger, ticket in one transaction); `cancelParticipation` (callable) refunds server-side; `reviewCreditPurchase` (callable, superUser) approves or rejects a Yape top-up in one transaction; `cancelEvent` / `removePlayer` (callables, organizer) refund every player / the removed player in full; `mirrorPublicEvent` (Firestore trigger) projects public `liveSessions` into `publicEvents`. Money and seats are server-only: clients cannot write `users.credits`, `liveSessions.players` / `playerCount`, tickets (except staff validation) or any `creditHistory` row other than their own pending Yape top-up, and nobody deletes a `liveSessions` doc from the client. Never loosen these; add a callable instead. Identity-document locks live in `documents/` (see docs/ARCHITECTURE.md); `firestore.rules` is the single source for rules, so never deploy it without first diffing against the console.
 
 ### Collections that exist in code
 
@@ -186,6 +186,6 @@ Version: `1.0.7+10` (`pubspec.yaml`). Dart SDK `^3.13.0`.
 
 **Done:** auth (email + Google + reset), profiles, groups + roles, session create/join, matchmaking (sport/gender/age/distance), Yape credits + admin approval, tickets + QR validation, public events feed (guests), cancel with refund (Cloud Function), responsive shell, Firebase Hosting.
 
-**Not done / leftover:** automated payment gateway, recurring sessions, waitlist, email verification, more tests (blocs, widgets), locking `users.credits` / `liveSessions` / `creditHistory` rules (PR 5), aligning remaining screens on GoRouter.
+**Not done / leftover:** automated payment gateway, recurring sessions, waitlist, email verification, more tests (blocs, widgets), aligning remaining screens on GoRouter.
 
 Pitfalls and full flows: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).

@@ -16,7 +16,7 @@ ProPlay utiliza un sistema de compra de créditos manual a través de **Yape** (
 
 ## 📦 Paquetes de Créditos
 
-Definidos actualmente en `@/home/ricardo/dev/proplay/lib/models/payment_result_model.dart:17-21`:
+Definidos actualmente en `lib/models/payment_result_model.dart:17-21`:
 
 | Créditos | Precio (S/) |
 | -------- | ----------- |
@@ -223,16 +223,14 @@ Aunque el proceso de pago ocurre fuera de la aplicación (en la billetera del us
 El sistema de pagos ha pasado por varias iteraciones:
 
 1. **Recibo Manual (Fase 1)**: Los usuarios subían capturas de pantalla. Los campos heredados `receiptUrl` y `phoneNumber` en `CreditHistoryModel` permanecen por compatibilidad.
-2. **MercadoPago (Fase 2)**: Se planificó e implementó parcialmente una pasarela automatizada usando `lib/mp.dart` y `Checkout Pro`.
+2. **MercadoPago (Fase 2)**: Se planificó e implementó parcialmente una pasarela automatizada con `Checkout Pro` (las preferencias de ejemplo `lib/mp.dart` se eliminaron; `/payment/success` ya no acredita saldo).
 3. **Yape Actual (Fase 3)**: Debido a preferencias operativas, el sistema regresó a Yape pero con un flujo más estructurado de "Código de Confirmación" en lugar de subida de capturas.
 
 ### Inventario de Código Heredado (Legacy):
 
 Estos archivos no se usan actualmente pero se mantienen para una futura integración de pasarela:
 
-- `@/home/ricardo/dev/proplay/lib/mp.dart` (Datos de preferencia hardcoded)
-- `@/home/ricardo/dev/proplay/lib/screens/payment_success_screen.dart`
-- `@/home/ricardo/dev/proplay/lib/screens/payment_pending_screen.dart`
-- `@/home/ricardo/dev/proplay/lib/screens/payment_failure_screen.dart`
-- `@/home/ricardo/dev/proplay/lib/models/mp_preference_model.dart`
-- Stub de `PaymentService` en `@/home/ricardo/dev/proplay/lib/main.dart:60-62`.
+- `lib/screens/payment_success_screen.dart`
+- `lib/screens/payment_pending_screen.dart`
+- `lib/screens/payment_failure_screen.dart`
+- Stub de `PaymentService` en `lib/main.dart:60-62`.

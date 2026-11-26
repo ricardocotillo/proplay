@@ -5,6 +5,7 @@ import {
   formatCredits,
   refundDocId,
   refundAmount,
+  isPaidRefund,
   pickUnrefundedSpend,
   REFUND_WINDOW_MS,
 } from '../src/refundPolicy';
@@ -52,5 +53,20 @@ test('pickUnrefundedSpend takes the latest unrefunded row', () => {
   ];
   assert.equal(pickUnrefundedSpend(rows)?.id, 'c');
   assert.equal(pickUnrefundedSpend(rows.map((r) => ({...r, refunded: true}))), undefined);
+});
+
+test('pickUnrefundedSpend ignores rows dated in the future', () => {
+  const rows = [
+    {id: 'real', creditAmount: 10, createdAtMs: 100, refunded: false},
+    {id: 'forged', creditAmount: 1000, createdAtMs: 9_999_999, refunded: false},
+  ];
+  assert.equal(pickUnrefundedSpend(rows, 1000)?.id, 'real');
+});
+
+test('isPaidRefund accepts only a refund row for that user', () => {
+  assert.equal(isPaidRefund({entryType: 'refund', userId: 'u1'}, 'u1'), true);
+  assert.equal(isPaidRefund({entryType: 'purchase', userId: 'u2', status: 'pending'}, 'u1'), false);
+  assert.equal(isPaidRefund({entryType: 'refund', userId: 'u2'}, 'u1'), false);
+  assert.equal(isPaidRefund(undefined, 'u1'), false);
   assert.equal(pickUnrefundedSpend([]), undefined);
 });

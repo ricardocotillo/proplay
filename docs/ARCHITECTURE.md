@@ -166,7 +166,6 @@ Ticket validation URL builder: `lib/utils/ticket_url_builder.dart` → `https://
 lib/
 ├── main.dart
 ├── firebase_options.dart          # generated — do not edit
-├── mp.dart                        # static Mercado Pago preference samples
 ├── bloc/<feature>/                # *_bloc.dart, *_event.dart, *_state.dart
 ├── models/
 ├── services/
@@ -439,7 +438,7 @@ SessionDetailBloc.JoinSession
   → SessionDetailLoaded(isCurrentUserJoined) → AuthRefreshUserRequested + ticket screen
 ```
 
-Gender/age are a feed filter only; the server does not enforce them. Older app builds still join with the old client transaction until the rules are tightened (plan PR 5); the rules still allow it.
+Gender/age are a feed filter only; the server does not enforce them. The rules deny any client write to seats, tickets, balances and ledger rows (plan PR 5), so app builds older than the callables can no longer join, cancel, approve or delete.
 
 Organizer actions (callables in `functions/src/organizer.ts`, allowed for the group owner/admin, the event's `creatorId` or a superUser, only before the event starts; `canManageEvent` in `adminPolicy.ts`):
 
@@ -511,7 +510,7 @@ CreditApprovalScreen (superUser) → CreditApprovalCubit → callable reviewCred
   → reject: status=rejected, no credit
 ```
 
-`CreditPurchaseRequested` + `StubPaymentService` is the unfinished automated path. `PaymentService` is the interface for a future gateway. [PAYMENT_GATEWAY_MIGRATION_PLAN.md](PAYMENT_GATEWAY_MIGRATION_PLAN.md) and `lib/mp.dart` are not the production checkout.
+`StubPaymentService` is the unfinished automated path (the client-side `CreditPurchaseRequested` crediting was removed; `/payment/success` only shows a message). `PaymentService` is the interface for a future gateway. [PAYMENT_GATEWAY_MIGRATION_PLAN.md](PAYMENT_GATEWAY_MIGRATION_PLAN.md) and `lib/mp.dart` are not the production checkout.
 
 ### Tickets
 
@@ -661,12 +660,12 @@ Intended direction (from project guidelines):
 ## 14. Known pitfalls (read before you change money or seats)
 
 1. **Credits are a string on the user**, a double on the ledger. Always go through `UserModel.formatCredits` / `creditsValue`.
-2. **Join and cancel are server-side callables** (`joinSession`, `cancelParticipation`); the rules still allow the old client join until PR 5 tightens them. There is no client `leaveSession` anymore. Credit approval, event cancel and player removal are callables too (`reviewCreditPurchase`, `cancelEvent`, `removePlayer`); the rules still allow the old client writes until PR 5.
+2. **Every money or seat write is a callable** (`joinSession`, `cancelParticipation`, `reviewCreditPurchase`, `cancelEvent`, `removePlayer`). The rules deny client writes to `users.credits`, `players` / `playerCount`, tickets (except staff validation) and `creditHistory` (except a user's own pending Yape top-up), and a `liveSessions` delete. An owner may not lower `costPerPlayer` once players joined, because refunds are capped at the current price.
 3. **Players live on the live session document.** Large games will hit document size / contention. A players subcollection (as in `docs/sessions.md`) is the eventual fix.
 4. **Two membership models.** Subcollections are source of truth. Do not revive `streamUserGroups` without writing `groups.members[]`.
 5. **Duplicate sport lists** in `HomeScreen`, `CreateGroupScreen`, `GroupEditScreen`. Extract a constant before adding a sport.
 6. **Owner checks disagree** across session detail vs ticket validation.
-7. **Rules and functions are in git but deployed by hand** (`firestore.rules`, `functions/`). Deploy order: rules → functions → backfill → hosting (see README). The `mirrorPublicEvent` trigger region must equal the Firestore location (`southamerica-east1`). The rules still let a client edit its own `users.credits` and write `players` / `playerCount` of any `liveSessions` doc (join is client-side, so a user can still add or remove entries or inflate the seat count). Every other `liveSessions` field (title, place, price, `isPrivate`, ...) is writable only by the group owner, `groupId` is immutable, and deleting a session needs the group owner or admin. That keeps guests from seeing tampered or newly published events in `publicEvents`; moving join + credit approval server-side and tightening those rules is the durable fix (plan: [notes/join-session-server-side.md](notes/join-session-server-side.md)).
+7. **Rules and functions are in git but deployed by hand** (`firestore.rules`, `functions/`). Deploy order: functions → backfill → hosting → rules (see README). Rules go last because they deny every client write the callables replaced: an app build older than the callables stops working once they are live. The `mirrorPublicEvent` trigger region must equal the Firestore location (`southamerica-east1`). Before the first deploy of the locked rules, run `functions/scripts/auditLedger.ts` (read-only) and review any `creditHistory` row it flags.
 8. **`PaymentService` is a stub.** Do not hook a real card form to `CardDetails` (PCI). Use a gateway SDK / redirect.
 9. **Mixed navigation.** Deep links only work for GoRouter paths.
 10. **API keys in client files** (`AppConstants`, manifests, `web/index.html`) are expected for Maps but should be restricted by bundle id / HTTP referrer in Google Cloud.

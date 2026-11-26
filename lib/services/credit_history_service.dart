@@ -8,59 +8,6 @@ import 'package:proplay/utils/error_message.dart';
 class CreditHistoryService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Complete a credit purchase: atomically create history record and add credits to user.
-  /// Returns the new credit balance as a formatted string.
-  Future<String> completeCreditPurchase({
-    required String userId,
-    required CreditPackage package,
-    required PaymentResult paymentResult,
-  }) async {
-    try {
-      final userRef = _firestore.collection('users').doc(userId);
-      final creditHistoryRef = _firestore.collection('creditHistory').doc();
-
-      final newBalance = await _firestore.runTransaction((transaction) async {
-        // Read current user credits
-        final userDoc = await transaction.get(userRef);
-        if (!userDoc.exists) {
-          throw Exception('Usuario no encontrado');
-        }
-
-        final currentUser = UserModel.fromDocument(userDoc);
-        final newCreditValue = currentUser.creditsValue + package.credits;
-        final newCreditAmount = UserModel.formatCredits(newCreditValue);
-
-        // Create credit history record
-        transaction.set(creditHistoryRef, {
-          'userId': userId,
-          'creditAmount': package.credits,
-          'amountPaid': package.price,
-          'currency': package.currency,
-          'createdAt': FieldValue.serverTimestamp(),
-          'status': 'completed',
-          'entryType': 'purchase',
-          'direction': 'credit',
-          'sourceType': 'payment',
-          'sourceId': paymentResult.transactionId,
-          'transactionId': paymentResult.transactionId,
-          'paymentMethod': paymentResult.paymentMethod,
-          'paymentGateway': paymentResult.paymentGateway,
-          'balanceBefore': currentUser.creditsValue,
-          'balanceAfter': newCreditValue,
-        });
-
-        // Update user credits
-        transaction.update(userRef, {'credits': newCreditAmount});
-
-        return newCreditAmount;
-      });
-
-      return newBalance;
-    } catch (e) {
-      throw Exception('Error al procesar la compra: $e');
-    }
-  }
-
   /// Create a pending credit purchase: create history record with 'pending' status.
   /// User credits are NOT updated until admin approval.
   Future<void> createPendingCreditPurchase({
