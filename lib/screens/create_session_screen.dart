@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
@@ -13,6 +14,8 @@ import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/storage_service.dart';
 import 'package:proplay/services/user_service.dart';
+import 'package:proplay/utils/app_paths.dart';
+import 'package:proplay/utils/manage_event.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/location_picker.dart';
 import 'package:proplay/widgets/step_indicator.dart';
@@ -72,6 +75,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   // Group data
   GroupModel? _group;
   bool _isLoadingGroup = true;
+  bool _allowed = true;
 
   static const List<String> _stepLabels = ['Ubicación', 'Fecha', 'Detalles'];
 
@@ -107,9 +111,17 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
     try {
       final groupService = GroupService(userService: UserService());
       final group = await groupService.getGroup(widget.groupId);
+      final role = await groupService.getMemberRole(
+        widget.groupId,
+        context.currentUser?.uid ?? '',
+      );
       if (mounted) {
         setState(() {
           _group = group;
+          _allowed = canCreateEvent(
+            superUser: context.currentUser?.superUser == true,
+            groupRole: role,
+          );
           _isLoadingGroup = false;
         });
       }
@@ -284,11 +296,37 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
         title: const Text('Crear sesión'),
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.canPop()
+              ? context.pop()
+              : context.go(groupPath(widget.groupId)),
         ),
       ),
       body: _isLoadingGroup
           ? const Center(child: CircularProgressIndicator())
+          : !_allowed
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.lock_outline, size: 48),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Publicar eventos está disponible para organizadores '
+                      'verificados de este grupo.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton(
+                      onPressed: () => context.go(groupPath(widget.groupId)),
+                      child: const Text('Volver al grupo'),
+                    ),
+                  ],
+                ),
+              ),
+            )
           : BlocListener<CreateSessionBloc, CreateSessionState>(
               listener: (context, state) {
                 if (state is SessionCreationSuccess) {
@@ -297,7 +335,9 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                       content: Text('Sesión creada exitosamente!'),
                     ),
                   );
-                  Navigator.of(context).pop(true);
+                  context.canPop()
+                      ? context.pop(true)
+                      : context.go(groupPath(widget.groupId));
                 }
                 if (state is SessionCreationFailure) {
                   ScaffoldMessenger.of(context).showSnackBar(

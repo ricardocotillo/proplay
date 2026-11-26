@@ -23,7 +23,7 @@ UI language is Spanish. Currency is PEN.
 | --- | --- |
 | App | Flutter (Dart SDK `^3.13.0`), current version `1.0.7+10` |
 | State | BLoC (`flutter_bloc` + `equatable`) |
-| Routing | `go_router` (auth + primary screens) plus `Navigator.push` for some detail flows |
+| Routing | `go_router` (auth + every primary screen, including events, tickets and event creation); `Navigator.push` only for the map |
 | Backend | Firebase project **`proplay-eac23`** |
 | Auth | Firebase Auth (email/password + Google) |
 | Data | Cloud Firestore |

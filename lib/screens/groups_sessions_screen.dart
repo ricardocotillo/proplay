@@ -1,16 +1,17 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/session/session_bloc.dart';
-import 'package:proplay/screens/create_session_screen.dart';
-import 'package:proplay/screens/session_detail_screen.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/ticket_url_builder.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:proplay/utils/app_paths.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/utils/manage_event.dart';
 
 class GroupsSessionsScreen extends StatelessWidget {
   final String groupId;
@@ -34,9 +35,10 @@ class GroupsSessionsScreen extends StatelessWidget {
               builder: (context, state) {
                 // Only show add button if user is superUser AND owner or admin
                 if (state is SessionLoaded &&
-                    currentUser?.superUser == true &&
-                    (state.currentUserRole == 'owner' ||
-                        state.currentUserRole == 'admin')) {
+                    canCreateEvent(
+                      superUser: currentUser?.superUser == true,
+                      groupRole: state.currentUserRole,
+                    )) {
                   return Builder(
                     builder: (builderContext) => TextButton(
                       child: Text(
@@ -46,12 +48,8 @@ class GroupsSessionsScreen extends StatelessWidget {
                       onPressed: () async {
                         // Capture the bloc before the async navigation
                         final sessionBloc = builderContext.read<SessionBloc>();
-                        final result = await Navigator.push(
-                          builderContext,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                CreateSessionScreen(groupId: groupId),
-                          ),
+                        final result = await builderContext.push<bool>(
+                          createEventPath(groupId),
                         );
                         // Reload sessions if a new session was created
                         if (result == true) {
@@ -109,12 +107,8 @@ class GroupsSessionsScreen extends StatelessWidget {
                           ),
                           onTap: () async {
                             final bloc = context.read<SessionBloc>();
-                            final cancelled = await Navigator.push<bool>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    SessionDetailScreen(sessionId: session.id),
-                              ),
+                            final cancelled = await context.push<bool>(
+                              eventPath(session.id),
                             );
                             if (cancelled == true) {
                               bloc.add(LoadSessions(groupId));

@@ -19,7 +19,7 @@ import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/services/ticket_service.dart';
 import 'package:proplay/screens/session_map_screen.dart';
-import 'package:proplay/screens/ticket_detail_screen.dart';
+import 'package:proplay/utils/app_paths.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/utils/join_availability.dart';
 import 'package:proplay/utils/refund_policy.dart';
@@ -49,6 +49,11 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Detalles de la Pichanga'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go('/events'),
+          ),
           actions: [
             // Only public events have a guest-readable page to share.
             BlocBuilder<SessionDetailBloc, SessionDetailState>(
@@ -99,15 +104,9 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
 
               // Redirect to ticket view
               if (mounted) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TicketDetailScreen(
-                      ticketId: TicketService.ticketId(
-                        state.session.id,
-                        currentUser.uid,
-                      ),
-                    ),
+                context.push(
+                  ticketPath(
+                    TicketService.ticketId(state.session.id, currentUser.uid),
                   ),
                 );
               }
@@ -138,7 +137,9 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                   ),
                 ),
               );
-              Navigator.of(context).maybePop(true);
+              // Back to where the user came from (result: the event is gone),
+              // or the feed when the page was opened from a link.
+              context.canPop() ? context.pop(true) : context.go('/events');
             }
 
             if (state is SessionDetailError) {
@@ -439,19 +440,14 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                             ),
                             const SizedBox(height: 12),
                             OutlinedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => TicketDetailScreen(
-                                      ticketId: TicketService.ticketId(
-                                        session.id,
-                                        currentUser.uid,
-                                      ),
-                                    ),
+                              onPressed: () => context.push(
+                                ticketPath(
+                                  TicketService.ticketId(
+                                    session.id,
+                                    currentUser.uid,
                                   ),
-                                );
-                              },
+                                ),
+                              ),
                               icon: const Icon(Icons.qr_code),
                               label: const Text('Ver mi Ticket'),
                               style: OutlinedButton.styleFrom(

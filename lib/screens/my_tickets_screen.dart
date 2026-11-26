@@ -7,8 +7,8 @@ import 'package:proplay/bloc/my_tickets/my_tickets_bloc.dart';
 import 'package:proplay/bloc/my_tickets/my_tickets_event.dart';
 import 'package:proplay/bloc/my_tickets/my_tickets_state.dart';
 import 'package:proplay/models/ticket_model.dart';
-import 'package:proplay/screens/ticket_detail_screen.dart';
 import 'package:proplay/services/ticket_service.dart';
+import 'package:proplay/utils/app_paths.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/utils/event_format.dart';
 import 'package:proplay/utils/refund_policy.dart';
@@ -193,12 +193,7 @@ class _TicketCard extends StatelessWidget {
           ],
         ),
         trailing: const Icon(Icons.chevron_right),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TicketDetailScreen(ticketId: ticket.id),
-          ),
-        ),
+        onTap: () => context.push(ticketPath(ticket.id)),
       ),
     );
   }
