@@ -61,7 +61,7 @@ Replaces `CreditApprovalScreen._approveCredit`: verify `superUser` on the caller
 
 Do this **last**, after the new client is released (see rollout):
 
-- `users`: owner update may not change `credits` or `superUser` (`request.resource.data.diff(resource.data).affectedKeys().hasOnly([...profile fields...])`); `create` already requires `credits == '0.00'`.
+- `users`: owner update may not change `credits` (`superUser` is already locked, and member roles too, since the rules-hardening PR) (`request.resource.data.diff(resource.data).affectedKeys().hasOnly([...profile fields...])`); `create` already requires `credits == '0.00'`.
 - `liveSessions`: update allowed only to the group owner (any field except `groupId`). Drop the non-owner `players` / `playerCount` branch. Admin removal of a player (`removeUserFromSession`) and `uploadReceipt` also move behind callables, or stay on a narrower rule if kept client-side.
 - `tickets`: no client `create`/`update` for holders; only the group staff validation update (`valid` → `used`). Reading stays as is. This drops the `isValidTicketData` machinery and the "holder can re-issue" case.
 - `creditHistory`: no client `create` except the Yape purchase request (`status: pending`, `entryType: purchase`), and that one validated by shape; no client updates.

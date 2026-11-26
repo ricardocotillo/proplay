@@ -285,6 +285,8 @@ Membership is **not** an array on the user document. It is `users/{uid}/groups/{
 
 Roles in `groups/{id}/members/{uid}.role`: `owner` | `admin` | `label: administrador / miembro / propietario`.
 
+Rules on roles (they authorize organizer actions in rules and Cloud Functions): a user may create only their own member doc, as `member` (join by code) or as `owner` when `groups/{id}.createdBy` is them (create group). `createdBy` is set to the creator and never changes. Only the group owner changes roles or removes members; anyone may leave. Only a superUser can change `users/{uid}.superUser`.
+
 Join/create also writes the reciprocal `users/{uid}/groups/{groupId}` doc. Role changes must update **both** sides (`GroupService.updateMemberRole` already does).
 
 ### `sessionTemplates/{id}` — `SessionTemplateModel`
