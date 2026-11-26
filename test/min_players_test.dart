@@ -38,6 +38,21 @@ void main() {
     });
   });
 
+  group('maxPlayersError', () {
+    test('1 to the cap is fine', () {
+      expect(maxPlayersError('1'), isNull);
+      expect(maxPlayersError('22'), isNull);
+      expect(maxPlayersError('$kMaxPlayersLimit'), isNull);
+    });
+    test('empty, 0, text and above the cap are refused', () {
+      expect(maxPlayersError(''), isNotNull);
+      expect(maxPlayersError(null), isNotNull);
+      expect(maxPlayersError('0'), isNotNull);
+      expect(maxPlayersError('abc'), isNotNull);
+      expect(maxPlayersError('${kMaxPlayersLimit + 1}'), contains('60'));
+    });
+  });
+
   group('minPlayersNote', () {
     String? note(int? min, int count, Duration left) => minPlayersNote(
       minPlayers: min,

@@ -118,3 +118,10 @@ test('todayLima uses Lima date, not UTC', () => {
   assert.equal(todayLima(new Date('2026-12-07T03:00:00Z')), '2026-12-06'); // Sun 22:00 Lima
   assert.equal(addDays('2026-12-06', 7), '2026-12-13');
 });
+
+test('maxPlayers must be 1 to 60 (a cancel refunds everyone in one transaction)', () => {
+  assert.deepEqual(parse(line({maxPlayers: '60'})).errors, []);
+  for (const v of ['0', '61', '2.5', 'x']) {
+    assert.ok(parse(line({maxPlayers: v})).errors.length > 0, v);
+  }
+});

@@ -1,5 +1,8 @@
 // Pure logic for scripts/createRecurringEvents.ts. No Firebase imports.
 
+/** Same cap as firestore.rules `validMax` and kMaxPlayersLimit (lib/utils/min_players.dart). */
+export const MAX_PLAYERS_LIMIT = 60;
+
 // Mirrors kSports in lib/utils/sports.dart. Keep accents exact.
 export const SPORTS = ['fútbol', 'baloncesto', 'voleibol'] as const;
 // Mirrors create_session_screen.dart (any | male | female, ages 18-80).
@@ -105,7 +108,9 @@ export function parseRows(records: string[][]): {rows: Row[]; errors: string[]} 
       return v;
     };
     const maxPlayers = num('maxPlayers');
-    if (!Number.isInteger(maxPlayers) || maxPlayers < 1) errs.push('maxPlayers must be integer >= 1');
+    if (!Number.isInteger(maxPlayers) || maxPlayers < 1 || maxPlayers > MAX_PLAYERS_LIMIT) {
+      errs.push(`maxPlayers must be an integer from 1 to ${MAX_PLAYERS_LIMIT}`);
+    }
     const totalCost = num('totalCost');
     if (totalCost < 0) errs.push('totalCost must be >= 0');
     const minAge = num('minAge', DEFAULT_MIN_AGE);

@@ -228,6 +228,29 @@ service cloud.firestore {
     // LIVE SESSIONS
     // -------------------------
     match /liveSessions/{sessionId} {
+      // Someone already holds a seat (the server writes players/playerCount).
+      function hasSeats() {
+        return resource.data.get('playerCount', 0) != 0 || resource.data.get('players', []).size() != 0;
+      }
+
+      // Seats per event: a cancel or auto-cancel refunds every player in one
+      // transaction (about 4 writes per player, 500 at most), so the maximum
+      // is capped. Same cap as MAX_PLAYERS_LIMIT in lib/utils/min_players.dart.
+      // Budget: 4 writes per player, 50 for a full waitlist, 1 for the event,
+      // and 5 per late canceller (not capped by the maximum): about 291 at 60
+      // players plus the late cancellers, so normal events have wide margin.
+      // Lowering the maximum to the player count while a waitlist seat is
+      // held can make that person's confirm fail; offers expire in 30 min.
+      function validMax(v) {
+        return v is int && v >= 1 && v <= 60;
+      }
+
+      // The optional minimum: a whole number from 2 up to the maximum.
+      function validMin(d) {
+        return !('minPlayers' in d)
+          || (d.minPlayers is int && d.minPlayers >= 2 && d.minPlayers <= d.get('maxPlayers', 0));
+      }
+
       // Read:
       // - If public session: any signed-in user can read
       // - If private session: only group members can read
@@ -243,7 +266,9 @@ service cloud.firestore {
       allow create: if signedIn() && isGroupOwner(request.resource.data.groupId)
         && request.resource.data.get('playerCount', 0) == 0
         && request.resource.data.get('players', []).size() == 0
-        && request.resource.data.get('creatorId', request.auth.uid) == request.auth.uid;
+        && request.resource.data.get('creatorId', request.auth.uid) == request.auth.uid
+        && validMax(request.resource.data.get('maxPlayers', 0))
+        && validMin(request.resource.data);
 
       // Update: only the owner of the session's group, and never groupId,
       // creatorId or the seats. players / playerCount are written only by
@@ -257,8 +282,24 @@ service cloud.firestore {
         // The price is frozen once anyone holds a seat: refunds are capped at
         // the current price, so lowering it would short joined players and
         // raising it would pay out more than they paid.
-        && ((resource.data.get('playerCount', 0) == 0 && resource.data.get('players', []).size() == 0)
-            || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['costPerPlayer']));
+        && (!hasSeats()
+            || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['costPerPlayer']))
+        // Once anyone joined, the date is frozen (reminders, the free-cancel
+        // promise and the minimum's check all key on it): to reschedule, the
+        // organizer cancels (everyone is refunded) and creates a new event.
+        && (!hasSeats()
+            || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['eventDate', 'eventEndDate']))
+        // The minimum can be lowered or removed after people joined, never raised.
+        && (!hasSeats()
+            || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['minPlayers'])
+            || request.resource.data.get('minPlayers', 0) <= resource.data.get('minPlayers', 0))
+        // The maximum stays within the cap and never below the people who joined.
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['maxPlayers'])
+            || (validMax(request.resource.data.get('maxPlayers', 0))
+                && request.resource.data.get('maxPlayers', 0) >= resource.data.get('playerCount', 0)))
+        // A changed minimum or maximum keeps the minimum valid (2 up to the maximum).
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['minPlayers', 'maxPlayers'])
+            || validMin(request.resource.data));
 
       // Delete: only the cancelEvent function (it refunds every player).
       allow delete: if false;
