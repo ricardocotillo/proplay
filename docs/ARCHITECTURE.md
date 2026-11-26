@@ -243,6 +243,8 @@ sessionTemplates/{templateId}
 liveSessions/{sessionId}         # players[] embedded on the document
 tickets/{sessionId}_{userId}
 documents/{type}_{number}        # uniqueness lock: { uid, createdAt }
+users/{uid}/fcmTokens/{token}     # web push device: { createdAt, platform }
+notificationsSent/{kind}_{id}    # server-only: claims a notification so it is sent once
 creditHistory/{id}
 yape/{id}                        # first doc wins — admin QR / phone / name
 ```
@@ -474,7 +476,18 @@ Guests tap a card → `/events/:id` (`PublicEventScreen`, "Ingresa para unirte" 
 
 ### Cloud Functions (`functions/`)
 
-TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation` and `joinSession` (callables) and `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel` and `join` (callable logic, incl. join → cancel → rejoin), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
+TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation`, `joinSession` and the organizer / credit callables, `mirrorPublicEvent`, `sendReminders` (scheduled) and `notifyCreditApproved` (trigger) (`onDocumentWritten('liveSessions/{id}')`). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel` and `join` (callable logic, incl. join → cancel → rejoin), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
+
+### Notifications (web push)
+
+Foundation plus three messages, web only (Firebase Cloud Messaging; email is not built).
+
+- **Opt in:** Perfil → "Avisos en el navegador" (`NotificationsCubit` → `NotificationService`). It asks the browser for permission, gets an FCM token with `AppConstants.webPushVapidKey` and stores it at `users/{uid}/fcmTokens/{token}` (rules: only the user, own tokens, fixed fields). The switch is hidden until the VAPID key is set. `web/firebase-messaging-sw.js` shows notifications while no tab is open; a click opens the link.
+- **Send:** `functions/src/notify.ts` (`sendToUser`: every device of a user, dead tokens deleted; `claim`: `notificationsSent/{kind}_{id}` is created once, so a notification is never sent twice).
+- **Messages** (copy in `reminderPolicy.ts`, Spanish):
+  - `sendReminders` (scheduled every 10 min, `runReminders`): *Última hora para cancelar gratis* in the hour before the 24 h free-cancel deadline, and *Tu evento empieza pronto* in the last 2 h, to every player; links to `/events/:id`.
+  - `notifyCreditApproved` (`onDocumentUpdated('creditHistory/{id}')`): *Saldo aprobado* when a top-up goes pending → approved; links to `/profile`.
+- A user who enables push after a reminder was claimed does not get that reminder. No quiet hours or per-message preferences yet.
 
 ### Matchmaking
 

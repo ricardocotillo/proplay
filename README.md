@@ -160,7 +160,9 @@ npx -y firebase-tools@latest deploy --only functions                           #
 flutter build web && npx -y firebase-tools@latest deploy --only hosting       # 3. web app (ship mobile builds too)
 (cd functions && npx tsx scripts/auditLedger.ts)                               # 4. read-only: review flagged creditHistory rows
 npx -y firebase-tools@latest deploy --only firestore:rules,firestore:indexes   # 5. rules (diff against the console first)
-``` Local testing: `npx -y firebase-tools@latest emulators:start --only firestore,functions,auth`.
+```
+
+**Web push (one-time):** Firebase console → Project settings → Cloud Messaging → Web Push certificates → generate a key pair, paste the public key into `AppConstants.webPushVapidKey` (`lib/utils/constants.dart`) and redeploy hosting; until then the "Avisos en el navegador" switch stays hidden. Deploying `sendReminders` creates a Cloud Scheduler job (needs the Blaze plan and the Cloud Scheduler API; the CLI offers to enable it). Local testing: `npx -y firebase-tools@latest emulators:start --only firestore,functions,auth`.
 
 ## Repo layout
 

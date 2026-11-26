@@ -55,7 +55,7 @@ Services in use: Auth (email/password + Google), Firestore, Storage, Hosting.
 
 **Do not hand-edit:** `lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`.
 
-Rules (`firestore.rules`), indexes and Cloud Functions (`functions/`, TypeScript, region `southamerica-east1`) are in git but **deployed by hand** (order: functions → backfill → hosting → rules, once mobile users are on the current build; see README). `joinSession` (callable) joins server-side (balance, seats, ledger, ticket in one transaction); `cancelParticipation` (callable) refunds server-side; `reviewCreditPurchase` (callable, superUser) approves or rejects a Yape top-up in one transaction; `cancelEvent` / `removePlayer` (callables, organizer) refund every player / the removed player in full; `checkInPlayer` (callable, organizer) toggles a player's check-in; `mirrorPublicEvent` (Firestore trigger) projects public `liveSessions` into `publicEvents`. Money and seats are server-only: clients cannot write `users.credits`, `liveSessions.players` / `playerCount`, tickets (except staff validation) or any `creditHistory` row other than their own pending Yape top-up, and nobody deletes a `liveSessions` doc from the client. Never loosen these; add a callable instead. Identity-document locks live in `documents/` (see docs/ARCHITECTURE.md); `firestore.rules` is the single source for rules, so never deploy it without first diffing against the console.
+Rules (`firestore.rules`), indexes and Cloud Functions (`functions/`, TypeScript, region `southamerica-east1`) are in git but **deployed by hand** (order: functions → backfill → hosting → rules, once mobile users are on the current build; see README). `joinSession` (callable) joins server-side (balance, seats, ledger, ticket in one transaction); `cancelParticipation` (callable) refunds server-side; `reviewCreditPurchase` (callable, superUser) approves or rejects a Yape top-up in one transaction; `cancelEvent` / `removePlayer` (callables, organizer) refund every player / the removed player in full; `checkInPlayer` (callable, organizer) toggles a player's check-in; `sendReminders` (scheduled, every 10 min) and `notifyCreditApproved` (trigger) send web push via FCM to `users/{uid}/fcmTokens`; `mirrorPublicEvent` (Firestore trigger) projects public `liveSessions` into `publicEvents`. Money and seats are server-only: clients cannot write `users.credits`, `liveSessions.players` / `playerCount`, tickets (except staff validation) or any `creditHistory` row other than their own pending Yape top-up, and nobody deletes a `liveSessions` doc from the client. Never loosen these; add a callable instead. Identity-document locks live in `documents/` (see docs/ARCHITECTURE.md); `firestore.rules` is the single source for rules, so never deploy it without first diffing against the console.
 
 ### Collections that exist in code
 
@@ -69,6 +69,8 @@ liveSessions/{sessionId}              # players[] embedded on the document
 publicEvents/{sessionId}              # server-written projection of public events (no players), readable by anyone
 tickets/{sessionId}_{userId}
 documents/{type}_{number}              # DNI/CE uniqueness lock { uid, createdAt }
+users/{uid}/fcmTokens/{token}         # web push device { createdAt, platform }
+notificationsSent/{kind}_{id}         # server-only: claims a notification
 creditHistory/{id}
 yape/{firstDoc}                       # { name, phone, qr }
 ```
@@ -186,6 +188,6 @@ Version: `1.0.7+10` (`pubspec.yaml`). Dart SDK `^3.13.0`.
 
 **Done:** auth (email + Google + reset), profiles, groups + roles, session create/join, matchmaking (sport/gender/age/distance), Yape credits + admin approval, tickets + QR validation, public events feed (guests), cancel with refund (Cloud Function), responsive shell, Firebase Hosting.
 
-**Not done / leftover:** automated payment gateway, recurring sessions, waitlist, email verification, more tests (blocs, widgets), aligning remaining screens on GoRouter.
+**Not done / leftover:** email and mobile push (web push only), automated payment gateway, recurring sessions, waitlist, email verification, more tests (blocs, widgets), aligning remaining screens on GoRouter.
 
 Pitfalls and full flows: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
