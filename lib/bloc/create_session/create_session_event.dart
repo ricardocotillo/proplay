@@ -13,8 +13,15 @@ class CreateSessionTemplate extends CreateSessionEvent {
   /// Optional banner picked by the organizer; uploaded before the template is written.
   final XFile? banner;
 
-  const CreateSessionTemplate(this.template, {this.banner});
+  /// Weekly occurrences to create, this event included (1 = no repeat).
+  final int occurrences;
+
+  const CreateSessionTemplate(
+    this.template, {
+    this.banner,
+    this.occurrences = 1,
+  });
 
   @override
-  List<Object?> get props => [template, banner];
+  List<Object?> get props => [template, banner, occurrences];
 }

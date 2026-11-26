@@ -3,6 +3,7 @@ import {
   getFirestore, FieldValue, Firestore, Transaction, DocumentData, DocumentReference,
 } from 'firebase-admin/firestore';
 import {getMessaging} from 'firebase-admin/messaging';
+import {forgiveNoShow} from './attendance';
 import {canManageEvent} from './adminPolicy';
 import {
   applyLateRefund, applyOffer, LateRefundPlan, notifyLateRefund, notifyOffer, planLateRefund,
@@ -272,7 +273,7 @@ export const checkInPlayer = onCall(async (request) => {
   const db = getFirestore();
   const ticketRef = db.doc(`tickets/${sessionId}_${userId}`);
 
-  return db.runTransaction(async (tx) => {
+  const out = await db.runTransaction(async (tx) => {
     const {players} = await loadSession(tx, db, sessionId, uid);
     if (!players.some((p) => p?.uid === userId)) {
       throw new HttpsError('failed-precondition', 'Este jugador ya no está en el evento.');
@@ -289,6 +290,15 @@ export const checkInPlayer = onCall(async (request) => {
     } else if (!present && used) {
       tx.update(ticketRef, {status: 'valid', usedAt: null, validatedBy: null});
     }
-    return {present};
+    return {present, eventId: sessionId};
   });
+  // Marked present after the fact: a recorded no-show for this event is forgiven.
+  if (present) {
+    try {
+      await forgiveNoShow(db, userId, sessionId, Date.now());
+    } catch (e) {
+      console.error('forgive no-show failed', sessionId, userId, e);
+    }
+  }
+  return {present: out.present};
 });

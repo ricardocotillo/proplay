@@ -246,6 +246,7 @@ liveSessions/{sessionId}         # players[] embedded on the document
 tickets/{sessionId}_{userId}
 documents/{type}_{number}        # uniqueness lock: { uid, createdAt }
 users/{uid}/fcmTokens/{token}     # web push device: { createdAt, platform, token }
+users/{uid}/noShows/{eventId}    # server-written: { eventId, title, at }; the user reads their own
 notificationsSent/{kind}_{id}    # server-only: claims a notification so it is sent once
 creditHistory/{id}
 yape/{id}                        # first doc wins — admin QR / phone / name
@@ -265,6 +266,7 @@ yape/{id}                        # first doc wins — admin QR / phone / name
 | `createdAt` | timestamp | |
 | `credits` | **string** | Always 2 decimals, e.g. `"15.00"` |
 | `superUser` | bool | Admin |
+| `blockedUntil` | timestamp? | Joining is paused until then (3 no-shows in 90 days). Written only by Cloud Functions; clients cannot change it |
 | `sports` | string[] | Canonical sport values |
 | `documentType` | string | `dni` \| `ce` (`DocumentType.name`). Mandatory at registration; `''` on legacy docs |
 | `documentNumber` | string | Normalized (trim + uppercase). DNI: 8 digits. CE: 9–12 alphanumerics |
@@ -295,7 +297,7 @@ Join/create also writes the reciprocal `users/{uid}/groups/{groupId}` doc. Role 
 
 Written by `SessionService.createSessionTemplate`, which also inserts the first `liveSessions` doc. Fields: `groupId`, `creatorId`, `title`, `eventDate`, `eventEndDate`, `durationInMinutes` (computed), `maxPlayers`, `totalCost`, `costPerPlayer` (`totalCost / maxPlayers`), `isPrivate`, `sport`, `minAge`, `maxAge`, `desiredGender`, location + GeoFirestore `g` / `l`, optional `district`, `format`, `bannerUrl`.
 
-Recurring `rrule` from `docs/sessions.md` is **not** implemented in the app. Ops script `functions/scripts/createRecurringEvents.ts` creates weekly events from a local CSV with deterministic ids: template `rec_{key}`, live session `rec_{key}_{YYYY-MM-DD}` (see README).
+Weekly repeat is built into the create flow (see *Recurring events*); the `rrule` of `docs/sessions.md` is not implemented. Ops script `functions/scripts/createRecurringEvents.ts` creates weekly events from a local CSV with deterministic ids: template `rec_{key}`, live session `rec_{key}_{YYYY-MM-DD}` (see README).
 
 ### `liveSessions/{id}` — `SessionModel`
 
@@ -479,7 +481,20 @@ Guests tap a card → `/events/:id` (`PublicEventScreen`, "Ingresa para unirte" 
 
 ### Cloud Functions (`functions/`)
 
-TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation`, `joinSession`, `joinWaitlist`, `leaveWaitlist` (and the scheduled `expireWaitlistOffers`, `autoCancelUnderfilled`) and the organizer / credit callables, `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`), and for web push `sendReminders` (scheduled), `notifyCreditApproved` and `claimDeviceToken` (triggers). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel`, `join` (callable logic, incl. join → cancel → rejoin), `organizer` (credit review, cancel/remove event, check-in) and `reminders` (push sending with a fake sender), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
+TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation`, `joinSession`, `joinWaitlist`, `leaveWaitlist` (and the scheduled `expireWaitlistOffers`, `autoCancelUnderfilled`, `recordAttendance`) and the organizer / credit callables, `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`), and for web push `sendReminders` (scheduled), `notifyCreditApproved` and `claimDeviceToken` (triggers). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel`, `join` (callable logic, incl. join → cancel → rejoin), `organizer` (credit review, cancel/remove event, check-in) and `reminders` (push sending with a fake sender), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
+
+### Recurring events (create flow)
+
+"Crear evento" has a **Repetir** dropdown: *No repetir* or 2 to 8 weekly events in total (`kMaxOccurrences`). `SessionService.createSessionTemplate(template, occurrences:)` writes the template and all the live sessions in one batch (`weeklyOccurrences`: the same weekday and clock time every 7 days, the first event's duration, same price, seats, minimum and place). The copies share the template (`templateId`), are independent events (cancel, check in, waitlist each on its own) and each passes the same rules as a single create. The ops script `functions/scripts/createRecurringEvents.ts` (CSV, deterministic ids) stays for bulk, scheduled creation.
+
+### Attendance policy (no-shows)
+
+Published at `/politica-asistencia` (`AttendancePolicyScreen`, open to guests; text in `attendancePolicyLines`, numbers in `lib/utils/attendance_policy.dart`, equal to `functions/src/attendancePolicy.ts`). Linked from Perfil (which also shows the user's count and any pause), the join bar and the push messages.
+
+- **Recording:** `recordAttendance` (hourly, `runAttendance`) looks at events whose end was 6 to 48 h ago (the 6 h grace lets the organizer finish taking attendance). Only when the organizer took attendance (at least one ticket is `used`: roster check-in or QR) does a player with a still-`valid` ticket count as absent. One record per (event, player) at `users/{uid}/noShows/{eventId}`.
+- **Consequences:** the 2nd no-show in 90 days sends a warning push; the 3rd (and later) sets `users/{uid}.blockedUntil` to now + 14 days (never shortening an existing pause) and sends a push. `joinSession` and `joinWaitlist` refuse a paused user ("No puedes unirte a nuevos eventos hasta el …"); events they already joined stay. No saldo penalty.
+- **Dispute:** marking the player present afterwards (`checkInPlayer`, or a staff QR scan via the `forgiveOnScan` trigger) deletes that record (`forgiveNoShow`; undoing the last check-in of an event forgives every player of it, `retractAttendance`; the warning and block pushes go once per event and player) and lifts the pause when fewer than 3 remain.
+- Rules: `blockedUntil` cannot be changed by a client; `noShows` is read-only to its owner.
 
 ### Minimum players (auto-cancel)
 

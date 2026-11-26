@@ -103,6 +103,11 @@ await t('client join-style update on a public event denied', () => assertFails(u
 await t('legacy doc: client playerCount update denied', () => assertFails(updateDoc(doc(bob, 'liveSessions/legacy'), {playerCount: 1})));
 await t('legacy doc without isPrivate: a non-owner cannot ADD isPrivate:false', () => assertFails(updateDoc(doc(bob, 'liveSessions/legacy'), {isPrivate: false})));
 await t('owner can still create a session for their group', () => assertSucceeds(setDoc(doc(owner, 'liveSessions/new1'), {groupId: 'g1', isPrivate: false, costPerPlayer: 5, maxPlayers: 10})));
+await t('owner creates 8 weekly events in one batch', () => {
+  const b = writeBatch(owner);
+  for (let i = 0; i < 8; i++) b.set(doc(owner, 'liveSessions/wk' + i), {groupId: 'g1', isPrivate: false, costPerPlayer: 5, maxPlayers: 10});
+  return assertSucceeds(b.commit());
+});
 await t('non-owner cannot create a session for a group they do not own', () => assertFails(setDoc(doc(bob, 'liveSessions/new2'), {groupId: 'g1', isPrivate: false})));
 
 
@@ -406,6 +411,27 @@ await t('on update the minimum stays 2 up to the maximum; it can be removed', as
   await assertSucceeds(updateDoc(evt('lim_upd'), {maxPlayers: 4}));
 });
 await t('a legacy event over the cap can still be edited in other fields', () => assertSucceeds(updateDoc(evt('lim_legacy'), {title: 'Viejo'})));
+
+// --- attendance policy ---
+await env.withSecurityRulesDisabled(async (c) => {
+  const d = c.firestore();
+  await setDoc(doc(d, 'users/att1'), {credits: '0.00', documentType: 'dni', documentNumber: '12345678', blockedUntil: Timestamp.fromMillis(Date.now() + 86400000)});
+  await setDoc(doc(d, 'users/att1/noShows/e1'), {eventId: 'e1', at: Timestamp.now()});
+});
+const att = as('att1');
+await t('a user cannot lift or set their own block', async () => {
+  await assertFails(updateDoc(doc(att, 'users/att1'), {blockedUntil: deleteField()}));
+  await assertFails(updateDoc(doc(att, 'users/att1'), {blockedUntil: Timestamp.fromMillis(Date.now() - 1000)}));
+  await assertFails(updateDoc(doc(alice, 'users/alice'), {blockedUntil: Timestamp.fromMillis(Date.now() + 1000)}));
+});
+await t('a user cannot delete their own doc to shed a block', () => assertFails(deleteDoc(doc(att, 'users/att1'))));
+await t('a blocked user still edits their profile', () => assertSucceeds(updateDoc(doc(att, 'users/att1'), {firstName: 'Ana'})));
+await t('a user reads their own no-shows, nobody else does, nobody writes them', async () => {
+  await assertSucceeds(getDoc(doc(att, 'users/att1/noShows/e1')));
+  await assertFails(getDoc(doc(bob, 'users/att1/noShows/e1')));
+  await assertFails(setDoc(doc(att, 'users/att1/noShows/e2'), {eventId: 'e2', at: serverTimestamp()}));
+  await assertFails(deleteDoc(doc(att, 'users/att1/noShows/e1')));
+});
 
 await env.cleanup();
 const failed = results.filter((r) => !r).length;

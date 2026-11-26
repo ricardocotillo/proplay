@@ -16,6 +16,7 @@ import 'package:proplay/services/storage_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/utils/app_paths.dart';
 import 'package:proplay/utils/min_players.dart';
+import 'package:proplay/utils/recurrence.dart';
 import 'package:proplay/utils/manage_event.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/location_picker.dart';
@@ -66,6 +67,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   final _titleController = TextEditingController();
   final _maxPlayersController = TextEditingController();
   final _minPlayersController = TextEditingController();
+  int _occurrences = 1;
   final _costPerPlayerController = TextEditingController();
   final _formatController = TextEditingController();
   String? _desiredGender;
@@ -289,7 +291,11 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
     );
 
     context.read<CreateSessionBloc>().add(
-      CreateSessionTemplate(template, banner: _banner),
+      CreateSessionTemplate(
+        template,
+        banner: _banner,
+        occurrences: _occurrences,
+      ),
     );
   }
 
@@ -335,7 +341,13 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
               listener: (context, state) {
                 if (state is SessionCreationSuccess) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Evento creado exitosamente')),
+                    SnackBar(
+                      content: Text(
+                        _occurrences > 1
+                            ? '$_occurrences eventos creados exitosamente'
+                            : 'Evento creado exitosamente',
+                      ),
+                    ),
                   );
                   context.canPop()
                       ? context.pop(true)
@@ -591,6 +603,25 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                       ),
                 now: DateTime.now(),
               ),
+            ),
+            const SizedBox(height: 16),
+
+            // Weekly repeat: the copies are created now, one batch.
+            DropdownButtonFormField<int>(
+              initialValue: _occurrences,
+              decoration: const InputDecoration(
+                labelText: 'Repetir',
+                helperText:
+                    'Se crean todos ahora, con el mismo precio y cupos. Cada '
+                    'evento se puede cancelar por separado.',
+                helperMaxLines: 2,
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                for (var n = 1; n <= kMaxOccurrences; n++)
+                  DropdownMenuItem(value: n, child: Text(occurrencesLabel(n))),
+              ],
+              onChanged: (v) => setState(() => _occurrences = v ?? 1),
             ),
             const SizedBox(height: 16),
 

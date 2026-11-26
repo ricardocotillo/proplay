@@ -3,6 +3,7 @@ import {onCall, HttpsError} from 'firebase-functions/v2/https';
 import {getFirestore, FieldValue, Timestamp} from 'firebase-admin/firestore';
 import {formatCredits} from './refundPolicy';
 import {getMessaging} from 'firebase-admin/messaging';
+import {blockedMessage, isBlocked} from './attendancePolicy';
 import {joinError, roundCents, spendDocId} from './joinPolicy';
 import {
   applyLateRefund, holdsOf, LateRefundPlan, notifyLateRefund, readLateRefund, readWaitlist,
@@ -62,6 +63,9 @@ export const joinSession = onCall(async (request) => {
       throw new HttpsError('failed-precondition', 'No encontramos tu perfil.');
     }
     const user = userSnap.data()!;
+    // Three no-shows in 90 days pause joining for 14 days (attendance policy).
+    const until: number | undefined = user.blockedUntil?.toMillis?.();
+    if (isBlocked(until, nowMs)) throw new HttpsError('failed-precondition', blockedMessage(until!));
 
     // Missing isPrivate = private, like the read rule and mirrorPublicEvent.
     const isPrivate = session.isPrivate !== false;

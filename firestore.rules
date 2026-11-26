@@ -53,6 +53,7 @@ service cloud.firestore {
             : d.documentNumber.matches('^[A-Z0-9]{9,12}$'))
         && d.superUser == false
         && d.credits == '0.00'
+        && !('blockedUntil' in d)
         && getAfter(/databases/$(database)/documents/documents/$(documentKey(d))).data.uid == userId;
     }
 
@@ -121,14 +122,22 @@ service cloud.firestore {
       // refunds, credit approval), never by any client.
       allow update: if (isOwner(userId) || isSuperUser()) && documentUnchanged()
         && request.resource.data.get('credits', '0.00') == resource.data.get('credits', '0.00')
+        // blockedUntil (attendance policy) is written only by Cloud Functions.
+        && request.resource.data.get('blockedUntil', null) == resource.data.get('blockedUntil', null)
         && (request.resource.data.get('superUser', false) == resource.data.get('superUser', false)
             || isSuperUser());
 
-      allow delete: if isOwner(userId) || isSuperUser();
+      // Not the owner: deleting and recreating the doc would drop blockedUntil.
+      allow delete: if isSuperUser();
 
       // user's groups subcollection
       match /groups/{groupId} {
         allow read, write: if isOwner(userId);
+      }
+
+      // Missed events (attendance policy): server-written, the user reads their own.
+      match /noShows/{eventId} {
+        allow read: if isOwner(userId);
       }
 
       // Web push tokens: one doc per device, id = the FCM token. Only the

@@ -75,6 +75,10 @@ class UserModel {
   final bool profileCompletionDismissed;
   final DateTime createdAt;
   final String credits;
+
+  /// Joining is paused until this moment (attendance policy); written only
+  /// by Cloud Functions.
+  final DateTime? blockedUntil;
   final bool superUser;
   final List<String> sports;
   final String documentType; // 'dni' | 'ce' (DocumentType.name)
@@ -91,6 +95,7 @@ class UserModel {
     this.profileCompletionDismissed = false,
     required this.createdAt,
     this.credits = '0.00',
+    this.blockedUntil,
     this.superUser = false,
     this.sports = const [],
     required this.documentType,
@@ -163,6 +168,7 @@ class UserModel {
       profileCompletionDismissed: map['profileCompletionDismissed'] ?? false,
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       credits: creditsString,
+      blockedUntil: (map['blockedUntil'] as Timestamp?)?.toDate(),
       superUser: map['superUser'] ?? false,
       sports: List<String>.from(map['sports'] ?? []),
       documentType: map['documentType'] ?? '',

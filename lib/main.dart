@@ -34,6 +34,7 @@ import 'package:proplay/screens/group_detail_screen_loader.dart';
 import 'package:proplay/screens/group_edit_screen_loader.dart';
 import 'package:proplay/screens/group_info_screen_loader.dart';
 import 'package:proplay/screens/events_feed_screen.dart';
+import 'package:proplay/screens/attendance_policy_screen.dart';
 import 'package:proplay/screens/event_screen.dart';
 import 'package:proplay/services/notification_service.dart';
 import 'package:proplay/screens/groups_screen.dart';
@@ -275,6 +276,12 @@ class _MyAppState extends State<MyApp> {
                           ],
                         ),
                       ],
+                    ),
+                    GoRoute(
+                      path: '/politica-asistencia',
+                      name: 'attendance-policy',
+                      builder: (context, state) =>
+                          const AttendancePolicyScreen(),
                     ),
                     GoRoute(
                       path: '/events',
