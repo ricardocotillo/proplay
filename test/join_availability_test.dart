@@ -35,6 +35,10 @@ void main() {
     expect(block(date: now, count: 10), JoinBlock.past);
   });
 
+  test('zero seats is full, like the join transaction', () {
+    expect(block(count: 0, max: 0), JoinBlock.full);
+  });
+
   test('missing credits', () {
     expect(block(balance: 9.99), JoinBlock.credits);
   });

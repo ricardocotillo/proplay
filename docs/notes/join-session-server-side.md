@@ -14,6 +14,7 @@ Today the client does the whole join: it checks the balance, debits credits, wri
 | A user can create arbitrary `creditHistory` rows for itself | `creditHistory` create | Forged `spend` rows (the refund is capped at the event price, but the ledger can no longer be trusted) |
 | The client creates its own ticket (`pricePaid`, document snapshot, token) | `tickets` create/update | Ticket not tied to a real payment |
 | ~~`joinSession` trusts the `UserModel` the client passes in~~ | fixed 2026-11-26 | The balance is now read from `users/{uid}` inside the transaction; the client still writes it |
+| "Event already started" uses the client clock | `joinSession` (`session_service.dart`), not in the rules | A wrong device clock can join a started event or be refused early; the callable must use server time, like `cancelParticipation` |
 | Yape approval is not one transaction | `CreditApprovalScreen._approveCredit` (direct Firestore) | Balance and ledger status can diverge; any `superUser` write is client-side |
 
 `cancelParticipation` (Cloud Function, already shipped) is the model: server-side, one transaction, idempotent, uid taken from the auth context.

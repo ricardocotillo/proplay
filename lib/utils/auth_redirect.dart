@@ -8,11 +8,16 @@ bool _isOpen(String location) =>
 /// A `?from=` target is honoured only when it is an in-app path that is not
 /// itself a guest route (no open redirect, no loop).
 String? safeFrom(String? from) {
-  if (from == null || !from.startsWith('/') || from.startsWith('//')) {
+  // Browsers read `\` as `/`, so `/\evil.com` would be `//evil.com`.
+  if (from == null || !from.startsWith('/') || from.contains('\\')) {
     return null;
   }
-  if (_publicRoutes.contains(Uri.parse(from).path)) return null;
-  return from;
+  final uri = Uri.tryParse(from);
+  if (uri == null || uri.hasScheme || uri.hasAuthority) return null;
+  final target = uri.toString();
+  if (!target.startsWith('/') || target.startsWith('//')) return null;
+  if (_publicRoutes.contains(uri.path)) return null;
+  return target;
 }
 
 /// `/login` or `/registration` that returns to [from] after signing in.

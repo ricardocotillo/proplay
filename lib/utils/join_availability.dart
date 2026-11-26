@@ -14,7 +14,8 @@ JoinBlock joinBlock({
   double? balance,
 }) {
   if (!eventDate.isAfter(now)) return JoinBlock.past;
-  if (maxPlayers > 0 && playerCount >= maxPlayers) return JoinBlock.full;
+  // Same rule as the join transaction: no seats (0) means full.
+  if (playerCount >= maxPlayers) return JoinBlock.full;
   if (balance != null && balance < cost) return JoinBlock.credits;
   return JoinBlock.none;
 }

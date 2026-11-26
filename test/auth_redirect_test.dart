@@ -36,6 +36,9 @@ void main() {
       authRedirect(loggedIn: true, location: '/login', from: 'https://x.pe'),
       '/',
     );
+    for (final evil in ['/\\evil.com', '/\\/evil.com', '///evil.com']) {
+      expect(safeFrom(evil), isNull, reason: evil);
+    }
     expect(
       authRedirect(loggedIn: true, location: '/login', from: '/login'),
       '/',
