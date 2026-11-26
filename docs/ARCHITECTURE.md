@@ -2,7 +2,7 @@
 
 Living document. Update this file in the same PR whenever you change architecture, Firestore shape, routes, providers, or a user-facing flow.
 
-Last reviewed against the codebase: 2026-11-13. App version in `pubspec.yaml`: **1.0.7+10**.
+Last reviewed against the codebase: 2026-11-26. App version in `pubspec.yaml`: **1.0.7+10**.
 
 ---
 
@@ -106,7 +106,7 @@ Feature BLoCs (`SessionBloc`, `SessionDetailBloc`, `CreateSessionBloc`, `GroupDe
 Redirect rules:
 
 - Unauthenticated users may only visit `/welcome`, `/login` and `/registration`; anything else redirects to `/welcome`.
-- Authenticated users hitting those three routes go to `/`.
+- Authenticated users hitting those three routes go to `?from=` when it is a safe in-app path (`safeFrom` in `lib/utils/auth_redirect.dart`), else `/`. Build auth links with `authPath('/login' | '/registration', from: ...)`: the guest event CTA and the desktop top bar (on `/events/:id`) do, so a guest returns to the event after signing up or in.
 - Custom scheme `proplay://success|pending|failure` remaps to `/payment/...` (Mercado Pago return path; not the live Yape flow).
 
 While `AuthBloc` is still `AuthInitial`, a spinner `MaterialApp` is shown (no router yet).
@@ -377,7 +377,7 @@ LoginScreen / RegistrationScreen
 - If claiming the document fails (duplicate, network), the just-created Auth user is deleted (`AuthService.deleteCurrentUser`) — no orphan accounts.
 - Google from the login screen with an unknown account: Auth user deleted, error "Primero regístrate…". No account exists without a document.
 - New Google users split `displayName` into first/last and copy `photoURL`.
-- Invalid invite code still creates the account and emits `AuthSuccessWithInfo`.
+- Invalid invite code still creates the account: `AuthSuccessWithInfo` (snackbar) then `AuthAuthenticated` (the router only treats the latter as signed in). Auth error copy is Spanish (`AuthService._handleAuthException`).
 - Password reset: `AuthPasswordResetRequested` → email → `AuthPasswordResetEmailSent` → back to unauthenticated.
 - `AuthBloc` listens to `authStateChanges`. If Auth exists but the Firestore user is not written yet (Google race), it **does not** flip to unauthenticated.
 
@@ -423,7 +423,8 @@ Join:
 ```
 SessionDetailBloc.JoinSession
   → SessionService.joinSession (Firestore transaction)
-      1. reject if already joined or full or credits < costPerPlayer
+      1. reject if the event started, already joined, full, or balance < costPerPlayer
+         (balance read from users/{uid} inside the transaction, not the cached model)
       2. debit users/{uid}.credits
       3. write creditHistory spend
       4. append SessionUserModel to players[], bump playerCount
@@ -457,7 +458,7 @@ EventsFeedBloc.EventsFeedStarted → SessionService.getPublicEvents (publicEvent
     gender/age only for signed-in users) → sortFeed (distance if GPS, else date)
 ```
 
-Guests tap a card → `/events/:id` (`PublicEventScreen`, "Regístrate para unirte"). Signed-in users open `SessionDetailScreen` via `Navigator.push`. Home leads with the same `EventsFeedView`; "Mis grupos" sits below it.
+Guests tap a card → `/events/:id` (`PublicEventScreen`, "Ingresa para unirte" → `/login?from=/events/:id`; login's "Regístrate" link keeps `from`, so sign-in and sign-up both return to the event). Signed-in users open `SessionDetailScreen` via `Navigator.push`; its bottom bar shows Unirse / Evento finalizado / Evento lleno / "Te faltan S/ X" + Recargar (`joinBlock` in `lib/utils/join_availability.dart`, display only). Errors reach the UI through `userMessage` (`lib/utils/error_message.dart`). Home leads with the same `EventsFeedView`, independent of the groups load; "Mis grupos" sits below it.
 
 ### Cloud Functions (`functions/`)
 
@@ -658,7 +659,6 @@ Intended direction (from project guidelines):
 10. **API keys in client files** (`AppConstants`, manifests, `web/index.html`) are expected for Maps but should be restricted by bundle id / HTTP referrer in Google Cloud.
 11. **`creditHistory` streams require a composite index** (`userId` + `createdAt`). Create it from the console error link if queries fail.
 12. **Geohash queries** fan out by range × gender × sport. Keep radius and sport count bounded.
-13. **Registration success copy is Portuguese** (`Usuário registrado...`) in `AuthBloc`. Product UI is otherwise Spanish.
 
 ---
 

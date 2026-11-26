@@ -240,7 +240,8 @@ class _MyAppState extends State<MyApp> {
                 GoRoute(
                   path: '/login',
                   name: 'login',
-                  builder: (context, state) => const LoginScreen(),
+                  builder: (context, state) =>
+                      LoginScreen(from: state.uri.queryParameters['from']),
                 ),
                 GoRoute(
                   path: '/welcome',
@@ -250,7 +251,9 @@ class _MyAppState extends State<MyApp> {
                 GoRoute(
                   path: '/registration',
                   name: 'registration',
-                  builder: (context, state) => const RegistrationScreen(),
+                  builder: (context, state) => RegistrationScreen(
+                    from: state.uri.queryParameters['from'],
+                  ),
                 ),
               ],
               redirect: (context, state) {
@@ -278,6 +281,7 @@ class _MyAppState extends State<MyApp> {
                 return authRedirect(
                       loggedIn: authState is AuthAuthenticated,
                       location: state.matchedLocation,
+                      from: state.uri.queryParameters['from'],
                     ) ??
                     adminRedirect(
                       superUser: superUser,

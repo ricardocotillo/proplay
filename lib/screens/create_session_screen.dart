@@ -518,8 +518,8 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,
-              validator: (value) => value!.isEmpty
-                  ? 'Por favor, ingresa el número de jugadores'
+              validator: (value) => (int.tryParse(value ?? '') ?? 0) < 1
+                  ? 'Ingresa al menos 1 jugador'
                   : null,
             ),
             const SizedBox(height: 16),

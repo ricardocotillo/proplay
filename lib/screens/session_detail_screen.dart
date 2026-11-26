@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/widgets/cached_image.dart';
@@ -19,6 +20,7 @@ import 'package:proplay/services/ticket_service.dart';
 import 'package:proplay/screens/session_map_screen.dart';
 import 'package:proplay/screens/ticket_detail_screen.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/utils/join_availability.dart';
 import 'package:proplay/utils/refund_policy.dart';
 
 class SessionDetailScreen extends StatefulWidget {
@@ -429,20 +431,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                             ],
                           ],
                         )
-                      : ElevatedButton.icon(
-                          onPressed: () {
-                            _showJoinConfirmationDialog(context, session);
-                          },
-                          icon: const Icon(Icons.add),
-                          label: const Text('Unirse a la Pichanga'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context)
-                                .colorScheme
-                                .primary,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
+                      : _buildJoinAction(context, session, players.length),
                 ),
               ],
             );
@@ -450,6 +439,78 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
         ),
       ),
     );
+  }
+
+  /// Bottom bar for a user who has not joined: join, or why they can't.
+  Widget _buildJoinAction(
+    BuildContext context,
+    SessionModel session,
+    int playerCount,
+  ) {
+    final balance = (context.watchUser ?? context.currentUser!).creditsValue;
+    final block = joinBlock(
+      eventDate: session.eventDate,
+      playerCount: playerCount,
+      maxPlayers: session.maxPlayers,
+      cost: session.costPerPlayer,
+      now: DateTime.now(),
+      balance: balance,
+    );
+    final buttonStyle = ElevatedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      minimumSize: const Size(double.infinity, 0),
+    );
+
+    switch (block) {
+      case JoinBlock.past:
+        return ElevatedButton(
+          onPressed: null,
+          style: buttonStyle,
+          child: const Text('Evento finalizado'),
+        );
+      case JoinBlock.full:
+        return ElevatedButton(
+          onPressed: null,
+          style: buttonStyle,
+          child: const Text('Evento lleno'),
+        );
+      case JoinBlock.credits:
+        final missing = UserModel.formatCredits(
+          session.costPerPlayer - balance,
+        );
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Te faltan S/ $missing para unirte',
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.warning),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: () {
+                final authBloc = context.read<AuthBloc>();
+                // Back here after buying; the balance may have changed.
+                context
+                    .push('/purchase-credits')
+                    .then(
+                      (_) => authBloc.add(const AuthRefreshUserRequested()),
+                    );
+              },
+              icon: const Icon(Icons.account_balance_wallet_outlined),
+              label: const Text('Recargar créditos'),
+              style: buttonStyle,
+            ),
+          ],
+        );
+      case JoinBlock.none:
+        return ElevatedButton.icon(
+          onPressed: () => _showJoinConfirmationDialog(context, session),
+          icon: const Icon(Icons.add),
+          label: const Text('Unirse a la Pichanga'),
+          style: buttonStyle,
+        );
+    }
   }
 
   Widget _buildBadge(

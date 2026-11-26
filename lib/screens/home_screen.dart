@@ -228,80 +228,78 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Expanded(
-                child: BlocConsumer<GroupBloc, GroupState>(
-                  listener: (context, state) {
-                    if (state is GroupJoinSuccess) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(state.message),
-                          backgroundColor: AppColors.success,
-                        ),
-                      );
-                      _loadGroups();
-                    } else if (state is GroupDeleteSuccess) {
-                      ScaffoldMessenger.of(context)
-                          .showSnackBar(SnackBar(content: Text(state.message)));
-                      _loadGroups();
-                    }
-                  },
-                  builder: (context, state) {
-                    if (state is GroupLoading) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    if (state is GroupLoaded) {
-                      return ListView(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
+                // The feed never waits on groups: a slow or failed groups
+                // load only affects the "Mis grupos" section below it.
+                child: ListView(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: EventsFeedView(
+                        userLat: _userLat,
+                        userLng: _userLng,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                      child: Text(
+                        'Mis grupos',
+                        style: Theme.of(context).textTheme.titleLarge
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    BlocConsumer<GroupBloc, GroupState>(
+                      listener: (context, state) {
+                        if (state is GroupJoinSuccess) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(state.message),
+                              backgroundColor: AppColors.success,
                             ),
-                            child: EventsFeedView(
-                              userLat: _userLat,
-                              userLng: _userLng,
+                          );
+                          _loadGroups();
+                        } else if (state is GroupDeleteSuccess) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(state.message)),
+                          );
+                          _loadGroups();
+                        }
+                      },
+                      builder: (context, state) {
+                        if (state is GroupLoading) {
+                          return const Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        if (state is GroupLoaded) {
+                          return state.groups.isEmpty
+                              ? _buildEmptyState(context)
+                              : _buildGroupsList(state.groups);
+                        }
+                        if (state is GroupError) {
+                          return Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'No pudimos cargar tus grupos',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                                TextButton(
+                                  onPressed: _loadGroups,
+                                  child: const Text('Reintentar'),
+                                ),
+                              ],
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                            child: Text(
-                              'Mis grupos',
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          if (state.groups.isEmpty)
-                            _buildEmptyState(context)
-                          else
-                            _buildGroupsList(state.groups),
-                        ],
-                      );
-                    }
-
-                    if (state is GroupError) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 48,
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(state.message),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadGroups,
-                              child: const Text('Reintentar'),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    return _buildEmptyState(context);
-                  },
+                          );
+                        }
+                        return _buildEmptyState(context);
+                      },
+                    ),
+                  ],
                 ),
               ),
             ],

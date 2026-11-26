@@ -10,6 +10,8 @@ import 'package:proplay/models/user_model.dart';
 import 'package:proplay/screens/session_detail_screen.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/utils/auth_redirect.dart';
+import 'package:proplay/utils/join_availability.dart';
 import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/event_format.dart';
 import 'package:proplay/widgets/event_bottom_bar.dart';
@@ -62,6 +64,13 @@ class _Details extends StatelessWidget {
   Widget build(BuildContext context) {
     final signedIn = context.isAuthenticated;
     final seats = seatsInfo(event.playerCount, event.maxPlayers);
+    final block = joinBlock(
+      eventDate: event.eventDate,
+      playerCount: event.playerCount,
+      maxPlayers: event.maxPlayers,
+      cost: event.costPerPlayer,
+      now: DateTime.now(),
+    );
 
     Widget row(IconData icon, String text) => Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -141,24 +150,30 @@ class _Details extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              FilledButton(
-                onPressed: () {
-                  if (signedIn) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            SessionDetailScreen(sessionId: event.id),
-                      ),
-                    );
-                  } else {
-                    context.go('/registration');
-                  }
-                },
-                child: Text(
-                  signedIn ? 'Ver evento y unirme' : 'Regístrate para unirte',
+              if (signedIn)
+                FilledButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SessionDetailScreen(sessionId: event.id),
+                    ),
+                  ),
+                  child: const Text('Ver evento y unirme'),
+                )
+              else
+                FilledButton(
+                  // Guests sign in (or sign up from login) and come back here.
+                  onPressed: block == JoinBlock.none
+                      ? () => context.go(
+                          authPath('/login', from: '/events/${event.id}'),
+                        )
+                      : null,
+                  child: Text(switch (block) {
+                    JoinBlock.past => 'Evento finalizado',
+                    JoinBlock.full => 'Evento lleno',
+                    _ => 'Ingresa para unirte',
+                  }),
                 ),
-              ),
             ],
           ),
         ),

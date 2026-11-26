@@ -67,7 +67,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _authService.sendPasswordResetEmail(event.email);
       emit(
         const AuthPasswordResetEmailSent(
-          'Password reset email sent. Please check your inbox.',
+          'Te enviamos un correo para restablecer tu contraseña.',
         ),
       );
       emit(AuthUnauthenticated());
@@ -119,7 +119,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           ),
         );
       } else {
-        emit(AuthError('User data not found'));
+        emit(AuthError('No encontramos tu perfil. Regístrate primero.'));
         emit(AuthUnauthenticated());
       }
     } catch (e) {
@@ -165,7 +165,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           // Group not found, but registration is successful
           emit(
             AuthSuccessWithInfo(
-              message: 'Usuário registrado com sucesso, mas o código do grupo não foi encontrado.',
+              message:
+                  'Cuenta creada, pero no encontramos ese código de grupo.',
+              firebaseUser: userCredential.user!,
+              userModel: user,
+            ),
+          );
+          // The router only treats AuthAuthenticated as signed in.
+          emit(
+            AuthAuthenticated(
               firebaseUser: userCredential.user!,
               userModel: user,
             ),
@@ -245,7 +253,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             // Group not found, but registration is successful
             emit(
               AuthSuccessWithInfo(
-                message: 'Usuário registrado com sucesso, mas o código do grupo não foi encontrado.',
+                message:
+                    'Cuenta creada, pero no encontramos ese código de grupo.',
+                firebaseUser: firebaseUser,
+                userModel: userModel,
+              ),
+            );
+            emit(
+              AuthAuthenticated(
                 firebaseUser: firebaseUser,
                 userModel: userModel,
               ),

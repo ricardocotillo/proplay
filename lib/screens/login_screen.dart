@@ -4,10 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/bloc/auth/auth_state.dart';
+import 'package:proplay/utils/auth_redirect.dart';
 import 'package:proplay/widgets/responsive_layout.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  /// Where to return after signing in (`?from=`, see `authRedirect`).
+  final String? from;
+
+  const LoginScreen({super.key, this.from});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -48,7 +52,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (email.isEmpty || !email.contains('@')) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Please enter a valid email to reset password.'),
+          content: const Text(
+            'Ingresa un correo válido para restablecer tu contraseña.',
+          ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -61,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: const Text('Iniciar sesión')),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthError) {
@@ -195,7 +201,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextButton(
                       onPressed: isLoading
                           ? null
-                          : () => context.push('/registration'),
+                          : () => context.push(
+                              authPath('/registration', from: widget.from),
+                            ),
                       child: const Text("¿No tienes una cuenta? Regístrate"),
                     ),
                   ],

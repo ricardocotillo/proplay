@@ -4,11 +4,15 @@ import 'package:go_router/go_router.dart';
 import 'package:proplay/bloc/auth/auth_bloc.dart';
 import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/bloc/auth/auth_state.dart';
+import 'package:proplay/utils/auth_redirect.dart';
 import 'package:proplay/utils/document.dart';
 import 'package:proplay/widgets/responsive_layout.dart';
 
 class RegistrationScreen extends StatefulWidget {
-  const RegistrationScreen({super.key});
+  /// Where to return after signing up (`?from=`, see `authRedirect`).
+  final String? from;
+
+  const RegistrationScreen({super.key, this.from});
 
   @override
   State<RegistrationScreen> createState() => _RegistrationScreenState();
@@ -83,17 +87,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 backgroundColor: Theme.of(context).colorScheme.error,
               ),
             );
-          } else if (state is AuthAuthenticated) {
-            // Pop back to let AuthWrapper handle navigation to MyHomePage
-            Navigator.of(context).popUntil((route) => route.isFirst);
           } else if (state is AuthSuccessWithInfo) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-              ),
-            );
-            Navigator.of(context).popUntil((route) => route.isFirst);
+            // The router then redirects (to `from` or `/`).
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.message)));
           }
         },
         builder: (context, state) {
@@ -291,7 +288,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     ),
                     const SizedBox(height: 16),
                     TextButton(
-                      onPressed: isLoading ? null : () => context.pop(),
+                      onPressed: isLoading
+                          ? null
+                          : () => context.go(
+                              authPath('/login', from: widget.from),
+                            ),
                       child: const Text('¿Ya tienes una cuenta? Inicia sesión'),
                     ),
                   ],
