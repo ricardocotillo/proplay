@@ -35,7 +35,7 @@ const noShows = async (uid) => (await db.collection(`users/${uid}/noShows`).get(
 const blockedUntil = async (uid) => (await db.doc(`users/${uid}`).get()).data().blockedUntil?.toMillis();
 
 /** An event that ended `endedHoursAgo` hours ago, tickets: `used` for the first, `valid` for the others. */
-async function ended({endedHoursAgo = 3, used = 1, valid = 2} = {}) {
+async function ended({endedHoursAgo = 8, used = 1, valid = 2} = {}) {
   const id = `a${++n}`;
   await db.doc(`liveSessions/${id}`).set({
     title: 'Pichanga', groupId: 'g', isPrivate: false, costPerPlayer: 10, maxPlayers: 20, players: [], playerCount: 0,
@@ -66,8 +66,8 @@ await t('an event where nobody was checked in records nothing', async () => {
   for (const u of absent) assert.equal(await noShows(u), 0);
 });
 
-await t('events outside the 1 to 48 h window are skipped', async () => {
-  const recent = await ended({endedHoursAgo: 0.5});
+await t('events outside the 6 to 48 h window are skipped', async () => {
+  const recent = await ended({endedHoursAgo: 3});
   const old = await ended({endedHoursAgo: 60});
   await runAttendance(db, sender(), Date.now());
   assert.equal(await noShows(recent.absent[0]), 0);
@@ -139,6 +139,27 @@ await t('marking someone present afterwards forgives that no-show and lifts the 
   assert.equal(await noShows(u), 2);
   assert.equal(await blockedUntil(u), undefined);
   assert.equal(await forgiveNoShow(db, u, id, Date.now()), false); // nothing left to forgive
+});
+
+await t('a retry after a crash repairs a missing block once, without extending it', async () => {
+  const {absent, id} = await ended({used: 1, valid: 1});
+  const u = absent[0];
+  for (const k of ['r1', 'r2']) await db.doc(`users/${u}/noShows/${k}`).set({eventId: k, at: Timestamp.fromMillis(Date.now() - 5 * D)});
+  await db.doc(`users/${u}/noShows/${id}`).set({eventId: id, at: Timestamp.now()}); // recorded, block lost
+  const s = sender();
+  await runAttendance(db, s, Date.now());
+  const first = await blockedUntil(u);
+  assert.ok(first);
+  await runAttendance(db, s, Date.now() + H);
+  assert.equal(await blockedUntil(u), first);
+});
+
+await t('a deleted user doc does not abort the rest of the event', async () => {
+  const {absent} = await ended({used: 1, valid: 2});
+  for (const k of ['d1', 'd2']) await db.doc(`users/${absent[0]}/noShows/${k}`).set({eventId: k, at: Timestamp.fromMillis(Date.now() - 5 * D)});
+  await db.doc(`users/${absent[0]}`).delete();
+  await runAttendance(db, sender(), Date.now());
+  assert.equal(await noShows(absent[1]), 1);
 });
 
 const failed = results.filter((r) => !r).length;

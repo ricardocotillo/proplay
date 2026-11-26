@@ -419,6 +419,7 @@ await t('a user cannot lift or set their own block', async () => {
   await assertFails(updateDoc(doc(att, 'users/att1'), {blockedUntil: Timestamp.fromMillis(Date.now() - 1000)}));
   await assertFails(updateDoc(doc(alice, 'users/alice'), {blockedUntil: Timestamp.fromMillis(Date.now() + 1000)}));
 });
+await t('a user cannot delete their own doc to shed a block', () => assertFails(deleteDoc(doc(att, 'users/att1'))));
 await t('a blocked user still edits their profile', () => assertSucceeds(updateDoc(doc(att, 'users/att1'), {firstName: 'Ana'})));
 await t('a user reads their own no-shows, nobody else does, nobody writes them', async () => {
   await assertSucceeds(getDoc(doc(att, 'users/att1/noShows/e1')));

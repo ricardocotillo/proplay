@@ -12,4 +12,4 @@ export {reviewCreditPurchase} from './reviewCreditPurchase';
 export {claimDeviceToken, notifyCreditApproved, sendReminders} from './reminders';
 export {expireWaitlistOffers, joinWaitlist, leaveWaitlist} from './waitlistCallables';
 export {autoCancelUnderfilled} from './minPlayers';
-export {recordAttendance} from './attendance';
+export {forgiveOnScan, recordAttendance} from './attendance';

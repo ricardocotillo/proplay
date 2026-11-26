@@ -127,7 +127,8 @@ service cloud.firestore {
         && (request.resource.data.get('superUser', false) == resource.data.get('superUser', false)
             || isSuperUser());
 
-      allow delete: if isOwner(userId) || isSuperUser();
+      // Not the owner: deleting and recreating the doc would drop blockedUntil.
+      allow delete: if isSuperUser();
 
       // user's groups subcollection
       match /groups/{groupId} {

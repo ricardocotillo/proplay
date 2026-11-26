@@ -491,9 +491,9 @@ TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `
 
 Published at `/politica-asistencia` (`AttendancePolicyScreen`, open to guests; text in `attendancePolicyLines`, numbers in `lib/utils/attendance_policy.dart`, equal to `functions/src/attendancePolicy.ts`). Linked from Perfil (which also shows the user's count and any pause), the join bar and the push messages.
 
-- **Recording:** `recordAttendance` (hourly, `runAttendance`) looks at events whose end was 1 to 48 h ago. Only when the organizer took attendance (at least one ticket is `used`: roster check-in or QR) does a player with a still-`valid` ticket count as absent. One record per (event, player) at `users/{uid}/noShows/{eventId}`.
+- **Recording:** `recordAttendance` (hourly, `runAttendance`) looks at events whose end was 6 to 48 h ago (the 6 h grace lets the organizer finish taking attendance). Only when the organizer took attendance (at least one ticket is `used`: roster check-in or QR) does a player with a still-`valid` ticket count as absent. One record per (event, player) at `users/{uid}/noShows/{eventId}`.
 - **Consequences:** the 2nd no-show in 90 days sends a warning push; the 3rd (and later) sets `users/{uid}.blockedUntil` to now + 14 days (never shortening an existing pause) and sends a push. `joinSession` and `joinWaitlist` refuse a paused user ("No puedes unirte a nuevos eventos hasta el …"); events they already joined stay. No saldo penalty.
-- **Dispute:** marking the player present afterwards (`checkInPlayer`) deletes that record (`forgiveNoShow`) and lifts the pause when fewer than 3 remain.
+- **Dispute:** marking the player present afterwards (`checkInPlayer`, or a staff QR scan via the `forgiveOnScan` trigger) deletes that record (`forgiveNoShow`) and lifts the pause when fewer than 3 remain.
 - Rules: `blockedUntil` cannot be changed by a client; `noShows` is read-only to its owner.
 
 ### Minimum players (auto-cancel)
