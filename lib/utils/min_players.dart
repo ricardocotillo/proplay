@@ -1,3 +1,15 @@
+/// Most players per event. A cancel refunds everyone in one transaction (about
+/// 4 writes per player, 500 at most); `firestore.rules` enforces the same cap.
+const int kMaxPlayersLimit = 60;
+
+/// Create-form validation for "Máximo de jugadores".
+String? maxPlayersError(String? text) {
+  final max = int.tryParse((text ?? '').trim());
+  if (max == null || max < 1) return 'Ingresa al menos 1 jugador';
+  if (max > kMaxPlayersLimit) return 'El máximo es $kMaxPlayersLimit jugadores';
+  return null;
+}
+
 /// Events need this long before the start for a minimum to make sense: the
 /// server checks it in the hour after the 24 h mark, never later.
 const Duration kMinPlayersLead = Duration(hours: 25);
