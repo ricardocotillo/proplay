@@ -103,6 +103,11 @@ await t('client join-style update on a public event denied', () => assertFails(u
 await t('legacy doc: client playerCount update denied', () => assertFails(updateDoc(doc(bob, 'liveSessions/legacy'), {playerCount: 1})));
 await t('legacy doc without isPrivate: a non-owner cannot ADD isPrivate:false', () => assertFails(updateDoc(doc(bob, 'liveSessions/legacy'), {isPrivate: false})));
 await t('owner can still create a session for their group', () => assertSucceeds(setDoc(doc(owner, 'liveSessions/new1'), {groupId: 'g1', isPrivate: false, costPerPlayer: 5, maxPlayers: 10})));
+await t('owner creates 8 weekly events in one batch', () => {
+  const b = writeBatch(owner);
+  for (let i = 0; i < 8; i++) b.set(doc(owner, 'liveSessions/wk' + i), {groupId: 'g1', isPrivate: false, costPerPlayer: 5, maxPlayers: 10});
+  return assertSucceeds(b.commit());
+});
 await t('non-owner cannot create a session for a group they do not own', () => assertFails(setDoc(doc(bob, 'liveSessions/new2'), {groupId: 'g1', isPrivate: false})));
 
 

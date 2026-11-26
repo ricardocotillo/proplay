@@ -12,7 +12,7 @@ initializeApp({projectId: 'demo-proplay'});
 const db = getFirestore();
 const {joinSession} = req(FN + '/lib/joinSession.js');
 const {joinWaitlist} = req(FN + '/lib/waitlistCallables.js');
-const {runAttendance, forgiveNoShow} = req(FN + '/lib/attendance.js');
+const {runAttendance, forgiveNoShow, retractAttendance} = req(FN + '/lib/attendance.js');
 
 const H = 3600 * 1000, D = 24 * H;
 let n = 0;
@@ -160,6 +160,32 @@ await t('a deleted user doc does not abort the rest of the event', async () => {
   await db.doc(`users/${absent[0]}`).delete();
   await runAttendance(db, sender(), Date.now());
   assert.equal(await noShows(absent[1]), 1);
+});
+
+await t('undoing the last check-in forgives the whole event', async () => {
+  const {present, absent, id} = await ended({used: 1, valid: 2});
+  await runAttendance(db, sender(), Date.now());
+  for (const u of absent) assert.equal(await noShows(u), 1);
+  assert.equal(await retractAttendance(db, id, Date.now()), 0); // someone is still checked in
+  await db.doc(`tickets/${id}_${present[0]}`).update({status: 'valid'});
+  assert.equal(await retractAttendance(db, id, Date.now()), 2);
+  for (const u of absent) assert.equal(await noShows(u), 0);
+  await runAttendance(db, sender(), Date.now()); // nobody checked in: still nothing recorded
+  for (const u of absent) assert.equal(await noShows(u), 0);
+});
+
+await t('forgive then re-record does not warn or block-notify twice', async () => {
+  const {absent, id} = await ended({used: 1, valid: 1});
+  const u = absent[0];
+  await db.doc(`users/${u}/noShows/w1`).set({eventId: 'w1', at: Timestamp.fromMillis(Date.now() - 5 * D)});
+  const s = sender();
+  await runAttendance(db, s, Date.now());
+  const mine = () => s.sent.filter((m) => m.tokens.includes(`${u}-t`)).length;
+  assert.equal(mine(), 1); // 2nd absence: warning
+  await forgiveNoShow(db, u, id, Date.now());
+  await runAttendance(db, s, Date.now());
+  assert.equal(await noShows(u), 2); // recorded again
+  assert.equal(mine(), 1); // same event, same player: no second push
 });
 
 const failed = results.filter((r) => !r).length;

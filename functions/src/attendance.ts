@@ -2,7 +2,8 @@ import {onSchedule} from 'firebase-functions/v2/scheduler';
 import {onDocumentUpdated} from 'firebase-functions/v2/firestore';
 import {getFirestore, FieldValue, Firestore, Timestamp} from 'firebase-admin/firestore';
 import {getMessaging} from 'firebase-admin/messaging';
-import {Sender, sendToUser} from './notify';
+import {claim, Sender, sendToUser} from './notify';
+import {claimId} from './reminderPolicy';
 import {
   isBlocked, isNoShow, nextBlockMs, noShowActions, noShowBlockPush, noShowWarnPush, WINDOW_MS, BLOCK_AT,
 } from './attendancePolicy';
@@ -67,8 +68,11 @@ export async function runAttendance(
           const until = nextBlockMs(current, nowMs);
           await userRef.update({blockedUntil: Timestamp.fromMillis(until)});
           blocked++;
-          await sendToUser(db, sender, uid, noShowBlockPush(until)).catch((e) => console.error('noshow push', e));
-        } else if (created && act.warn) {
+          // Once per (event, player): forgive then re-record must not notify twice.
+          if (await claim(db, claimId('noshow_block', `${ev.id}_${uid}`))) {
+            await sendToUser(db, sender, uid, noShowBlockPush(until)).catch((e) => console.error('noshow push', e));
+          }
+        } else if (created && act.warn && await claim(db, claimId('noshow_warn', `${ev.id}_${uid}`))) {
           await sendToUser(db, sender, uid, noShowWarnPush(String(ev.get('title') ?? 'Tu evento')))
             .catch((e) => console.error('noshow push', e));
         }
@@ -102,13 +106,32 @@ export async function forgiveNoShow(
   });
 }
 
-/** Door staff scan a ticket (client write status -> used): forgive that event's no-show too. */
+/**
+ * The organizer took everyone's check-in back: attendance was not taken after
+ * all, so no one is absent. Forgives every player of the event.
+ */
+export async function retractAttendance(db: Firestore, eventId: string, nowMs: number): Promise<number> {
+  const tickets = await db.collection('tickets').where('sessionId', '==', eventId).get();
+  if (tickets.docs.some((t) => t.get('status') === 'used')) return 0;
+  let n = 0;
+  for (const t of tickets.docs) {
+    if (await forgiveNoShow(db, String(t.get('userId')), eventId, nowMs)) n++;
+  }
+  return n;
+}
+
+/**
+ * A ticket changed by check-in: scanned or marked present (-> used) forgives that
+ * player's no-show; the last check-in undone (-> valid) forgives the whole event.
+ */
 export const forgiveOnScan = onDocumentUpdated('tickets/{id}', async (event) => {
   const before = event.data?.before.data();
   const after = event.data?.after.data();
-  if (!before || !after || before.status === 'used' || after.status !== 'used') return;
+  if (!before || !after || before.status === after.status) return;
   if (typeof after.userId !== 'string' || typeof after.sessionId !== 'string') return;
-  await forgiveNoShow(getFirestore(), after.userId, after.sessionId, Date.now());
+  const db = getFirestore();
+  if (after.status === 'used') await forgiveNoShow(db, after.userId, after.sessionId, Date.now());
+  else if (before.status === 'used' && after.status === 'valid') await retractAttendance(db, after.sessionId, Date.now());
 });
 
 /** Hourly: record no-shows of events that ended 6 to 48 h ago. */

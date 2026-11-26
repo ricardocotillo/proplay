@@ -493,7 +493,7 @@ Published at `/politica-asistencia` (`AttendancePolicyScreen`, open to guests; t
 
 - **Recording:** `recordAttendance` (hourly, `runAttendance`) looks at events whose end was 6 to 48 h ago (the 6 h grace lets the organizer finish taking attendance). Only when the organizer took attendance (at least one ticket is `used`: roster check-in or QR) does a player with a still-`valid` ticket count as absent. One record per (event, player) at `users/{uid}/noShows/{eventId}`.
 - **Consequences:** the 2nd no-show in 90 days sends a warning push; the 3rd (and later) sets `users/{uid}.blockedUntil` to now + 14 days (never shortening an existing pause) and sends a push. `joinSession` and `joinWaitlist` refuse a paused user ("No puedes unirte a nuevos eventos hasta el …"); events they already joined stay. No saldo penalty.
-- **Dispute:** marking the player present afterwards (`checkInPlayer`, or a staff QR scan via the `forgiveOnScan` trigger) deletes that record (`forgiveNoShow`) and lifts the pause when fewer than 3 remain.
+- **Dispute:** marking the player present afterwards (`checkInPlayer`, or a staff QR scan via the `forgiveOnScan` trigger) deletes that record (`forgiveNoShow`; undoing the last check-in of an event forgives every player of it, `retractAttendance`; the warning and block pushes go once per event and player) and lifts the pause when fewer than 3 remain.
 - Rules: `blockedUntil` cannot be changed by a client; `noShows` is read-only to its owner.
 
 ### Minimum players (auto-cancel)
