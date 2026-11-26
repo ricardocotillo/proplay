@@ -458,7 +458,7 @@ EventsFeedBloc.EventsFeedStarted → SessionService.getPublicEvents (publicEvent
     gender/age only for signed-in users) → sortFeed (distance if GPS, else date)
 ```
 
-Guests tap a card → `/events/:id` (`PublicEventScreen`, "Regístrate para unirte"). Signed-in users open `SessionDetailScreen` via `Navigator.push`; its bottom bar shows Unirse / Evento finalizado / Evento lleno / "Te faltan S/ X" + Recargar (`joinBlock` in `lib/utils/join_availability.dart`, display only). Errors reach the UI through `userMessage` (`lib/utils/error_message.dart`). Home leads with the same `EventsFeedView`, independent of the groups load; "Mis grupos" sits below it.
+Guests tap a card → `/events/:id` (`PublicEventScreen`, "Ingresa para unirte" → `/login?from=/events/:id`; login's "Regístrate" link keeps `from`, so sign-in and sign-up both return to the event). Signed-in users open `SessionDetailScreen` via `Navigator.push`; its bottom bar shows Unirse / Evento finalizado / Evento lleno / "Te faltan S/ X" + Recargar (`joinBlock` in `lib/utils/join_availability.dart`, display only). Errors reach the UI through `userMessage` (`lib/utils/error_message.dart`). Home leads with the same `EventsFeedView`, independent of the groups load; "Mis grupos" sits below it.
 
 ### Cloud Functions (`functions/`)
 

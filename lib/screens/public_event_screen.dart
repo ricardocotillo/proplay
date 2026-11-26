@@ -162,19 +162,16 @@ class _Details extends StatelessWidget {
                 )
               else
                 FilledButton(
-                  // Guests come back to this event after signing up.
+                  // Guests sign in (or sign up from login) and come back here.
                   onPressed: block == JoinBlock.none
                       ? () => context.go(
-                          authPath(
-                            '/registration',
-                            from: '/events/${event.id}',
-                          ),
+                          authPath('/login', from: '/events/${event.id}'),
                         )
                       : null,
                   child: Text(switch (block) {
                     JoinBlock.past => 'Evento finalizado',
                     JoinBlock.full => 'Evento lleno',
-                    _ => 'Regístrate para unirte',
+                    _ => 'Ingresa para unirte',
                   }),
                 ),
             ],
