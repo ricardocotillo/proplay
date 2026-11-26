@@ -425,9 +425,11 @@ Join:
 SessionDetailBloc.JoinSession
   → SessionService.joinSession → callable `joinSession` (southamerica-east1)
       one transaction, all reads before writes; uid from request.auth only:
-      0. already a player → return the existing ticket id (retry-safe, no charge)
-      1. reject (functions/src/joinPolicy.ts): private event and not a group member,
-         event started (server clock), full, or balance (users/{uid}) < costPerPlayer
+      0. already a player with a ticket → return its id (retry-safe, no charge)
+      1. reject (functions/src/joinPolicy.ts): private event (missing isPrivate = private)
+         and not a group member; price or seat limit not a valid number (price < 0,
+         seats <= 0); event started (server clock); full; balance (users/{uid}) < price.
+         The price is rounded to cents once and used for the debit, ledger and ticket
       2. debit users/{uid}.credits
       3. creditHistory spend, id `spend_{sessionId}_{uid}_{token}`
       4. append the player built from users/{uid} (never the payload), bump playerCount

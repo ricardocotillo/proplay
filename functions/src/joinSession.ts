@@ -2,7 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {onCall, HttpsError} from 'firebase-functions/v2/https';
 import {getFirestore, FieldValue, Timestamp} from 'firebase-admin/firestore';
 import {formatCredits} from './refundPolicy';
-import {joinError, spendDocId} from './joinPolicy';
+import {joinError, roundCents, spendDocId} from './joinPolicy';
 
 type Player = {uid?: string};
 
@@ -19,7 +19,7 @@ export const joinSession = onCall(async (request) => {
   }
   const uid = request.auth.uid;
   const sessionId = request.data?.sessionId;
-  if (typeof sessionId !== 'string' || sessionId.length === 0) {
+  if (typeof sessionId !== 'string' || sessionId.length === 0 || sessionId.includes('/')) {
     throw new HttpsError('invalid-argument', 'sessionId requerido');
   }
 
@@ -38,7 +38,10 @@ export const joinSession = onCall(async (request) => {
     const session = sessionSnap.data()!;
     const players: Player[] = Array.isArray(session.players) ? session.players : [];
     if (players.some((p) => p?.uid === uid)) {
-      return {ticketId, alreadyJoined: true};
+      // Retry after a successful join: same ticket, no charge. A legacy
+      // player without a ticket has nothing to return.
+      if ((await tx.get(ticketRef)).exists) return {ticketId, alreadyJoined: true};
+      throw new HttpsError('failed-precondition', 'Ya estás inscrito en este evento.');
     }
 
     const userSnap = await tx.get(userRef);
@@ -47,13 +50,16 @@ export const joinSession = onCall(async (request) => {
     }
     const user = userSnap.data()!;
 
-    const isPrivate = session.isPrivate === true;
+    // Missing isPrivate = private, like the read rule and mirrorPublicEvent.
+    const isPrivate = session.isPrivate !== false;
     const isMember = isPrivate && typeof session.groupId === 'string'
       ? (await tx.get(db.doc(`groups/${session.groupId}/members/${uid}`))).exists
       : false;
 
     const balance = parseFloat(user.credits ?? '0') || 0;
-    const cost = Number(session.costPerPlayer) || 0;
+    // Only real numbers count: Number(null) would be 0, a free join.
+    const num = (v: unknown) => (typeof v === 'number' ? v : NaN);
+    const rawCost = num(session.costPerPlayer);
     const eventDate: Date | null =
       typeof session.eventDate?.toDate === 'function' ? session.eventDate.toDate() : null;
     const error = joinError({
@@ -62,15 +68,16 @@ export const joinSession = onCall(async (request) => {
       isPrivate,
       isMember,
       playerCount: players.length,
-      maxPlayers: Number(session.maxPlayers) || 0,
+      maxPlayers: num(session.maxPlayers),
       balance,
-      cost,
+      cost: rawCost,
     });
     if (error) throw new HttpsError(error.code, error.message);
+    const cost = roundCents(rawCost);
 
     // ---- writes ----
     const token = randomUUID();
-    const newBalance = balance - cost;
+    const newBalance = roundCents(balance - cost);
     tx.update(userRef, {credits: formatCredits(newBalance)});
 
     tx.set(db.doc(`creditHistory/${spendDocId(sessionId, uid, token)}`), {

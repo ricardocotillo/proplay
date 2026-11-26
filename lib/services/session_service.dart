@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
+import 'package:proplay/utils/error_message.dart';
 import 'package:proplay/models/cancel_result_model.dart';
 import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/session_template_model.dart';
@@ -619,7 +620,7 @@ class SessionService {
       ).httpsCallable('joinSession').call({'sessionId': sessionId});
       return (result.data as Map)['ticketId'] as String;
     } on FirebaseFunctionsException catch (e) {
-      throw Exception(e.message ?? 'No pudimos unirte al evento');
+      throw callableError(e);
     }
   }
 
@@ -633,7 +634,7 @@ class SessionService {
       ).httpsCallable('cancelParticipation').call({'sessionId': sessionId});
       return CancelResultModel.fromMap(result.data as Map);
     } on FirebaseFunctionsException catch (e) {
-      throw Exception(e.message ?? 'No se pudo cancelar tu cupo');
+      throw callableError(e);
     }
   }
 

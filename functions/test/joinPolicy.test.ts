@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {joinError, spendDocId, JoinCheck} from '../src/joinPolicy';
+import {joinError, roundCents, spendDocId, JoinCheck} from '../src/joinPolicy';
 
 const NOW = Date.UTC(2026, 10, 26, 12);
 const ok: JoinCheck = {
@@ -22,11 +22,25 @@ test('started, undated, full, and short balance are rejected in that order', () 
   assert.match(joinError({...ok, eventDateMs: NOW})!.message, /empezó/);
   assert.match(joinError({...ok, eventDateMs: null})!.message, /empezó/);
   assert.match(joinError({...ok, playerCount: 10, balance: 0})!.message, /lleno/);
-  assert.match(joinError({...ok, maxPlayers: 0})!.message, /lleno/);
   assert.equal(
     joinError({...ok, balance: 9.5})!.message,
     'No tienes saldo suficiente. Necesitas S/ 10.00 y tienes S/ 9.50.',
   );
+});
+
+test('missing, NaN or negative price and bad seat limits are rejected', () => {
+  for (const cost of [NaN, Number(undefined), -5, Infinity]) {
+    assert.match(joinError({...ok, cost})!.message, /no está disponible/, String(cost));
+  }
+  for (const maxPlayers of [NaN, 0, -1]) {
+    assert.match(joinError({...ok, maxPlayers})!.message, /no está disponible/, String(maxPlayers));
+  }
+  assert.equal(joinError({...ok, cost: 0, balance: 0}), null);
+});
+
+test('price is compared in cents', () => {
+  assert.equal(roundCents(100 / 3), 33.33);
+  assert.equal(joinError({...ok, cost: 100 / 3, balance: 33.33}), null);
 });
 
 test('spend id is deterministic per join token', () => {

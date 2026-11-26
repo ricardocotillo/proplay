@@ -141,6 +141,44 @@ await t('join -> cancel refunds that spend -> rejoin charges again', async () =>
   assert.equal((await spends(uid)).length, 2);
 });
 
+await t('negative, missing or NaN price never joins or credits', async () => {
+  for (const cost of [-50, undefined, 'abc']) {
+    const {id, uid} = await seed();
+    await db.doc(`liveSessions/${id}`).update({costPerPlayer: cost ?? null});
+    await rejects(join(uid, id), 'failed-precondition', /no está disponible/);
+    assert.equal(await credits(uid), '20.00');
+    assert.equal((await spends(uid)).length, 0);
+  }
+});
+
+await t('missing isPrivate counts as private (non-member rejected)', async () => {
+  const {id, uid} = await seed();
+  const {FieldValue} = req('firebase-admin/firestore');
+  await db.doc(`liveSessions/${id}`).update({isPrivate: FieldValue.delete()});
+  await rejects(join(uid, id), 'permission-denied');
+});
+
+await t('session id with a slash is an invalid argument', async () => {
+  const {uid} = await seed();
+  await rejects(join(uid, 'a/b'), 'invalid-argument');
+});
+
+await t('legacy player without a ticket: no charge, clear error', async () => {
+  const {id, uid} = await seed();
+  await db.doc(`liveSessions/${id}`).update({players: [{uid}], playerCount: 1});
+  await rejects(join(uid, id), 'failed-precondition', /inscrito/);
+  assert.equal(await credits(uid), '20.00');
+});
+
+await t('price with more than 2 decimals is charged in cents', async () => {
+  const {id, uid} = await seed({cost: 100 / 3, credits: '50.00'});
+  await join(uid, id);
+  assert.equal(await credits(uid), '16.67');
+  const [row] = await spends(uid);
+  assert.equal(row.data().creditAmount, 33.33);
+  assert.equal((await db.doc(`tickets/${id}_${uid}`).get()).data().pricePaid, 33.33);
+});
+
 const failed = results.filter((r) => !r[1]).length;
 console.log(`\njoin: ${results.length - failed}/${results.length} passed`);
 process.exit(failed ? 1 : 0);

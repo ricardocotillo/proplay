@@ -7,10 +7,15 @@ export type JoinCheck = {
   isPrivate: boolean;
   isMember: boolean;
   playerCount: number;
+  /** `session.maxPlayers` when it is a number, else NaN. */
   maxPlayers: number;
   balance: number;
+  /** `session.costPerPlayer` when it is a number (may be negative), else NaN. */
   cost: number;
 };
+
+/** Money is whole cents everywhere (mirrors `formatCredits`). */
+export const roundCents = (v: number): number => Math.round(v * 100) / 100;
 
 export type JoinError = {
   code: 'permission-denied' | 'failed-precondition';
@@ -26,17 +31,23 @@ export const joinError = (c: JoinCheck): JoinError | null => {
   if (c.isPrivate && !c.isMember) {
     return {code: 'permission-denied', message: 'Este evento es privado.'};
   }
+  // A broken event never lets anyone in: a missing/NaN price would be a free
+  // join, a negative one would raise the balance.
+  if (!Number.isFinite(c.cost) || c.cost < 0 ||
+      !Number.isFinite(c.maxPlayers) || c.maxPlayers <= 0) {
+    return {code: 'failed-precondition', message: 'Este evento no está disponible.'};
+  }
   if (c.eventDateMs === null || c.eventDateMs <= c.nowMs) {
     return {code: 'failed-precondition', message: 'Este evento ya empezó o terminó.'};
   }
   if (c.playerCount >= c.maxPlayers) {
     return {code: 'failed-precondition', message: 'Este evento ya está lleno.'};
   }
-  if (c.balance < c.cost) {
+  if (c.balance < roundCents(c.cost)) {
     return {
       code: 'failed-precondition',
       message:
-        `No tienes saldo suficiente. Necesitas S/ ${formatCredits(c.cost)} ` +
+        `No tienes saldo suficiente. Necesitas S/ ${formatCredits(roundCents(c.cost))} ` +
         `y tienes S/ ${formatCredits(c.balance)}.`,
     };
   }
