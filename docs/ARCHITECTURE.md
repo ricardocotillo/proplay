@@ -58,7 +58,7 @@ Rules of the road:
 3. **BLoCs receive services via constructor injection.**
 4. **UI talks to BLoCs and to `context.currentUser`**, not to Firebase (except two admin/history screens — see §10).
 
-Known exception: `CreditApprovalScreen` and `CreditHistoryScreen` query Firestore directly. New work should not copy this pattern; put it in a service + BLoC.
+Known exception: `CreditHistoryScreen` queries Firestore directly. New work should not copy this pattern; put it in a service + BLoC.
 
 ---
 
@@ -350,10 +350,10 @@ Ledger. Amounts are doubles. User **balance** remains a 2-decimal string.
 | --- | --- | --- |
 | `purchase` | `credit` | `payment` |
 | `spend` | `debit` | `session` (join) |
-| `refund` | `credit` | session cancel (`cancelParticipation`; doc id `refund_{sessionId}_{uid}_{ticketToken}`) |
+| `refund` | `credit` | player cancel (`cancelParticipation`), organizer cancel (`cancelEvent`) or removal (`removePlayer`); doc id `refund_{spendId}`, so each spend refunds once |
 | `adjustment` | either | `admin` |
 
-Player cancel goes through `cancelParticipation` and refunds. The admin remove-player path (`removeUserFromSession`) still does **not** refund credits or void the ticket.
+Player cancel goes through `cancelParticipation` (refund 24 h or more before). Organizer cancel (`cancelEvent`) and removal (`removePlayer`) always refund in full. A reviewed purchase also stores `reviewedBy` / `reviewedAt`.
 
 ### `yape`
 
@@ -398,7 +398,7 @@ GroupDetailBloc loads members by fetching each user doc
   owner/admin can toggle admin ↔ member or remove
 ```
 
-`SessionDetailBloc` treats "owner/admin" as `group.createdBy == currentUser.uid` only. Ticket validation is stricter and also accepts `role == admin` and `superUser`. Align these if you change permissions.
+`SessionDetailBloc` decides who manages an event with `canManageEvent` (`lib/utils/manage_event.dart`), the same rule as the server (`functions/src/adminPolicy.ts`): the event `creatorId`, a group owner/admin (member role) or a superUser. Keep the two in sync.
 
 ### Sessions
 
@@ -441,7 +441,10 @@ SessionDetailBloc.JoinSession
 
 Gender/age are a feed filter only; the server does not enforce them. Older app builds still join with the old client transaction until the rules are tightened (plan PR 5); the rules still allow it.
 
-Admin remove only updates `players` / `playerCount`. It does not refund or void the ticket.
+Organizer actions (callables in `functions/src/organizer.ts`, allowed for the group owner/admin, the event's `creatorId` or a superUser, only before the event starts; `canManageEvent` in `adminPolicy.ts`):
+
+- **Cancelar evento** (event menu, `SessionDetailBloc` `CancelEvent` → `cancelEvent`): refunds each current player's latest unrefunded spend in full, deletes all tickets and the event (the mirror trigger drops the public copy), then the screen closes and the group list reloads.
+- **Retirar** a player (`RemoveUserFromSession` → `removePlayer`): frees the seat, deletes the ticket, refunds in full. Refused when the ticket was used.
 
 Cancel (player):
 
@@ -503,8 +506,8 @@ PurchaseCreditsScreen
   → CreditYapePurchaseRequested
   → creditHistory status=pending (balance unchanged)
 
-CreditApprovalScreen (superUser, queries Firestore directly)
-  → approve: increment users.credits, status=approved
+CreditApprovalScreen (superUser) → CreditApprovalCubit → callable reviewCreditPurchase
+  → approve: one transaction, only from status=pending: users.credits += amount, status=approved
   → reject: status=rejected, no credit
 ```
 
@@ -536,7 +539,7 @@ CreditApprovalScreen (superUser, queries Firestore directly)
 | `StorageService` | `profile_images/`, `group_images/`, `event_banners/` |
 | `ReceiptUploadService` | Pick image + `session_receipts/{sessionId}/` |
 
-Join runs in the `joinSession` callable (one server transaction: seat + debit + ledger + ticket). Approval of credits in `CreditApprovalScreen` is **not** currently a single transaction — be careful if you extract it.
+Join runs in the `joinSession` callable (one server transaction: seat + debit + ledger + ticket). Credit approval runs in the `reviewCreditPurchase` callable (one transaction; a second approve fails with "ya fue revisada"). Old builds still approve from the client; the rules allow that only while the row is `pending`, so they can never credit an already-reviewed row. `reviewCreditPurchase` also rejects a row whose `creditAmount` exceeds `amountPaid`.
 
 ---
 
@@ -561,7 +564,7 @@ Join runs in the `joinSession` callable (one server transaction: seat + debit + 
 | `MyTicketsScreen` / `TicketDetailScreen` | "Mis partidos": upcoming (with free-cancel deadline) and past games (`splitTickets`), ticket QR |
 | `ValidateTicketScreen` | Staff check-in |
 | `CreditHistoryScreen` | User ledger (direct Firestore) |
-| `CreditApprovalScreen` | Super-user queue (direct Firestore) |
+| `CreditApprovalScreen` | Super-user queue of pending Yape top-ups: approve / reject (`CreditApprovalCubit`) |
 
 Shared widgets: `AppDrawer`, `AppShell`, `AppTopBar`, `Brand`, `WalletIndicator` (balance in S/, plus Yape top-ups awaiting approval via `PendingCreditsCubit`), `ShareEventButton`, `UpcomingEvents`, `CachedImage` (`PlatformCachedImage`), `LocationPicker`, `StepIndicator`.
 
@@ -658,7 +661,7 @@ Intended direction (from project guidelines):
 ## 14. Known pitfalls (read before you change money or seats)
 
 1. **Credits are a string on the user**, a double on the ledger. Always go through `UserModel.formatCredits` / `creditsValue`.
-2. **Join and cancel are server-side callables** (`joinSession`, `cancelParticipation`); the rules still allow the old client join until PR 5 tightens them. There is no client `leaveSession` anymore. Admin remove still does not refund or void the ticket.
+2. **Join and cancel are server-side callables** (`joinSession`, `cancelParticipation`); the rules still allow the old client join until PR 5 tightens them. There is no client `leaveSession` anymore. Credit approval, event cancel and player removal are callables too (`reviewCreditPurchase`, `cancelEvent`, `removePlayer`); the rules still allow the old client writes until PR 5.
 3. **Players live on the live session document.** Large games will hit document size / contention. A players subcollection (as in `docs/sessions.md`) is the eventual fix.
 4. **Two membership models.** Subcollections are source of truth. Do not revive `streamUserGroups` without writing `groups.members[]`.
 5. **Duplicate sport lists** in `HomeScreen`, `CreateGroupScreen`, `GroupEditScreen`. Extract a constant before adding a sport.

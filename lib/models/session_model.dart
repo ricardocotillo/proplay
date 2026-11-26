@@ -33,6 +33,9 @@ class SessionModel extends Equatable {
   /// (`publicEvents`), written by the Cloud Function — never by the client.
   final String? groupName;
 
+  /// Who created the event (manage rights, with group owner/admin).
+  final String? creatorId;
+
   const SessionModel({
     required this.id,
     required this.templateId,
@@ -57,6 +60,7 @@ class SessionModel extends Equatable {
     this.format,
     this.bannerUrl,
     this.groupName,
+    this.creatorId,
   });
 
   @override
@@ -84,6 +88,7 @@ class SessionModel extends Equatable {
     format,
     bannerUrl,
     groupName,
+    creatorId,
   ];
 
   SessionModel copyWith({
@@ -110,6 +115,7 @@ class SessionModel extends Equatable {
     String? format,
     String? bannerUrl,
     String? groupName,
+    String? creatorId,
   }) {
     return SessionModel(
       id: id ?? this.id,
@@ -135,6 +141,7 @@ class SessionModel extends Equatable {
       format: format ?? this.format,
       bannerUrl: bannerUrl ?? this.bannerUrl,
       groupName: groupName ?? this.groupName,
+      creatorId: creatorId ?? this.creatorId,
     );
   }
 
@@ -199,6 +206,7 @@ class SessionModel extends Equatable {
       format: map['format'] as String?,
       bannerUrl: map['bannerUrl'] as String?,
       groupName: map['groupName'] as String?,
+      creatorId: map['creatorId'] as String?,
     );
   }
 }

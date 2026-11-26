@@ -173,10 +173,10 @@ service cloud.firestore {
       // User can create their own credit request
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
 
-      // IMPORTANT: approving credits updates status.
-      // Without admin claims, you cannot safely allow this from client.
-      // For now, keep updates blocked:
-      allow update, delete: if signedIn() && isSuperUser();
+      // Approval runs in the reviewCreditPurchase function. Old app builds
+      // still approve from the client: only while the row is pending, so a
+      // row the server already reviewed can't be credited a second time.
+      allow update, delete: if signedIn() && isSuperUser() && resource.data.status == 'pending';
     }
 
     // -------------------------

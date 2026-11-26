@@ -97,98 +97,29 @@ class GroupsSessionsScreen extends StatelessWidget {
                       itemCount: state.sessions.length,
                       itemBuilder: (context, index) {
                         final session = state.sessions[index];
-                        return Dismissible(
-                          key: Key(session.id),
-                          direction: DismissDirection.endToStart,
-                          confirmDismiss: (direction) async {
-                            return await showDialog<bool>(
-                                  context: context,
-                                  builder: (BuildContext dialogContext) {
-                                    return AlertDialog(
-                                      title: const Text('Eliminar sesión'),
-                                      content: const Text(
-                                        '¿Estás seguro de que quieres eliminar esta sesión? '
-                                        'Esta acción no se puede deshacer.',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.of(dialogContext)
-                                                  .pop(false),
-                                          child: const Text('Cancelar'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.of(dialogContext)
-                                                  .pop(true),
-                                          style: TextButton.styleFrom(
-                                            foregroundColor: Theme.of(
-                                              dialogContext,
-                                            ).colorScheme.error,
-                                          ),
-                                          child: const Text('Eliminar'),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ) ??
-                                false;
-                          },
-                          onDismissed: (direction) {
-                            context.read<SessionBloc>().add(
-                              DeleteSession(session.id),
-                            );
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${session.title} eliminada'),
-                              ),
-                            );
-                          },
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20.0),
-                            color: AppColors.error,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Icon(
-                                  Icons.delete,
-                                  color: Theme.of(context).colorScheme.onError,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Eliminar',
-                                  style: TextStyle(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onError,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                        return ListTile(
+                          title: Text(session.title),
+                          subtitle: Text(
+                            DateFormat.yMMMd().add_jm().format(
+                              session.eventDate,
                             ),
                           ),
-                          child: ListTile(
-                            title: Text(session.title),
-                            subtitle: Text(
-                              DateFormat.yMMMd().add_jm().format(
-                                session.eventDate,
-                              ),
-                            ),
-                            trailing: Text(
-                              '${session.playerCount}/${session.maxPlayers} jugadores',
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => SessionDetailScreen(
-                                    sessionId: session.id,
-                                  ),
-                                ),
-                              );
-                            },
+                          trailing: Text(
+                            '${session.playerCount}/${session.maxPlayers} jugadores',
                           ),
+                          onTap: () async {
+                            final bloc = context.read<SessionBloc>();
+                            final cancelled = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    SessionDetailScreen(sessionId: session.id),
+                              ),
+                            );
+                            if (cancelled == true) {
+                              bloc.add(LoadSessions(groupId));
+                            }
+                          },
                         );
                       },
                     ),

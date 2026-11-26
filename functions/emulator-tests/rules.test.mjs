@@ -214,6 +214,19 @@ await t('owner promotes a member to admin', () => assertSucceeds(updateDoc(doc(c
 await t('owner cannot set an unknown role', () => assertFails(updateDoc(doc(carol, 'groups/g3/members/mem1'), {role: 'god'})));
 await t('non-owner cannot remove another member', () => assertFails(deleteDoc(doc(as('j1'), 'groups/g3/members/mem1'))));
 await t('owner removes a member', () => assertSucceeds(deleteDoc(doc(carol, 'groups/g3/members/j1'))));
+// --- creditHistory review (old builds approve from the client) ---
+await env.withSecurityRulesDisabled(async (ctx) => {
+  const d = ctx.firestore();
+  await setDoc(doc(d, 'users/su1'), {credits: '0.00', superUser: true});
+  await setDoc(doc(d, 'creditHistory/pend1'), {userId: 'alice', status: 'pending', entryType: 'purchase', creditAmount: 20, amountPaid: 21});
+  await setDoc(doc(d, 'creditHistory/done1'), {userId: 'alice', status: 'approved', entryType: 'purchase', creditAmount: 20, amountPaid: 21});
+});
+await t('old-build approve: superUser may update a pending row', () => assertSucceeds(updateDoc(doc(as('su1'), 'creditHistory/pend1'), {status: 'approved'})));
+await t('old-build approve of an already-reviewed row denied (no double credit)', () => assertFails(updateDoc(doc(as('su1'), 'creditHistory/done1'), {status: 'approved'})));
+await t('non-superUser cannot approve own pending row', async () => {
+  await env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), 'creditHistory/pend2'), {userId: 'alice', status: 'pending', entryType: 'purchase', creditAmount: 20}));
+  await assertFails(updateDoc(doc(alice, 'creditHistory/pend2'), {status: 'approved'}));
+});
 
 await t('[known hole] a non-owner can still inflate playerCount (join is client-side)', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/f8'), {players: [], playerCount: 999})));
 await t('[known hole] a non-owner can still remove other players', () => assertSucceeds(updateDoc(doc(bob, 'liveSessions/f9'), {players: [], playerCount: 0})));

@@ -1,0 +1,186 @@
+import 'dart:async';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:proplay/bloc/session_detail/session_detail_bloc.dart';
+import 'package:proplay/bloc/session_detail/session_detail_event.dart';
+import 'package:proplay/bloc/session_detail/session_detail_state.dart';
+import 'package:proplay/models/session_model.dart';
+import 'package:proplay/models/user_model.dart';
+import 'package:proplay/services/group_service.dart';
+import 'package:proplay/services/session_service.dart';
+import 'package:proplay/utils/manage_event.dart';
+
+final _session = SessionModel(
+  id: 's1',
+  templateId: 't1',
+  groupId: 'g1',
+  title: 'Pichanga',
+  eventDate: DateTime(2030),
+  eventEndDate: DateTime(2030, 1, 1, 2),
+  status: 'OPEN',
+  playerCount: 0,
+  maxPlayers: 10,
+  costPerPlayer: 10,
+  sport: 'fútbol',
+  minAge: 0,
+  maxAge: 99,
+  desiredGender: 'any',
+);
+
+/// Server stand-in: cancelEvent may delete the event (its stream then
+/// errors with not found) and may still fail (timeout after commit).
+class _FakeSessions implements SessionService {
+  bool deleted = false;
+  bool deleteOnCancel = true;
+  Object? cancelError;
+  final _changes = StreamController<void>.broadcast();
+
+  @override
+  Stream<SessionModel> streamSession(String sessionId) async* {
+    if (deleted) throw Exception('Evento no encontrado.');
+    yield _session;
+    await for (final _ in _changes.stream) {
+      if (deleted) throw Exception('Evento no encontrado.');
+      yield _session;
+    }
+  }
+
+  @override
+  Future<({int refunded, double total})> cancelEvent(String sessionId) async {
+    deleted = deleteOnCancel;
+    _changes.add(null);
+    await Future<void>.delayed(Duration.zero);
+    if (cancelError != null) throw cancelError!;
+    return (refunded: 2, total: 20.0);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeGroups implements GroupService {
+  final String? role;
+  _FakeGroups(this.role);
+
+  @override
+  Future<String?> getMemberRole(String groupId, String userId) async => role;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+UserModel _user({bool superUser = false}) => UserModel(
+  uid: 'u1',
+  email: 'a@b.pe',
+  firstName: 'Ana',
+  lastName: 'Perez',
+  createdAt: DateTime(2026),
+  documentType: 'dni',
+  documentNumber: '12345678',
+  superUser: superUser,
+);
+
+Future<(SessionDetailBloc, List<SessionDetailState>)> _loaded(
+  _FakeSessions sessions, {
+  String? role = 'owner',
+  bool superUser = false,
+}) async {
+  final bloc = SessionDetailBloc(
+    sessionService: sessions,
+    groupService: _FakeGroups(role),
+    currentUser: _user(superUser: superUser),
+  );
+  final states = <SessionDetailState>[];
+  bloc.stream.listen(states.add);
+  bloc.add(const LoadSessionDetail('s1'));
+  await bloc.stream.firstWhere((s) => s is SessionDetailLoaded);
+  return (bloc, states);
+}
+
+Future<void> _settle() =>
+    Future<void>.delayed(const Duration(milliseconds: 20));
+
+void main() {
+  test(
+    'success: cancelled state, the not-found stream error is ignored',
+    () async {
+      final (bloc, states) = await _loaded(_FakeSessions());
+      bloc.add(const CancelEvent());
+      await _settle();
+      expect(states.last, isA<SessionDetailEventCancelled>());
+      expect((states.last as SessionDetailEventCancelled).refunded, 2);
+      expect(states.whereType<SessionDetailError>(), isEmpty);
+      await bloc.close();
+    },
+  );
+
+  test('failure while the event still exists shows the error', () async {
+    final sessions = _FakeSessions()
+      ..deleteOnCancel = false
+      ..cancelError = Exception(
+        'No tienes permiso para gestionar este evento.',
+      );
+    final (bloc, states) = await _loaded(sessions);
+    bloc.add(const CancelEvent());
+    await _settle();
+    final error = states.whereType<SessionDetailError>().single;
+    expect(error.message, 'No tienes permiso para gestionar este evento.');
+    expect(error.session, isNotNull);
+    await bloc.close();
+  });
+
+  test('timeout after the server committed counts as cancelled', () async {
+    final sessions = _FakeSessions()..cancelError = Exception('timeout');
+    final (bloc, states) = await _loaded(sessions);
+    bloc.add(const CancelEvent());
+    await _settle();
+    expect(states.last, isA<SessionDetailEventCancelled>());
+    expect(states.whereType<SessionDetailError>(), isEmpty);
+    await bloc.close();
+  });
+
+  test(
+    'a plain member cannot cancel; a group admin or superUser can manage',
+    () async {
+      final (member, states) = await _loaded(_FakeSessions(), role: 'member');
+      expect((states.last as SessionDetailLoaded).isOwnerOrAdmin, isFalse);
+      member.add(const CancelEvent());
+      await _settle();
+      expect(states.whereType<SessionDetailEventCancelled>(), isEmpty);
+      await member.close();
+
+      final (admin, adminStates) = await _loaded(
+        _FakeSessions(),
+        role: 'admin',
+      );
+      expect((adminStates.last as SessionDetailLoaded).isOwnerOrAdmin, isTrue);
+      await admin.close();
+
+      final (root, rootStates) = await _loaded(
+        _FakeSessions(),
+        role: null,
+        superUser: true,
+      );
+      expect((rootStates.last as SessionDetailLoaded).isOwnerOrAdmin, isTrue);
+      await root.close();
+    },
+  );
+
+  test('canManageEvent mirrors the server rule', () {
+    bool can({String? creator, String? role, bool su = false}) =>
+        canManageEvent(
+          uid: 'u1',
+          creatorId: creator,
+          memberRole: role,
+          superUser: su,
+        );
+    expect(can(), isFalse);
+    expect(can(role: 'member'), isFalse);
+    expect(can(creator: 'other'), isFalse);
+    expect(can(creator: ''), isFalse);
+    expect(can(creator: 'u1'), isTrue);
+    expect(can(role: 'owner'), isTrue);
+    expect(can(role: 'admin'), isTrue);
+    expect(can(su: true), isTrue);
+  });
+}

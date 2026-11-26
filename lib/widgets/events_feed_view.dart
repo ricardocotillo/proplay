@@ -359,14 +359,16 @@ class _EmptyFeed extends StatelessWidget {
   }
 }
 
-void _openEvent(BuildContext context, SessionModel session) {
+Future<void> _openEvent(BuildContext context, SessionModel session) async {
   if (context.isAuthenticated) {
-    Navigator.push(
+    final feed = context.read<EventsFeedBloc>();
+    final cancelled = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => SessionDetailScreen(sessionId: session.id),
       ),
     );
+    if (cancelled == true) feed.add(EventsFeedEventRemoved(session.id));
   } else {
     context.go('/events/${session.id}');
   }

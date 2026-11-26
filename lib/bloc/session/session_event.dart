@@ -46,12 +46,3 @@ class LoadAllUserSessions extends SessionEvent {
     maxDistanceKm,
   ];
 }
-
-class DeleteSession extends SessionEvent {
-  final String sessionId;
-
-  const DeleteSession(this.sessionId);
-
-  @override
-  List<Object?> get props => [sessionId];
-}

@@ -24,7 +24,7 @@ lib/
 └── utils/              # Helpers (auth, geohash, ticket URLs, breakpoints)
 ```
 
-1. Widgets dispatch events. They do not call Firebase (do not copy `CreditApprovalScreen` / `CreditHistoryScreen`).
+1. Widgets dispatch events. They do not call Firebase (do not copy `CreditHistoryScreen`).
 2. BLoCs orchestrate use cases and emit `Equatable` states.
 3. Services are constructor-injected into BLoCs.
 4. After a write that changes the signed-in user, dispatch `AuthRefreshUserRequested`.
@@ -55,7 +55,7 @@ Services in use: Auth (email/password + Google), Firestore, Storage, Hosting.
 
 **Do not hand-edit:** `lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`.
 
-Rules (`firestore.rules`), indexes and Cloud Functions (`functions/`, TypeScript, region `southamerica-east1`) are in git but **deployed by hand** (order: rules → functions → backfill → hosting; see README). `joinSession` (callable) joins server-side (balance, seats, ledger, ticket in one transaction); `cancelParticipation` (callable) refunds server-side; `mirrorPublicEvent` (Firestore trigger) projects public `liveSessions` into `publicEvents`. Credit approval is still a client write, and the rules still allow the old client join until they are tightened. Treat that as a known risk; do not loosen it further. Identity-document locks live in `documents/` (see docs/ARCHITECTURE.md); `firestore.rules` is the single source for rules, so never deploy it without first diffing against the console.
+Rules (`firestore.rules`), indexes and Cloud Functions (`functions/`, TypeScript, region `southamerica-east1`) are in git but **deployed by hand** (order: rules → functions → backfill → hosting; see README). `joinSession` (callable) joins server-side (balance, seats, ledger, ticket in one transaction); `cancelParticipation` (callable) refunds server-side; `reviewCreditPurchase` (callable, superUser) approves or rejects a Yape top-up in one transaction; `cancelEvent` / `removePlayer` (callables, organizer) refund every player / the removed player in full; `mirrorPublicEvent` (Firestore trigger) projects public `liveSessions` into `publicEvents`. The rules still allow the old client join, credit approval, event delete and player removal (old app builds) until they are tightened (plan PR 5). Treat that as a known risk; do not loosen it further. Identity-document locks live in `documents/` (see docs/ARCHITECTURE.md); `firestore.rules` is the single source for rules, so never deploy it without first diffing against the console.
 
 ### Collections that exist in code
 
@@ -104,11 +104,11 @@ New primary destinations go in `GoRouter`. Update the table in `docs/ARCHITECTUR
 | Groups | `GroupBloc` / `GroupDetailBloc` / `GroupEditBloc` | Create, join by 6-char code, roles `owner`/`admin`/`member` |
 | Sessions | `CreateSessionBloc`, `SessionBloc`, `SessionDetailBloc` | Template + first live session; join is the `joinSession` callable |
 | Matchmaking | `SessionService.getAllUpcomingSessions` | Sport, gender, age, optional geohash radius |
-| Credits | `CreditBloc` + Yape | Pending purchase; `superUser` approves in `CreditApprovalScreen` |
+| Credits | `CreditBloc` + Yape | Pending purchase; `superUser` approves or rejects in `CreditApprovalScreen` (`CreditApprovalCubit` → `reviewCreditPurchase`) |
 | Tickets | `TicketService`, `MyTicketsBloc`, `ValidateTicketBloc` | Created atomically on join; validate via token URL; a cancelled ticket is deleted |
 | Events feed | `EventsFeedBloc`, `PublicEventBloc` | Public feed with sport/district/day-part/price/format filters; guests allowed; Home leads with it |
 
-Join (`SessionService.joinSession` → callable `joinSession`): server checks access, start time, seats and balance → debit → ledger spend → append player → write ticket; a retry returns the existing ticket. Cancel: `SessionDetailBloc` `CancelParticipation` → `SessionService.cancelParticipation` → callable `cancelParticipation` frees the seat, deletes the ticket and refunds in full (once per ledger `spend` row, capped at the event price) when the event is 24 h or more away (server time); otherwise no refund. Cancelling after the event started is rejected. Admin remove (`removeUserFromSession`) does **not** refund. There is no client-side leave.
+Join (`SessionService.joinSession` → callable `joinSession`): server checks access, start time, seats and balance → debit → ledger spend → append player → write ticket; a retry returns the existing ticket. Cancel: `SessionDetailBloc` `CancelParticipation` → `SessionService.cancelParticipation` → callable `cancelParticipation` frees the seat, deletes the ticket and refunds in full (once per ledger `spend` row, capped at the event price) when the event is 24 h or more away (server time); otherwise no refund. Cancelling after the event started is rejected. Organizer actions (group owner/admin, event `creatorId` or superUser; before the event starts): "Cancelar evento" in the event's menu → `SessionDetailBloc` `CancelEvent` → callable `cancelEvent` refunds every player in full (no 24 h window), deletes tickets and the event; "Retirar" on a player → callable `removePlayer` frees the seat, deletes the ticket and refunds in full (refused for a used ticket). The group list has no swipe-to-delete. There is no client-side leave.
 
 Live payment path is **manual Yape**, not the stub `PaymentService` / Mercado Pago samples. Details: [docs/PAYMENT_SYSTEM.md](docs/PAYMENT_SYSTEM.md).
 
@@ -155,7 +155,7 @@ flutter run
 flutter analyze
 flutter test          # pure-function/model tests; the default counter smoke test (needs Firebase) fails and is pre-existing
 (cd functions && npm install && npm run build && npm test)
-(cd functions && npm run test:emulator)   # rules + cancelParticipation + trigger + backfill on the Firestore/Functions emulators (needs Java)
+(cd functions && npm run test:emulator)   # rules + join, cancel, organizer and credit-review callables + trigger + backfill on the Firestore/Functions emulators (needs Java)
 flutter build web
 npx -y firebase-tools@latest deploy --only hosting
 ```
@@ -186,6 +186,6 @@ Version: `1.0.7+10` (`pubspec.yaml`). Dart SDK `^3.13.0`.
 
 **Done:** auth (email + Google + reset), profiles, groups + roles, session create/join, matchmaking (sport/gender/age/distance), Yape credits + admin approval, tickets + QR validation, public events feed (guests), cancel with refund (Cloud Function), responsive shell, Firebase Hosting.
 
-**Not done / leftover:** automated payment gateway, recurring sessions, waitlist, refund on organizer deletion / admin removal, email verification, more tests (blocs, widgets), locking `users.credits` / `liveSessions` rules, moving credit approval server-side, aligning remaining screens on GoRouter.
+**Not done / leftover:** automated payment gateway, recurring sessions, waitlist, email verification, more tests (blocs, widgets), locking `users.credits` / `liveSessions` / `creditHistory` rules (PR 5), aligning remaining screens on GoRouter.
 
 Pitfalls and full flows: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
