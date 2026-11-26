@@ -19,6 +19,39 @@ void main() {
     }
   });
 
+  test('signed-in user on public route returns to a safe ?from=', () {
+    expect(
+      authRedirect(
+        loggedIn: true,
+        location: '/registration',
+        from: '/events/a',
+      ),
+      '/events/a',
+    );
+    expect(
+      authRedirect(loggedIn: true, location: '/login', from: '//evil.com'),
+      '/',
+    );
+    expect(
+      authRedirect(loggedIn: true, location: '/login', from: 'https://x.pe'),
+      '/',
+    );
+    expect(
+      authRedirect(loggedIn: true, location: '/login', from: '/login'),
+      '/',
+    );
+    expect(
+      authRedirect(loggedIn: false, location: '/login', from: '/x'),
+      isNull,
+    );
+  });
+
+  test('authPath adds from only when safe', () {
+    expect(authPath('/login'), '/login');
+    expect(authPath('/login', from: '/events/a'), '/login?from=%2Fevents%2Fa');
+    expect(authPath('/registration', from: '/welcome'), '/registration');
+  });
+
   test('events feed is open to guests and signed-in users', () {
     for (final r in ['/events', '/events/abc']) {
       expect(authRedirect(loggedIn: false, location: r), isNull);

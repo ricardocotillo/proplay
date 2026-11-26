@@ -598,7 +598,7 @@ class SessionService {
     return _firestore.collection('liveSessions').doc(sessionId).snapshots().map(
       (doc) {
         if (!doc.exists) {
-          throw Exception('Session not found');
+          throw Exception('Evento no encontrado.');
         }
         return SessionModel.fromMap(doc.id, doc.data()!);
       },
@@ -622,18 +622,27 @@ class SessionService {
         final sessionDoc = await transaction.get(sessionRef);
 
         if (!sessionDoc.exists) {
-          throw Exception('Session not found');
+          throw Exception('Evento no encontrado.');
         }
 
         final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
 
-        // Check if user has enough credits
-        final userCredits = user.creditsValue;
+        if (!session.eventDate.isAfter(DateTime.now())) {
+          throw Exception('Este evento ya empezó o terminó.');
+        }
+
+        // Balance from the document read in this transaction, not the
+        // cached model: a credit approval since the last refresh must count
+        // and must not be overwritten by the debit below.
+        final userRef = _firestore.collection('users').doc(user.uid);
+        final userDoc = await transaction.get(userRef);
+        if (!userDoc.exists) throw Exception('No encontramos tu perfil.');
+        final userCredits = UserModel.fromMap(userDoc.data()!).creditsValue;
         final costPerPlayer = session.costPerPlayer;
 
         if (userCredits < costPerPlayer) {
           throw Exception(
-            'No tienes suficientes créditos. Necesitas ${UserModel.formatCredits(costPerPlayer)} pero solo tienes ${user.credits}',
+            'No tienes suficientes créditos. Necesitas S/ ${UserModel.formatCredits(costPerPlayer)} y tienes S/ ${UserModel.formatCredits(userCredits)}.',
           );
         }
 
@@ -641,7 +650,11 @@ class SessionService {
         final players = session.players ?? [];
 
         if (players.any((p) => p.uid == user.uid)) {
-          throw Exception('You have already joined this session');
+          throw Exception('Ya estás inscrito en este evento.');
+        }
+
+        if (players.length >= session.maxPlayers) {
+          throw Exception('Este evento ya está lleno.');
         }
 
         // Calculate new credit balance
@@ -649,7 +662,6 @@ class SessionService {
         final newCreditsFormatted = UserModel.formatCredits(newCredits);
 
         // Update user's credits
-        final userRef = _firestore.collection('users').doc(user.uid);
         transaction.update(userRef, {'credits': newCreditsFormatted});
 
         // Create credit history entry for the spend
@@ -672,27 +684,22 @@ class SessionService {
           'notes': 'Unirse a pichanga: ${session.title}',
         });
 
-        // Check if there's space in the main player list
-        if (players.length < session.maxPlayers) {
-          // Add to main player list
-          final updatedPlayers = [...players, sessionUser];
-          transaction.update(sessionRef, {
-            'players': updatedPlayers.map((p) => p.toMap()).toList(),
-            'playerCount': updatedPlayers.length,
-          });
+        // Add to main player list
+        final updatedPlayers = [...players, sessionUser];
+        transaction.update(sessionRef, {
+          'players': updatedPlayers.map((p) => p.toMap()).toList(),
+          'playerCount': updatedPlayers.length,
+        });
 
-          // Create the virtual ticket atomically with the join
-          final ticket = TicketService.buildTicketForJoin(
-            session: session,
-            user: user,
-          );
-          final ticketRef = _firestore
-              .collection(TicketService.ticketsCollection)
-              .doc(ticket.id);
-          transaction.set(ticketRef, ticket.toMap());
-        } else {
-          throw Exception('Session is full');
-        }
+        // Create the virtual ticket atomically with the join
+        final ticket = TicketService.buildTicketForJoin(
+          session: session,
+          user: user,
+        );
+        final ticketRef = _firestore
+            .collection(TicketService.ticketsCollection)
+            .doc(ticket.id);
+        transaction.set(ticketRef, ticket.toMap());
       });
     } catch (e) {
       rethrow;
@@ -755,7 +762,7 @@ class SessionService {
         final sessionDoc = await transaction.get(sessionRef);
 
         if (!sessionDoc.exists) {
-          throw Exception('Session not found');
+          throw Exception('Evento no encontrado.');
         }
 
         final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);
@@ -775,7 +782,7 @@ class SessionService {
         }).toList();
 
         if (!found) {
-          throw Exception('User not found in session');
+          throw Exception('Este jugador ya no está en el evento.');
         }
 
         // Update Firestore
@@ -799,7 +806,7 @@ class SessionService {
         final sessionDoc = await transaction.get(sessionRef);
 
         if (!sessionDoc.exists) {
-          throw Exception('Session not found');
+          throw Exception('Evento no encontrado.');
         }
 
         final session = SessionModel.fromMap(sessionDoc.id, sessionDoc.data()!);

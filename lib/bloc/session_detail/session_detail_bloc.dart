@@ -7,6 +7,7 @@ import 'package:proplay/models/session_model.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/group_service.dart';
+import 'package:proplay/utils/error_message.dart';
 
 class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
   final SessionService sessionService;
@@ -72,11 +73,11 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
               );
             },
             onError: (error) {
-              add(_SessionError(error.toString()));
+              add(_SessionError(userMessage(error)));
             },
           );
     } catch (e) {
-      emit(SessionDetailError(e.toString()));
+      emit(SessionDetailError(userMessage(e)));
     }
   }
 
@@ -95,7 +96,7 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
       await sessionService.joinSession(currentState.session.id, currentUser);
       // The stream will automatically update the state with the new session data
     } catch (e) {
-      emit(SessionDetailError(e.toString(), session: currentState.session));
+      emit(SessionDetailError(userMessage(e), session: currentState.session));
     }
   }
 
@@ -126,7 +127,7 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
       );
       // The session stream then emits Loaded with the updated players list.
     } catch (e) {
-      emit(SessionDetailError(e.toString(), session: currentState.session));
+      emit(SessionDetailError(userMessage(e), session: currentState.session));
     }
   }
 
@@ -174,7 +175,7 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
       );
       // The stream will automatically update the state
     } catch (e) {
-      emit(SessionDetailError(e.toString(), session: currentState.session));
+      emit(SessionDetailError(userMessage(e), session: currentState.session));
     }
   }
 

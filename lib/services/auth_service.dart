@@ -77,31 +77,31 @@ class AuthService {
   String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'invalid-credential':
-        return 'Invalid credentials. Please try again.';
+        return 'Correo o contraseña incorrectos.';
       case 'user-not-found':
-        return 'No user found with this email.';
+        return 'No hay una cuenta con este correo.';
       case 'wrong-password':
-        return 'Wrong password provided.';
+        return 'Contraseña incorrecta.';
       case 'user-disabled':
-        return 'This user account has been disabled.';
+        return 'Esta cuenta está deshabilitada.';
       case 'too-many-requests':
-        return 'Too many attempts. Please try again later.';
+        return 'Demasiados intentos. Inténtalo más tarde.';
       case 'network-request-failed':
-        return 'Network error. Please check your connection and try again.';
+        return 'Sin conexión. Revisa tu internet e inténtalo de nuevo.';
       case 'email-already-in-use':
-        return 'An account already exists with this email.';
+        return 'Ya existe una cuenta con este correo.';
       case 'invalid-email':
-        return 'The email address is invalid.';
+        return 'El correo no es válido.';
       case 'weak-password':
-        return 'The password is too weak.';
+        return 'La contraseña es muy débil.';
       case 'operation-not-allowed':
-        return 'Email/password accounts are not enabled.';
+        return 'El ingreso con correo no está habilitado.';
       case 'account-exists-with-different-credential':
-        return 'An account already exists with this email using a different sign-in method.';
+        return 'Este correo ya está registrado con otro método de ingreso.';
       case 'credential-already-in-use':
-        return 'This credential is already associated with a different account.';
+        return 'Estas credenciales ya pertenecen a otra cuenta.';
       default:
-        return 'Auth error (${e.code}): ${e.message ?? 'Please try again.'}';
+        return 'No pudimos completar el ingreso (${e.code}). Inténtalo de nuevo.';
     }
   }
 }

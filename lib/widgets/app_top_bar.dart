@@ -6,6 +6,7 @@ import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/utils/auth_redirect.dart';
 import 'package:proplay/utils/shell_nav.dart';
 import 'package:proplay/widgets/brand.dart';
 import 'package:proplay/widgets/cached_image.dart';
@@ -16,6 +17,9 @@ class AppTopBar extends StatelessWidget {
   const AppTopBar({super.key, required this.location});
 
   final String location;
+
+  /// Guests signing in from an event page come back to it.
+  String? get _from => location.startsWith('/events/') ? location : null;
 
   @override
   Widget build(BuildContext context) {
@@ -45,12 +49,14 @@ class AppTopBar extends StatelessWidget {
                 const Spacer(),
                 if (user == null) ...[
                   TextButton(
-                    onPressed: () => context.go('/login'),
+                    onPressed: () =>
+                        context.go(authPath('/login', from: _from)),
                     child: const Text('Ingresar'),
                   ),
                   const SizedBox(width: 8),
                   FilledButton(
-                    onPressed: () => context.go('/registration'),
+                    onPressed: () =>
+                        context.go(authPath('/registration', from: _from)),
                     child: const Text('Crear cuenta'),
                   ),
                 ] else ...[
