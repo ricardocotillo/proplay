@@ -4,7 +4,7 @@ import {getFirestore} from 'firebase-admin/firestore';
 // Fields copied from liveSessions to the public projection. Never `players`.
 const PUBLIC_FIELDS = [
   'templateId', 'groupId', 'title', 'eventDate', 'eventEndDate', 'status',
-  'playerCount', 'maxPlayers', 'costPerPlayer', 'isPrivate', 'sport',
+  'playerCount', 'maxPlayers', 'minPlayers', 'costPerPlayer', 'isPrivate', 'sport',
   'minAge', 'maxAge', 'desiredGender', 'locationLat', 'locationLng',
   'locationAddress', 'district', 'format', 'bannerUrl', 'g', 'l',
 ] as const;

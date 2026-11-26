@@ -15,6 +15,7 @@ import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/storage_service.dart';
 import 'package:proplay/services/user_service.dart';
 import 'package:proplay/utils/app_paths.dart';
+import 'package:proplay/utils/min_players.dart';
 import 'package:proplay/utils/manage_event.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/widgets/location_picker.dart';
@@ -64,6 +65,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _maxPlayersController = TextEditingController();
+  final _minPlayersController = TextEditingController();
   final _costPerPlayerController = TextEditingController();
   final _formatController = TextEditingController();
   String? _desiredGender;
@@ -142,6 +144,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
     _pageController.dispose();
     _titleController.dispose();
     _maxPlayersController.dispose();
+    _minPlayersController.dispose();
     _costPerPlayerController.dispose();
     _formatController.dispose();
     super.dispose();
@@ -268,6 +271,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
       eventDate: Timestamp.fromDate(eventDateTime),
       eventEndDate: Timestamp.fromDate(eventEndDateTime),
       maxPlayers: maxPlayers,
+      minPlayers: int.tryParse(_minPlayersController.text.trim()),
       totalCost: totalCost,
       costPerPlayer: costPerPlayer,
       isPrivate: _isPrivate,
@@ -559,6 +563,36 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
               validator: (value) => (int.tryParse(value ?? '') ?? 0) < 1
                   ? 'Ingresa al menos 1 jugador'
                   : null,
+            ),
+            const SizedBox(height: 16),
+
+            // Optional minimum: the server cancels and refunds if it is not
+            // reached 24 h before the start.
+            TextFormField(
+              controller: _minPlayersController,
+              decoration: const InputDecoration(
+                labelText: 'Mínimo de jugadores (opcional)',
+                helperText:
+                    'Si 24 h antes no llegan, el evento se cancela y se '
+                    'devuelve el saldo a todos.',
+                helperMaxLines: 2,
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) => minPlayersError(
+                value,
+                maxPlayers: int.tryParse(_maxPlayersController.text),
+                start: _eventDate == null || _eventTime == null
+                    ? null
+                    : DateTime(
+                        _eventDate!.year,
+                        _eventDate!.month,
+                        _eventDate!.day,
+                        _eventTime!.hour,
+                        _eventTime!.minute,
+                      ),
+                now: DateTime.now(),
+              ),
             ),
             const SizedBox(height: 16),
 

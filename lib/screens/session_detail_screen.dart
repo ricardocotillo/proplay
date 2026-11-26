@@ -25,6 +25,7 @@ import 'package:proplay/screens/session_map_screen.dart';
 import 'package:proplay/utils/app_paths.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/utils/join_availability.dart';
+import 'package:proplay/utils/min_players.dart';
 import 'package:proplay/utils/waitlist_bar.dart';
 import 'package:proplay/utils/refund_policy.dart';
 
@@ -329,6 +330,34 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
                                   ),
                                 ],
                                 const SizedBox(height: 12),
+                                if (minPlayersNote(
+                                      minPlayers: session.minPlayers,
+                                      playerCount: players.length,
+                                      eventDate: session.eventDate,
+                                      now: DateTime.now(),
+                                    )
+                                    case final note?) ...[
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(
+                                        Icons.groups_outlined,
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          note,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
                                 // Player count badge
                                 _buildBadge(
                                   context,

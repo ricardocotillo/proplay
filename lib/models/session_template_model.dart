@@ -11,6 +11,7 @@ class SessionTemplateModel extends Equatable {
   final Timestamp eventEndDate;
   final int? durationInMinutes;
   final int maxPlayers;
+  final int? minPlayers;
   final double totalCost;
   final double? costPerPlayer;
   final bool isPrivate;
@@ -34,6 +35,7 @@ class SessionTemplateModel extends Equatable {
     required this.eventEndDate,
     this.durationInMinutes,
     required this.maxPlayers,
+    this.minPlayers,
     required this.totalCost,
     this.costPerPlayer,
     this.isPrivate = false,
@@ -59,6 +61,7 @@ class SessionTemplateModel extends Equatable {
     eventEndDate,
     durationInMinutes,
     maxPlayers,
+    minPlayers,
     totalCost,
     costPerPlayer,
     isPrivate,
@@ -83,6 +86,7 @@ class SessionTemplateModel extends Equatable {
     Timestamp? eventEndDate,
     int? durationInMinutes,
     int? maxPlayers,
+    int? minPlayers,
     double? totalCost,
     double? costPerPlayer,
     bool? isPrivate,
@@ -106,6 +110,7 @@ class SessionTemplateModel extends Equatable {
       eventEndDate: eventEndDate ?? this.eventEndDate,
       durationInMinutes: durationInMinutes ?? this.durationInMinutes,
       maxPlayers: maxPlayers ?? this.maxPlayers,
+      minPlayers: minPlayers ?? this.minPlayers,
       totalCost: totalCost ?? this.totalCost,
       costPerPlayer: costPerPlayer ?? this.costPerPlayer,
       isPrivate: isPrivate ?? this.isPrivate,
@@ -131,6 +136,7 @@ class SessionTemplateModel extends Equatable {
       'eventEndDate': eventEndDate,
       'durationInMinutes': durationInMinutes,
       'maxPlayers': maxPlayers,
+      if (minPlayers != null) 'minPlayers': minPlayers,
       'totalCost': totalCost,
       'costPerPlayer': costPerPlayer,
       'isPrivate': isPrivate,
@@ -162,6 +168,7 @@ class SessionTemplateModel extends Equatable {
       eventEndDate: map['eventEndDate'] as Timestamp,
       durationInMinutes: map['durationInMinutes'] as int?,
       maxPlayers: map['maxPlayers'] as int,
+      minPlayers: (map['minPlayers'] as num?)?.toInt(),
       totalCost: (map['totalCost'] as num).toDouble(),
       costPerPlayer: (map['costPerPlayer'] as num?)?.toDouble(),
       isPrivate: map['isPrivate'] as bool? ?? false,
