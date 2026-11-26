@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:responsive_framework/responsive_framework.dart';
+import 'package:url_launcher/link.dart';
 import 'package:proplay/bloc/events_feed/events_feed_bloc.dart';
 import 'package:proplay/bloc/events_feed/events_feed_event.dart';
 import 'package:proplay/bloc/events_feed/events_feed_state.dart';
@@ -556,6 +557,15 @@ class _Footer extends StatelessWidget {
                 TextButton(
                   onPressed: () => context.go('/registration'),
                   child: const Text('Crear cuenta'),
+                ),
+                // Link renders a real <a href> on web, so Google's OAuth
+                // branding review can find the policy from the homepage.
+                Link(
+                  uri: Uri.parse('https://proplayapp.com/privacidad.html'),
+                  builder: (context, follow) => TextButton(
+                    onPressed: follow,
+                    child: const Text('Política de privacidad'),
+                  ),
                 ),
               ],
             ),
