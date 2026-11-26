@@ -35,18 +35,36 @@
     <!-- iOS meta tags & icons -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-    <meta name="apple-mobile-web-app-title" content="proplay" />
+    <meta name="apple-mobile-web-app-title" content="ProPlay" />
     <link rel="apple-touch-icon" href="icons/Icon-192.png" />
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="favicon.png" />
 
-    <title>Proplay</title>
+    <title>ProPlay - Encuentra tu próximo partido</title>
     <link rel="manifest" href="manifest.json" />
 
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDD-9jkMn3n-JmNmSOvfO7gO2-HTkXIWQ4"></script>
   </head>
-  <body>
+  <body style="margin:0;background:#0F1115;color:#F2F3F5;font-family:system-ui,sans-serif">
+    <!-- Static homepage text for crawlers and Google's OAuth branding review
+         (Flutter paints to a canvas). Removed once the app draws its first frame. -->
+    <div id="static-home" style="max-width:640px;margin:0 auto;padding:48px 16px">
+      <h1>ProPlay</h1>
+      <p>ProPlay es una app para organizar y descubrir deporte amateur en Perú: fútbol, baloncesto y voleibol.
+        Únete a grupos, reserva tu lugar en eventos con tu saldo y entra a la cancha con tu entrada QR.</p>
+      <p>
+        <a href="/events" style="color:#FF5A5C">Ver eventos</a> ·
+        <a href="/login" style="color:#FF5A5C">Ingresar</a> ·
+        <a href="/privacidad.html" style="color:#FF5A5C">Política de privacidad</a>
+      </p>
+    </div>
+    <script>
+      window.addEventListener('flutter-first-frame', function () {
+        var el = document.getElementById('static-home');
+        if (el) el.remove();
+      });
+    </script>
     <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
