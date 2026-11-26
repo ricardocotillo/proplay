@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -42,21 +44,64 @@ class NotificationService {
     }
     final token = await _token();
     if (token == null) return PushStatus.off;
-    await _tokenDoc(
-      uid,
-      token,
-    ).set({'createdAt': FieldValue.serverTimestamp(), 'platform': 'web'});
+    await _save(uid, token);
     return PushStatus.on;
   }
 
   /// Forget this browser (the permission stays granted in the browser).
+  /// Also used on logout, so the next account on a shared browser doesn't
+  /// inherit this one's pushes.
   Future<void> disable(String uid) async {
+    stopRefreshSync();
     if (!supported) return;
     final token = await _token();
     if (token != null) await _tokenDoc(uid, token).delete();
     // ignore: deprecated_member_use
     await FirebaseMessaging.instance.deleteToken();
   }
+
+  StreamSubscription<String>? _refresh;
+  String? _lastToken;
+
+  /// While push is on, a rotated browser token replaces the stored one;
+  /// otherwise pushes would silently stop.
+  Future<void> startRefreshSync(String uid) async {
+    if (!supported) return;
+    await _refresh?.cancel();
+    _lastToken = await _token();
+    // ignore: deprecated_member_use
+    _refresh = FirebaseMessaging.instance.onTokenRefresh.listen((fresh) async {
+      final old = _lastToken;
+      _lastToken = fresh;
+      await _save(uid, fresh);
+      if (old != null && old != fresh) await _tokenDoc(uid, old).delete();
+    });
+  }
+
+  void stopRefreshSync() {
+    _refresh?.cancel();
+    _refresh = null;
+    _lastToken = null;
+  }
+
+  /// Pushes that arrive while a ProPlay tab is focused (the browser shows
+  /// nothing then); the app shows them in-app.
+  Stream<({String title, String body})> get foregroundMessages => !supported
+      ? const Stream.empty()
+      : FirebaseMessaging.onMessage
+            .where((m) => m.notification != null)
+            .map(
+              (m) => (
+                title: m.notification!.title ?? '',
+                body: m.notification!.body ?? '',
+              ),
+            );
+
+  Future<void> _save(String uid, String token) => _tokenDoc(uid, token).set({
+    'createdAt': FieldValue.serverTimestamp(),
+    'platform': 'web',
+    'token': token,
+  });
 
   // ponytail: getToken is deprecated in firebase_messaging 17 in favor of
   // register() + onRegistered; it still works on web. Move when it is removed.

@@ -18,6 +18,14 @@ class _FakePush implements NotificationService {
     return onEnable;
   }
 
+  var syncing = false;
+
+  @override
+  Future<void> startRefreshSync(String uid) async => syncing = true;
+
+  @override
+  void stopRefreshSync() => syncing = false;
+
   @override
   Future<void> disable(String uid) async {
     calls.add('disable:$uid');
@@ -34,6 +42,9 @@ void main() {
     final cubit = NotificationsCubit(push, 'u1');
     await cubit.load();
     expect(cubit.state.status, PushStatus.on);
+    expect(push.syncing, isTrue); // rotated tokens are re-saved
+    await cubit.close();
+    expect(push.syncing, isFalse);
   });
 
   test('turning on registers this device', () async {

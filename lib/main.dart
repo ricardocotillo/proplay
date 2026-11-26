@@ -35,6 +35,7 @@ import 'package:proplay/screens/group_edit_screen_loader.dart';
 import 'package:proplay/screens/group_info_screen_loader.dart';
 import 'package:proplay/screens/events_feed_screen.dart';
 import 'package:proplay/screens/event_screen.dart';
+import 'package:proplay/services/notification_service.dart';
 import 'package:proplay/screens/groups_screen.dart';
 import 'package:proplay/screens/profile_screen.dart';
 import 'package:proplay/screens/create_session_screen.dart';
@@ -77,6 +78,20 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   GoRouter? _router;
+  final _messenger = GlobalKey<ScaffoldMessengerState>();
+  StreamSubscription<({String title, String body})>? _pushSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // A push that arrives while a ProPlay tab is focused: the browser shows
+    // nothing, so show it in-app.
+    _pushSub = NotificationService().foregroundMessages.listen(
+      (m) => _messenger.currentState?.showSnackBar(
+        SnackBar(content: Text('${m.title}\n${m.body}')),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,6 +118,7 @@ class _MyAppState extends State<MyApp> {
               authService: context.read<AuthService>(),
               userService: context.read<UserService>(),
               groupService: context.read<GroupService>(),
+              notificationService: NotificationService(),
             ),
           ),
           BlocProvider<UserBloc>(
@@ -401,6 +417,7 @@ class _MyAppState extends State<MyApp> {
                 ],
               ),
               routerConfig: _router!,
+              scaffoldMessengerKey: _messenger,
               title: 'ProPlay',
               theme: AppTheme.dark,
             );
@@ -412,6 +429,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    _pushSub?.cancel();
     _router?.dispose();
     super.dispose();
   }

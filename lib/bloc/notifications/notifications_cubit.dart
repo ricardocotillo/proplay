@@ -26,10 +26,18 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 
   Future<void> load() async {
     try {
-      emit(NotificationsState(status: await _service.status(_uid)));
+      final status = await _service.status(_uid);
+      emit(NotificationsState(status: status));
+      if (status == PushStatus.on) await _service.startRefreshSync(_uid);
     } catch (_) {
       emit(const NotificationsState());
     }
+  }
+
+  @override
+  Future<void> close() {
+    _service.stopRefreshSync();
+    return super.close();
   }
 
   Future<void> set(bool enabled) async {
@@ -38,6 +46,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     try {
       if (enabled) {
         final now = await _service.enable(_uid);
+        if (now == PushStatus.on) await _service.startRefreshSync(_uid);
         emit(
           NotificationsState(
             status: now,

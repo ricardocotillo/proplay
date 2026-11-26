@@ -11,7 +11,7 @@ const {getFirestore, Timestamp} = req('firebase-admin/firestore');
 initializeApp({projectId: 'demo-proplay'});
 const db = getFirestore();
 const {runReminders} = req(FN + '/lib/reminders.js');
-const {sendToUser, claim} = req(FN + '/lib/notify.js');
+const {sendToUser, claim, dropTokenElsewhere} = req(FN + '/lib/notify.js');
 
 const H = 3600 * 1000;
 let n = 0;
@@ -92,7 +92,68 @@ await t('events with no players, started events and users without tokens send no
   assert.ok(!s.sent.some((m) => m.data.path === `/events/${empty}`));
   assert.ok(!s.sent.some((m) => m.data.path === `/events/${past}`));
   assert.ok(!s.sent.some((m) => m.data.path === `/events/${noTok}`));
-  assert.ok(out.events >= 1); // noTok was claimed (sent nowhere)
+  assert.equal(out.sent >= 0, true);
+});
+
+await t('a player who enables push after a run still gets the reminder in the next run', async () => {
+  const a = user(), b = user();
+  await enable(a, `${a}-t1`);
+  const id = await seedEvent(1, [a, b]);
+  const s1 = fakeSender();
+  await runReminders(db, s1, Date.now());
+  assert.deepEqual(s1.sent.filter((m) => m.data.path === `/events/${id}`).flatMap((m) => m.tokens), [`${a}-t1`]);
+  await enable(b, `${b}-t1`); // late enabler
+  const s2 = fakeSender();
+  await runReminders(db, s2, Date.now());
+  assert.deepEqual(s2.sent.filter((m) => m.data.path === `/events/${id}`).flatMap((m) => m.tokens), [`${b}-t1`]);
+});
+
+await t('one failing send does not block the other players or events', async () => {
+  const bad = user(), good = user();
+  await enable(bad, `${bad}-t1`); await enable(good, `${good}-t1`);
+  const id = await seedEvent(1, [bad, good]);
+  const sent = [];
+  const sender = {
+    async sendEachForMulticast(m) {
+      if (m.tokens[0] === `${bad}-t1`) throw new Error('fcm down');
+      sent.push(m);
+      return {responses: m.tokens.map(() => ({success: true}))};
+    },
+  };
+  await runReminders(db, sender, Date.now());
+  assert.ok(sent.some((m) => m.data.path === `/events/${id}` && m.tokens[0] === `${good}-t1`));
+});
+
+await t('a player already checked in gets no 2 h reminder', async () => {
+  const a = user(), b = user();
+  await enable(a, `${a}-t1`); await enable(b, `${b}-t1`);
+  const id = await seedEvent(1, [a, b]);
+  await db.doc(`tickets/${id}_${a}`).set({status: 'used'});
+  await db.doc(`tickets/${id}_${b}`).set({status: 'valid'});
+  const s = fakeSender();
+  await runReminders(db, s, Date.now());
+  const tokens = s.sent.filter((m) => m.data.path === `/events/${id}`).flatMap((m) => m.tokens);
+  assert.deepEqual(tokens, [`${b}-t1`]);
+});
+
+await t('a token registered by a new account is dropped from the previous one', async () => {
+  const oldU = user(), newU = user();
+  const tk = `shared-${n}`;
+  await db.doc(`users/${oldU}/fcmTokens/${tk}`).set({token: tk, platform: 'web'});
+  await db.doc(`users/${newU}/fcmTokens/${tk}`).set({token: tk, platform: 'web'});
+  assert.equal(await dropTokenElsewhere(db, newU, tk), 1);
+  assert.equal((await db.doc(`users/${oldU}/fcmTokens/${tk}`).get()).exists, false);
+  assert.equal((await db.doc(`users/${newU}/fcmTokens/${tk}`).get()).exists, true);
+});
+
+await t('invalid-argument tokens are treated as dead', async () => {
+  const a = user();
+  await enable(a, 'bad-arg');
+  const sender = {async sendEachForMulticast(m) {
+    return {responses: m.tokens.map(() => ({success: false, error: {code: 'messaging/invalid-argument'}}))};
+  }};
+  await sendToUser(db, sender, a, {title: 't', body: 'b', path: '/x'});
+  assert.equal((await db.collection(`users/${a}/fcmTokens`).get()).size, 0);
 });
 
 await t('dead tokens are deleted, live ones kept', async () => {

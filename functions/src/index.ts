@@ -9,4 +9,4 @@ export {joinSession} from './joinSession';
 export {mirrorPublicEvent} from './publicEvents';
 export {cancelEvent, checkInPlayer, removePlayer} from './organizer';
 export {reviewCreditPurchase} from './reviewCreditPurchase';
-export {notifyCreditApproved, sendReminders} from './reminders';
+export {claimDeviceToken, notifyCreditApproved, sendReminders} from './reminders';

@@ -243,7 +243,7 @@ sessionTemplates/{templateId}
 liveSessions/{sessionId}         # players[] embedded on the document
 tickets/{sessionId}_{userId}
 documents/{type}_{number}        # uniqueness lock: { uid, createdAt }
-users/{uid}/fcmTokens/{token}     # web push device: { createdAt, platform }
+users/{uid}/fcmTokens/{token}     # web push device: { createdAt, platform, token }
 notificationsSent/{kind}_{id}    # server-only: claims a notification so it is sent once
 creditHistory/{id}
 yape/{id}                        # first doc wins — admin QR / phone / name
@@ -476,7 +476,7 @@ Guests tap a card → `/events/:id` (`PublicEventScreen`, "Ingresa para unirte" 
 
 ### Cloud Functions (`functions/`)
 
-TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation`, `joinSession` and the organizer / credit callables, `mirrorPublicEvent`, `sendReminders` (scheduled) and `notifyCreditApproved` (trigger) (`onDocumentWritten('liveSessions/{id}')`). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel` and `join` (callable logic, incl. join → cancel → rejoin), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
+TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation`, `joinSession` and the organizer / credit callables, `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`), and for web push `sendReminders` (scheduled), `notifyCreditApproved` and `claimDeviceToken` (triggers). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel`, `join` (callable logic, incl. join → cancel → rejoin), `organizer` (credit review, cancel/remove event, check-in) and `reminders` (push sending with a fake sender), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
 
 ### Notifications (web push)
 
@@ -485,9 +485,11 @@ Foundation plus three messages, web only (Firebase Cloud Messaging; email is not
 - **Opt in:** Perfil → "Avisos en el navegador" (`NotificationsCubit` → `NotificationService`). It asks the browser for permission, gets an FCM token with `AppConstants.webPushVapidKey` and stores it at `users/{uid}/fcmTokens/{token}` (rules: only the user, own tokens, fixed fields). The switch is hidden until the VAPID key is set. `web/firebase-messaging-sw.js` shows notifications while no tab is open; a click opens the link.
 - **Send:** `functions/src/notify.ts` (`sendToUser`: every device of a user, dead tokens deleted; `claim`: `notificationsSent/{kind}_{id}` is created once, so a notification is never sent twice).
 - **Messages** (copy in `reminderPolicy.ts`, Spanish):
-  - `sendReminders` (scheduled every 10 min, `runReminders`): *Última hora para cancelar gratis* in the hour before the 24 h free-cancel deadline, and *Tu evento empieza pronto* in the last 2 h, to every player; links to `/events/:id`.
+  - `sendReminders` (scheduled every 10 min, `runReminders`): *Última hora para cancelar gratis* in the hour before the 24 h free-cancel deadline, and *Tu evento empieza pronto* in the last 2 h (not for players already checked in), to every player with a device; links to `/events/:id`. The claim is per (kind, event, player) and only taken when the player has a device, so a late enabler still gets it, one failed send never blocks the others, and a crash loses at most the player being sent.
   - `notifyCreditApproved` (`onDocumentUpdated('creditHistory/{id}')`): *Saldo aprobado* when a top-up goes pending → approved; links to `/profile`.
-- A user who enables push after a reminder was claimed does not get that reminder. No quiet hours or per-message preferences yet.
+- **One browser, one account:** logout deletes this browser's token (`AuthBloc` → `NotificationService.disable`, best effort), and `claimDeviceToken` (trigger on a new token doc) deletes the same token under any other user, found through a collection-group query on the `token` field (index override in `firestore.indexes.json`). A rotated token is re-saved while the switch is on (`startRefreshSync`).
+- **Open tab:** a push that arrives while a ProPlay tab is focused is shown as an in-app snackbar (`foregroundMessages`).
+- No quiet hours or per-message preferences yet.
 
 ### Matchmaking
 
