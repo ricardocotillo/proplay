@@ -242,7 +242,7 @@ class _CreditHistoryScreenState extends State<CreditHistoryScreen> {
                       ),
                       title: Text(
                         history.entryType == 'spend'
-                            ? history.sessionTitle ?? 'Pichanga'
+                            ? history.sessionTitle ?? 'Evento'
                             : history.entryType == 'refund'
                             ? 'Reembolso: ${history.sessionTitle ?? ""}'
                             : history.entryType == 'adjustment'

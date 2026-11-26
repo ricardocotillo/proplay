@@ -24,7 +24,7 @@ class AppTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watchUser;
-    final active = activeNavPath(location);
+    final active = activeSection(location);
     return Container(
       height: 64,
       decoration: const BoxDecoration(
@@ -43,7 +43,7 @@ class AppTopBar extends StatelessWidget {
                 for (final item in navFor(signedIn: user != null))
                   _NavLink(
                     label: item.label,
-                    active: item.path == active,
+                    active: item.section == active,
                     onTap: () => context.go(item.path),
                   ),
                 const Spacer(),
@@ -147,7 +147,7 @@ class _AvatarMenu extends StatelessWidget {
       onSelected: (value) {
         switch (value) {
           case 'profile':
-            context.push('/edit-profile');
+            context.go('/profile');
           case 'history':
             context.push('/credit-history');
           case 'approval':
@@ -157,16 +157,13 @@ class _AvatarMenu extends StatelessWidget {
         }
       },
       itemBuilder: (_) => [
-        const PopupMenuItem(value: 'profile', child: Text('Editar perfil')),
+        const PopupMenuItem(value: 'profile', child: Text('Perfil')),
         const PopupMenuItem(
           value: 'history',
           child: Text('Historial de saldo'),
         ),
         if (user.superUser)
-          const PopupMenuItem(
-            value: 'approval',
-            child: Text('Aprobar créditos'),
-          ),
+          const PopupMenuItem(value: 'approval', child: Text('Aprobar saldo')),
         const PopupMenuDivider(),
         const PopupMenuItem(value: 'logout', child: Text('Cerrar sesión')),
       ],

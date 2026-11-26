@@ -132,7 +132,7 @@ Crea el registro histórico con estado `pending`.
 
 ## 👤 Flujo de Operaciones / Admin
 
-Los superusuarios tienen una opción para aprobar saldo en el `AppDrawer`. Esta pantalla (`CreditApprovalScreen`, con `CreditApprovalCubit`) es el centro operativo.
+Los superusuarios tienen una opción para aprobar saldo en la pantalla Perfil. Esta pantalla (`CreditApprovalScreen`, con `CreditApprovalCubit`) es el centro operativo.
 
 ### Proceso de Aprobación:
 

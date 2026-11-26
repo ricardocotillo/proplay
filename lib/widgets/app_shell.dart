@@ -1,10 +1,14 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:proplay/theme/app_colors.dart';
+import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/utils/shell_nav.dart';
+import 'package:proplay/widgets/app_bottom_nav.dart';
 import 'package:proplay/widgets/app_top_bar.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
-/// Desktop chrome for the `ShellRoute`: one top bar above every page. On
-/// mobile and tablet it renders the page untouched (drawer + own app bars).
+/// Chrome for the `ShellRoute`: a top bar above every page on desktop; on
+/// mobile and tablet a bottom bar for signed-in users on the top level of each
+/// destination. Pages keep their own app bars.
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.location, required this.child});
 
@@ -13,7 +17,15 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!ResponsiveBreakpoints.of(context).largerThan(TABLET)) return child;
+    if (!ResponsiveBreakpoints.of(context).largerThan(TABLET)) {
+      if (context.watchUser == null || !showsBottomNav(location)) return child;
+      return Column(
+        children: [
+          Expanded(child: child),
+          AppBottomNav(location: location),
+        ],
+      );
+    }
     final theme = Theme.of(context);
     // Pages keep their own app bar; flatten it so it reads as a page header.
     final flattened = theme.copyWith(

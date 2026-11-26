@@ -21,7 +21,7 @@ Source of truth: `lib/theme/app_colors.dart` (palette) and `lib/theme/app_theme.
 | Token | Value | Use |
 | --- | --- | --- |
 | `AppColors.page` | `#0F1115` | page background |
-| `AppColors.bar` | `#16181D` | top bar, drawer, app bars, footer |
+| `AppColors.bar` | `#16181D` | top bar, bottom bar, app bars, footer |
 | `AppColors.card` | `#1A1D23` | cards, dialogs, sheets |
 | `AppColors.field` | `#20232A` | inputs, skeletons, disabled fills |
 | `AppColors.border` | `#262A31` | 1px borders and dividers |
@@ -53,10 +53,23 @@ Cards 14, buttons and inputs 12, dialogs 16, chips and pills stadium. Card borde
 
 ## 4. Shell
 
-- Desktop: `AppShell` + `AppTopBar` (64 px: brand, Inicio / Eventos / Mis tickets, wallet, avatar menu; guests get Ingresar / Crear cuenta) wrap `/` and `/events*` through a `ShellRoute`. Each page keeps its own app bar; the shell flattens it so it reads as a page header.
-- Mobile: no shell. Drawer (`AppDrawer`) and per-screen app bars.
+- Four destinations, one list (`kShellNav`): **Explorar** (`/`, the feed first, then "De tus grupos"), **Mis partidos** (`/tickets`), **Grupos** (`/groups`), **Perfil** (`/profile`: saldo, edit profile, saldo history, approve saldo for superUsers, log out). Guests only get Explorar (`/events`).
+- Desktop: `AppShell` + `AppTopBar` (64 px: brand, the four destinations, wallet, avatar menu; guests get Ingresar / Crear cuenta) wrap every primary route through a `ShellRoute`. Each page keeps its own app bar; the shell flattens it so it reads as a page header.
+- Mobile and tablet: `AppBottomNav` (a `NavigationBar`) under signed-in users' pages, only on the top level of a destination (`showsBottomNav`); detail pages (an event, a ticket, a group) keep a back button. There is no drawer.
 - `/welcome`, `/login`, `/registration` are outside the shell and have their own nav (landing) or none.
 - Active nav logic is pure and tested: `lib/utils/shell_nav.dart`.
+
+## 4b. Glossary (user-facing words)
+
+One word per thing in every screen, message and share text:
+
+| Say | Never | Notes |
+| --- | --- | --- |
+| **evento** | pichanga, sesión, partido (for the thing you join) | The code still says `session` / `liveSession`; users never see it. "Mis partidos" is the one exception: it lists the events you joined or played. |
+| **saldo** | créditos, pro coins, monedas | Always in S/ ("S/ 15.00"). A top-up is a **recarga**; the screen is "Recargar saldo". |
+| **ticket** | boleto, entrada | The QR you show at the door. |
+| **grupo** | club, equipo | Owned by an organizer; events belong to a group. |
+| **organizador** | admin (in copy) | Group owner/admin, or the event creator. |
 
 ## 5. Components
 

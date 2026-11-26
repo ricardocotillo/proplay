@@ -33,7 +33,7 @@ const _steps = <({String title, String body, IconData icon})>[
   ),
   (
     title: 'Juega y haz check-in',
-    body: 'Únete a una sesión y muestra tu ticket QR en la cancha.',
+    body: 'Únete a un evento y muestra tu ticket QR en la cancha.',
     icon: Icons.qr_code_2,
   ),
 ];

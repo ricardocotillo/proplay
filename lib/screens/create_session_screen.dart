@@ -293,7 +293,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Crear sesión'),
+        title: const Text('Crear evento'),
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => context.canPop()
@@ -331,9 +331,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
               listener: (context, state) {
                 if (state is SessionCreationSuccess) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Sesión creada exitosamente!'),
-                    ),
+                    const SnackBar(content: Text('Evento creado exitosamente')),
                   );
                   context.canPop()
                       ? context.pop(true)
@@ -645,9 +643,9 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
 
             // Private checkbox
             CheckboxListTile(
-              title: const Text('Sesión privada'),
+              title: const Text('Evento privado'),
               subtitle: const Text(
-                'Solo los miembros del grupo podrán ver esta sesión',
+                'Solo los miembros del grupo podrán ver este evento',
               ),
               value: _isPrivate,
               onChanged: (value) => setState(() => _isPrivate = value ?? false),
@@ -673,7 +671,7 @@ class _CreateSessionContentState extends State<_CreateSessionContent> {
                     return FilledButton.icon(
                       onPressed: _submitForm,
                       icon: const Icon(Icons.check),
-                      label: const Text('Crear Sesión'),
+                      label: const Text('Crear evento'),
                     );
                   },
                 ),

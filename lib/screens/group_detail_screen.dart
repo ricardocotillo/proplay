@@ -102,7 +102,7 @@ class GroupDetailScreen extends StatelessWidget {
           actions: [
             TextButton(
               child: Text(
-                'Pichangas',
+                'Eventos',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onPrimary,
                 ),
@@ -351,7 +351,7 @@ class GroupDetailScreen extends StatelessWidget {
               );
             },
             icon: const Icon(Icons.sports),
-            label: const Text('Ver Pichangas'),
+            label: const Text('Ver eventos'),
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 48),
             ),

@@ -29,7 +29,7 @@ UI language is Spanish. Currency is PEN.
 | Data | Cloud Firestore |
 | Files | Firebase Storage (profile, group, receipt images) |
 | Maps | Google Maps + `map_location_picker`, `geolocator`, `dart_geohash` |
-| Layout | `responsive_framework` (mobile drawer / desktop sidebar) |
+| Layout | `responsive_framework` (mobile bottom bar / desktop top bar) |
 | Hosting | Firebase Hosting serves `build/web` at [proplayapp.com](https://proplayapp.com) |
 
 There is **no Cloud Functions package** in this repo. Business writes currently happen from the client (including credit debit and ticket create).
@@ -171,7 +171,7 @@ lib/
   models/                   # Firestore / payment models
   services/                 # Firebase and payment I/O only
   screens/                  # Full-page UI
-  widgets/                  # Shared UI (drawer, sidebar, maps helpers)
+  widgets/                  # Shared UI (top/bottom nav, maps helpers)
   utils/                    # Auth helpers, geohash, ticket URLs, breakpoints
 docs/                       # Living architecture + feature notes
 android/ ios/ web/          # Platform shells and Firebase / Maps config
