@@ -102,7 +102,7 @@ await t('client join-style update on a private event denied', () => assertFails(
 await t('client join-style update on a public event denied', () => assertFails(updateDoc(doc(bob, 'liveSessions/s1'), {players: [{uid: 'bob'}], playerCount: 1})));
 await t('legacy doc: client playerCount update denied', () => assertFails(updateDoc(doc(bob, 'liveSessions/legacy'), {playerCount: 1})));
 await t('legacy doc without isPrivate: a non-owner cannot ADD isPrivate:false', () => assertFails(updateDoc(doc(bob, 'liveSessions/legacy'), {isPrivate: false})));
-await t('owner can still create a session for their group', () => assertSucceeds(setDoc(doc(owner, 'liveSessions/new1'), {groupId: 'g1', isPrivate: false, costPerPlayer: 5})));
+await t('owner can still create a session for their group', () => assertSucceeds(setDoc(doc(owner, 'liveSessions/new1'), {groupId: 'g1', isPrivate: false, costPerPlayer: 5, maxPlayers: 10})));
 await t('non-owner cannot create a session for a group they do not own', () => assertFails(setDoc(doc(bob, 'liveSessions/new2'), {groupId: 'g1', isPrivate: false})));
 
 
@@ -384,6 +384,26 @@ await t('maximum cannot drop below the people who joined', async () => {
   await env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), 'liveSessions/lim_three'), {groupId: 'g1', isPrivate: false, costPerPlayer: 5, maxPlayers: 10, eventDate: T0, players: [{uid: 'a'}, {uid: 'b'}, {uid: 'c'}], playerCount: 3}));
   await assertFails(updateDoc(evt('lim_three'), {maxPlayers: 2}));
   await assertSucceeds(updateDoc(evt('lim_three'), {maxPlayers: 3}));
+});
+await t('create needs a maximum and a valid minimum', async () => {
+  await assertFails(setDoc(doc(owner, 'liveSessions/lim_nomax'), {groupId: 'g1', isPrivate: false, costPerPlayer: 5}));
+  const ok = {groupId: 'g1', isPrivate: false, costPerPlayer: 5, maxPlayers: 10};
+  await assertSucceeds(setDoc(doc(owner, 'liveSessions/lim_min_ok'), {...ok, minPlayers: 4}));
+  await assertSucceeds(setDoc(doc(owner, 'liveSessions/lim_min_eq'), {...ok, minPlayers: 10}));
+  await assertFails(setDoc(doc(owner, 'liveSessions/lim_min1'), {...ok, minPlayers: 1}));
+  await assertFails(setDoc(doc(owner, 'liveSessions/lim_min_dec'), {...ok, minPlayers: 2.5}));
+  await assertFails(setDoc(doc(owner, 'liveSessions/lim_min_str'), {...ok, minPlayers: '4'}));
+  await assertFails(setDoc(doc(owner, 'liveSessions/lim_min_big'), {...ok, minPlayers: 11}));
+});
+await t('on update the minimum stays 2 up to the maximum; it can be removed', async () => {
+  await env.withSecurityRulesDisabled((c) => setDoc(doc(c.firestore(), 'liveSessions/lim_upd'), {groupId: 'g1', isPrivate: false, costPerPlayer: 5, maxPlayers: 10, minPlayers: 6, players: [], playerCount: 0}));
+  await assertFails(updateDoc(evt('lim_upd'), {minPlayers: 1}));
+  await assertFails(updateDoc(evt('lim_upd'), {minPlayers: 11}));
+  await assertFails(updateDoc(evt('lim_upd'), {minPlayers: '6'}));
+  await assertFails(updateDoc(evt('lim_upd'), {maxPlayers: 5})); // would leave min 6 above max
+  await assertSucceeds(updateDoc(evt('lim_upd'), {maxPlayers: 6}));
+  await assertSucceeds(updateDoc(evt('lim_upd'), {minPlayers: deleteField()}));
+  await assertSucceeds(updateDoc(evt('lim_upd'), {maxPlayers: 4}));
 });
 await t('a legacy event over the cap can still be edited in other fields', () => assertSucceeds(updateDoc(evt('lim_legacy'), {title: 'Viejo'})));
 
