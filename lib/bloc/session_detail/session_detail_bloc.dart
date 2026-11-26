@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:proplay/bloc/session_detail/session_detail_event.dart';
 import 'package:proplay/bloc/session_detail/session_detail_state.dart';
@@ -83,7 +84,12 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
       _waitlist = null;
       _waitlistSubscription = sessionService
           .streamMyWaitlist(firstSession.id, currentUser.uid)
-          .listen((w) => add(_UpdateWaitlist(w)), onError: (_) {});
+          .listen(
+            (w) => add(_UpdateWaitlist(w)),
+            // No entry readable (rules, network): the page then shows the
+            // normal join bar; the server still enforces everything.
+            onError: (Object e) => debugPrint('waitlist stream: $e'),
+          );
 
       // Organizers also follow who is checked in.
       await _presenceSubscription?.cancel();
@@ -252,8 +258,11 @@ class SessionDetailBloc extends Bloc<SessionDetailEvent, SessionDetailState> {
       await call(current.session.id);
       // The waitlist stream updates the page.
     } catch (e) {
+      // Back to the newest page state (streams may have updated it during
+      // the call), not the one captured before it.
+      final latest = state is SessionDetailLoaded ? state : current;
       emit(SessionDetailError(userMessage(e), session: current.session));
-      emit(current);
+      emit(latest);
     }
   }
 

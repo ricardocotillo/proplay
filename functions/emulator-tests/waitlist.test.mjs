@@ -14,7 +14,7 @@ const db = getFirestore();
 const {joinSession} = req(FN + '/lib/joinSession.js');
 const {cancelParticipation} = req(FN + '/lib/cancelParticipation.js');
 const {cancelEvent, removePlayer} = req(FN + '/lib/organizer.js');
-const {joinWaitlist, leaveWaitlist, expireOffers} = req(FN + '/lib/waitlistCallables.js');
+const {joinWaitlist, leaveWaitlist, expireOffers, cleanupEnded} = req(FN + '/lib/waitlistCallables.js');
 
 const H = 3600 * 1000;
 let n = 0;
@@ -161,10 +161,11 @@ await t('late cancel: no refund now, paid back when the waitlist fills the seat,
   const out = await run(cancelParticipation, p1, {sessionId: id});
   assert.deepEqual(out, {refunded: false, amount: 0});
   assert.equal(await credits(p1), '20.00');
-  assert.equal((await db.doc(`liveSessions/${id}/lateCancels/${p1}`).get()).data().refunded, false);
+  const late = async (u) => (await db.collection(`liveSessions/${id}/lateCancels`).where('uid', '==', u).get()).docs.map((d) => d.data());
+  assert.deepEqual((await late(p1)).map((r) => r.refunded), [false]);
   await run(joinSession, w1, {sessionId: id});
   assert.equal(await credits(p1), '30.00');
-  assert.equal((await db.doc(`liveSessions/${id}/lateCancels/${p1}`).get()).data().refunded, true);
+  assert.deepEqual((await late(p1)).map((r) => r.refunded), [true]);
   const refunds = await db.collection('creditHistory').where('userId', '==', p1).where('entryType', '==', 'refund').get();
   assert.equal(refunds.size, 1);
   // a later direct join does not refund anyone again
@@ -215,6 +216,76 @@ await t('cancel event: a late canceller who rejoined is refunded for both spends
   assert.equal(await credits(p1), '30.00');
   await run(cancelEvent, owner, {sessionId: id});
   assert.equal(await credits(w1), '30.00');
+});
+
+const noPush = {sendEachForMulticast: async () => ({responses: []})};
+
+await t('declining after the hold expired (before the sweep) still offers the next person', async () => {
+  const {id, p1} = await fullEvent();
+  const w1 = await waiter(id), w2 = await waiter(id);
+  await run(cancelParticipation, p1, {sessionId: id});
+  await db.doc(`liveSessions/${id}/waitlist/${w1}`).update({offerExpiresAt: Timestamp.fromMillis(Date.now() - 1000)});
+  await run(leaveWaitlist, w1, {sessionId: id});
+  assert.equal(await entry(id, w1), undefined);
+  assert.equal((await entry(id, w2)).status, 'offered');
+});
+
+await t('cancel late, rejoin, cancel late again: every cancel keeps its own row', async () => {
+  const {id, p1} = await fullEvent({hoursAhead: 5});
+  const w1 = await waiter(id);
+  await run(cancelParticipation, p1, {sessionId: id}); // late #1 (spend A), w1 offered
+  await run(joinSession, w1, {sessionId: id}); // fill: p1 paid back for A
+  assert.equal(await credits(p1), '30.00');
+  await run(joinWaitlist, p1, {sessionId: id});
+  await run(cancelParticipation, w1, {sessionId: id}); // late (w1's spend), p1 offered
+  await run(joinSession, p1, {sessionId: id}); // fill: w1 paid back; p1 now has spend B
+  assert.equal(await credits(w1), '30.00');
+  await run(cancelParticipation, p1, {sessionId: id}); // late #2 of p1 (spend B), nobody waiting
+  const rows = (await db.collection(`liveSessions/${id}/lateCancels`).get()).docs;
+  assert.equal(rows.length, 3);
+  assert.equal(rows.every((d) => d.id === d.data().spendId), true);
+  assert.deepEqual(rows.filter((d) => d.data().uid === p1).map((d) => d.data().refunded).sort(), [false, true]);
+});
+
+await t('an offer skips people who can no longer pay and keeps their place', async () => {
+  const {id, p1} = await fullEvent();
+  const w1 = await waiter(id), w2 = await waiter(id);
+  await db.doc(`users/${w1}`).update({credits: '2.00'});
+  await run(cancelParticipation, p1, {sessionId: id});
+  assert.equal((await entry(id, w1)).status, 'waiting');
+  assert.equal((await entry(id, w2)).status, 'offered');
+});
+
+await t('no offer is made once the event has started', async () => {
+  const {id, p1} = await fullEvent();
+  const w1 = await waiter(id), w2 = await waiter(id);
+  await run(cancelParticipation, p1, {sessionId: id}); // w1 offered
+  await db.doc(`liveSessions/${id}`).update({eventDate: Timestamp.fromMillis(Date.now() - 1000)});
+  await run(leaveWaitlist, w1, {sessionId: id});
+  assert.equal((await entry(id, w2)).status, 'waiting');
+});
+
+await t('the waitlist is capped per event', async () => {
+  const {id} = await fullEvent();
+  const batch = db.batch();
+  for (let i = 0; i < 50; i++) batch.set(db.doc(`liveSessions/${id}/waitlist/cap${i}`), {status: 'waiting', joinedAt: Timestamp.now()});
+  await batch.commit();
+  const w = `ww${++n}`; await user(w);
+  await rejects(run(joinWaitlist, w, {sessionId: id}), 'failed-precondition', /llena/);
+});
+
+await t('cleanup removes waitlist and late-cancel rows of events that ended', async () => {
+  const {id: past} = await fullEvent();
+  const {id: future} = await fullEvent();
+  await db.doc(`liveSessions/${past}`).update({eventDate: Timestamp.fromMillis(Date.now() - 2 * 3600_000)});
+  await db.doc(`liveSessions/${past}/waitlist/x`).set({status: 'waiting', joinedAt: Timestamp.now()});
+  await db.doc(`liveSessions/${past}/lateCancels/s1`).set({uid: 'u', spendId: 's1', refunded: false});
+  await db.doc(`liveSessions/${future}/waitlist/y`).set({status: 'waiting', joinedAt: Timestamp.now()});
+  assert.ok((await cleanupEnded(db, Date.now())) >= 2);
+  assert.equal((await db.collection(`liveSessions/${past}/waitlist`).get()).size, 0);
+  assert.equal((await db.collection(`liveSessions/${past}/lateCancels`).get()).size, 0);
+  assert.equal((await db.collection(`liveSessions/${future}/waitlist`).get()).size, 1);
+  void noPush;
 });
 
 const failed = results.filter((r) => !r).length;

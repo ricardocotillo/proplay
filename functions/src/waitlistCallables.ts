@@ -5,7 +5,7 @@ import {getMessaging} from 'firebase-admin/messaging';
 import {joinError} from './joinPolicy';
 import {Sender} from './notify';
 import {applyOffer, holdsOf, notifyOffer, OfferPlan, planOffer, readWaitlist} from './waitlist';
-import {isActiveOffer} from './waitlistPolicy';
+import {isActiveOffer, MAX_WAITLIST} from './waitlistPolicy';
 
 type Player = {uid?: string};
 
@@ -36,6 +36,9 @@ export const joinWaitlist = onCall(async (request) => {
     const nowMs = Date.now();
     const wl = await readWaitlist(tx, db, sessionId);
     if (wl.some((e) => e.uid === uid)) return {status: 'already'};
+    if (wl.length >= MAX_WAITLIST) {
+      throw new HttpsError('failed-precondition', 'La lista de espera de este evento está llena.');
+    }
 
     const userSnap = await tx.get(db.doc(`users/${uid}`));
     if (!userSnap.exists) throw new HttpsError('failed-precondition', 'No encontramos tu perfil.');
@@ -86,13 +89,15 @@ export const leaveWaitlist = onCall(async (request) => {
     const nowMs = Date.now();
     const session = sessionSnap.data();
     const rest = wl.filter((e) => e.uid !== uid);
-    // A declined offer frees its seat for the next person.
-    const offer = session && isActiveOffer(mine, nowMs)
-      ? planOffer(rest, {
+    // Declining an offer frees its seat for the next person, also when the
+    // hold had already run out but the sweep had not dropped it yet.
+    const offer = session && mine.status === 'offered'
+      ? await planOffer(tx, db, rest, {
         maxPlayers: Number(session.maxPlayers) || 0,
         playersAfter: Array.isArray(session.players) ? session.players.length : 0,
         eventMs: session.eventDate?.toMillis?.() ?? 0,
         nowMs,
+        cost: Number(session.costPerPlayer) || 0,
       })
       : null;
     tx.delete(mine.ref);
@@ -124,11 +129,12 @@ export async function expireOffers(
         const rest = wl.filter((e) => !gone.includes(e));
         const session = sessionSnap.data();
         const eventMs: number = session?.eventDate?.toMillis?.() ?? 0;
-        const offer = session && eventMs > nowMs
-          ? planOffer(rest, {
+        const offer = session
+          ? await planOffer(tx, db, rest, {
             maxPlayers: Number(session.maxPlayers) || 0,
             playersAfter: Array.isArray(session.players) ? session.players.length : 0,
             eventMs, nowMs,
+            cost: Number(session.costPerPlayer) || 0,
           })
           : null;
         gone.forEach((e) => tx.delete(e.ref));
@@ -145,7 +151,30 @@ export async function expireOffers(
   return {expired, offered};
 }
 
+/**
+ * Events that ended without being cancelled leave waiting entries and
+ * unpaid late-cancel rows behind: delete them for events that started 1 to
+ * 48 h ago. Idempotent.
+ */
+export async function cleanupEnded(db: Firestore, nowMs: number): Promise<number> {
+  const events = await db.collection('liveSessions')
+    .where('eventDate', '>', Timestamp.fromMillis(nowMs - 48 * 3600_000))
+    .where('eventDate', '<=', Timestamp.fromMillis(nowMs - 3600_000))
+    .get();
+  let removed = 0;
+  for (const e of events.docs) {
+    for (const sub of ['waitlist', 'lateCancels']) {
+      const docs = await e.ref.collection(sub).get();
+      await Promise.all(docs.docs.map((d) => d.ref.delete()));
+      removed += docs.size;
+    }
+  }
+  return removed;
+}
+
 export const expireWaitlistOffers = onSchedule('every 10 minutes', async () => {
-  await expireOffers(getFirestore(), getMessaging(), Date.now());
+  const db = getFirestore();
+  await expireOffers(db, getMessaging(), Date.now());
+  await cleanupEnded(db, Date.now());
 });
 

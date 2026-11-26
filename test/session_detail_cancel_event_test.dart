@@ -320,6 +320,11 @@ void main() {
         'Aún hay cupos: únete directamente.',
       );
       expect(states.last, isA<SessionDetailLoaded>());
+      // the page keeps showing the newest waitlist data after the error
+      sessions.waitlistError = null;
+      sessions.waitlist.add(const WaitlistEntryModel(status: 'waiting'));
+      await _settle();
+      expect((states.last as SessionDetailLoaded).waitlist?.status, 'waiting');
       await bloc.close();
     },
   );

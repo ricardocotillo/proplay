@@ -147,7 +147,8 @@ export const cancelEvent = onCall(async (request) => {
     // The waitlist ends with the event, and people who cancelled late (no
     // refund, waiting for a waitlist fill) are paid back now.
     const waitlist = await readWaitlist(tx, db, sessionId);
-    const lateRows = (await readLateCancels(tx, db, sessionId)).filter((r) => !r.refunded);
+    const lateAll = await readLateCancels(tx, db, sessionId);
+    const lateRows = lateAll.filter((r) => !r.refunded);
     const late = await Promise.all(lateRows.map((r) => planLateRefund(tx, db, sessionId, r, session)));
     // Same user refunded twice (late cancel, then rejoined): build on the first balance.
     for (const l of late) {
@@ -160,7 +161,7 @@ export const cancelEvent = onCall(async (request) => {
     late.forEach((l) => applyLateRefund(tx, l));
     tickets.docs.forEach((d) => tx.delete(d.ref));
     waitlist.forEach((w) => tx.delete(w.ref));
-    lateRows.forEach((r) => tx.delete(db.doc(`liveSessions/${sessionId}/lateCancels/${r.uid}`)));
+    lateAll.forEach((r) => tx.delete(db.doc(`liveSessions/${sessionId}/lateCancels/${r.spendId}`)));
     tx.delete(sessionRef);
     return {
       refunded: refunds.length,
@@ -203,11 +204,12 @@ export const removePlayer = onCall(async (request) => {
     const remaining = players.filter((p) => p?.uid !== userId);
     const waitlist = await readWaitlist(tx, db, sessionId);
     const nowMs = Date.now();
-    const offer = planOffer(waitlist, {
+    const offer = await planOffer(tx, db, waitlist, {
       maxPlayers: Number(session.maxPlayers) || 0,
       playersAfter: remaining.length,
       eventMs: session.eventDate.toMillis(),
       nowMs,
+      cost: Number(session.costPerPlayer) || 0,
     });
 
     applyRefunds(tx, db, sessionId, session, refunds,

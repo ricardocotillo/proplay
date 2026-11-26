@@ -6,7 +6,7 @@ import {claimId, lateCancelRefundPush, waitlistOfferPush} from './reminderPolicy
 import {formatCredits, isPaidRefund, refundAmount, refundDocId} from './refundPolicy';
 import {roundCents} from './joinPolicy';
 import {
-  Entry, freeSeats, isActiveOffer, LateCancel, minutesLeft, offerExpiryMs, pickLateCancel, pickNext,
+  Entry, freeSeats, isActiveOffer, LateCancel, minutesLeft, offerExpiryMs, pickLateCancel,
 } from './waitlistPolicy';
 
 /** `liveSessions/{id}/waitlist/{uid}`: server-written; the user reads only their own. */
@@ -30,20 +30,34 @@ export const holdsOf = (wl: WaitlistEntry[], nowMs: number, exceptUid?: string):
 
 export type OfferPlan = {ref: DocumentReference; uid: string; expiresMs: number} | null;
 
+/** Most waiting people checked for saldo when a seat frees (bounds the reads). */
+const OFFER_SCAN = 10;
+
 /**
  * After a seat freed (cancel, removal, expired or declined offer): who gets
- * it. Pure on the already-read waitlist; the caller applies it with
- * [applyOffer] after all of its reads.
+ * it. The first person in line who can still pay `cost`; people short of saldo
+ * keep their place but are skipped. Nothing is offered once the event started.
+ * Does tx reads only: call it before the transaction's first write, then
+ * apply with [applyOffer].
  */
-export function planOffer(
-  wl: WaitlistEntry[],
-  c: {maxPlayers: number; playersAfter: number; eventMs: number; nowMs: number},
-): OfferPlan {
+export async function planOffer(
+  tx: Transaction, db: Firestore, wl: WaitlistEntry[],
+  c: {maxPlayers: number; playersAfter: number; eventMs: number; nowMs: number; cost: number},
+): Promise<OfferPlan> {
+  if (c.eventMs <= c.nowMs) return null;
   if (freeSeats(c.maxPlayers, c.playersAfter, holdsOf(wl, c.nowMs)) <= 0) return null;
-  const next = pickNext(wl);
-  if (!next) return null;
-  const ref = wl.find((e) => e.uid === next.uid)!.ref;
-  return {ref, uid: next.uid, expiresMs: offerExpiryMs(c.nowMs, c.eventMs)};
+  const line = wl
+    .filter((e) => e.status === 'waiting')
+    .sort((x, y) => x.joinedAtMs - y.joinedAtMs || (x.uid < y.uid ? -1 : 1))
+    .slice(0, OFFER_SCAN);
+  for (const e of line) {
+    const user = await tx.get(db.doc(`users/${e.uid}`));
+    const balance = parseFloat(user.get('credits') ?? '0') || 0;
+    if (user.exists && balance >= roundCents(c.cost)) {
+      return {ref: e.ref, uid: e.uid, expiresMs: offerExpiryMs(c.nowMs, c.eventMs)};
+    }
+  }
+  return null;
 }
 
 export function applyOffer(tx: Transaction, plan: OfferPlan, nowMs: number): void {
@@ -68,12 +82,15 @@ export async function notifyOffer(
   }
 }
 
-/** A player who cancels inside the no-refund window: remember their spend. */
+/**
+ * A player who cancels inside the no-refund window: remember their spend.
+ * Keyed by the spend, so cancel, rejoin, cancel again keeps both entitlements.
+ */
 export function recordLateCancel(
   tx: Transaction, db: Firestore, sessionId: string, uid: string, spendId: string,
 ): void {
-  tx.set(db.doc(`liveSessions/${sessionId}/lateCancels/${uid}`), {
-    spendId, createdAt: FieldValue.serverTimestamp(), refunded: false,
+  tx.set(db.doc(`liveSessions/${sessionId}/lateCancels/${spendId}`), {
+    uid, spendId, createdAt: FieldValue.serverTimestamp(), refunded: false,
   });
 }
 
@@ -87,8 +104,8 @@ export type LateRefundPlan = {
 export async function readLateCancels(tx: Transaction, db: Firestore, sessionId: string): Promise<LateCancel[]> {
   const snap = await tx.get(db.collection(`liveSessions/${sessionId}/lateCancels`));
   return snap.docs.map((d) => ({
-    uid: d.id,
-    spendId: String(d.get('spendId')),
+    uid: String(d.get('uid')),
+    spendId: d.id,
     createdAtMs: d.get('createdAt')?.toMillis?.() ?? 0,
     refunded: d.get('refunded') === true,
   }));
@@ -108,7 +125,7 @@ export async function planLateRefund(
   const refundRef = db.doc(`creditHistory/${refundDocId(row.spendId)}`);
   const userRef = db.doc(`users/${row.uid}`);
   const [spend, refund, user] = await Promise.all([tx.get(spendRef), tx.get(refundRef), tx.get(userRef)]);
-  const lateRef = db.doc(`liveSessions/${sessionId}/lateCancels/${row.uid}`);
+  const lateRef = db.doc(`liveSessions/${sessionId}/lateCancels/${row.spendId}`);
   const amount = roundCents(refundAmount(Number(spend.get('creditAmount')) || 0, session.costPerPlayer));
   const nothing = !spend.exists || spend.get('refundedAt') != null || isPaidRefund(refund.data(), row.uid) ||
     !user.exists || amount <= 0;

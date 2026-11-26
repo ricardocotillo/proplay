@@ -25,6 +25,7 @@ import 'package:proplay/screens/session_map_screen.dart';
 import 'package:proplay/utils/app_paths.dart';
 import 'package:proplay/utils/auth_helper.dart';
 import 'package:proplay/utils/join_availability.dart';
+import 'package:proplay/utils/waitlist_bar.dart';
 import 'package:proplay/utils/refund_policy.dart';
 
 class SessionDetailScreen extends StatefulWidget {
@@ -577,8 +578,14 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
   ) {
     // On the waitlist (or holding an offered seat): that decides the bar,
     // whatever the seat count says.
-    if (waitlist != null && session.eventDate.isAfter(DateTime.now())) {
-      return _buildWaitlistAction(context, session, waitlist);
+    if (session.eventDate.isAfter(DateTime.now()) &&
+        waitlistBar(
+              waitlist,
+              playerCount: playerCount,
+              maxPlayers: session.maxPlayers,
+            ) !=
+            WaitlistBar.none) {
+      return _buildWaitlistAction(context, session, waitlist!);
     }
     final balance = (context.watchUser ?? context.currentUser!).creditsValue;
     final block = joinBlock(

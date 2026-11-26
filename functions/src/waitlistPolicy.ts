@@ -1,3 +1,6 @@
+/** Most people on one event's waitlist (bounds reads in every seat transaction). */
+export const MAX_WAITLIST = 50;
+
 /** How long a freed seat is held for the person it is offered to. */
 export const HOLD_MS = 30 * 60_000;
 

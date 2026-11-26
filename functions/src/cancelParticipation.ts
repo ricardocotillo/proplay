@@ -105,11 +105,12 @@ export const cancelParticipation = onCall(async (request) => {
     }
 
     const remaining = players.filter((p) => p?.uid !== uid);
-    const offer = planOffer(waitlist, {
+    const offer = await planOffer(tx, db, waitlist, {
       maxPlayers: Number(session.maxPlayers) || 0,
       playersAfter: remaining.length,
       eventMs: eventDate.getTime(),
       nowMs,
+      cost: Number(session.costPerPlayer) || 0,
     });
 
     // ---- writes ----
