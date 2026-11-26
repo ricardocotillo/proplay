@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Política de privacidad · ProPlay</title>
+  <meta name="description" content="Cómo ProPlay recopila, usa y protege tus datos personales.">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <style>
+    /* Colors mirror lib/theme/app_colors.dart; font is the bundled Barlow Condensed. */
+    @font-face {
+      font-family: "BarlowCondensed";
+      font-weight: 700;
+      src: url("/assets/assets/fonts/BarlowCondensed-Bold.ttf") format("truetype");
+    }
+    :root {
+      --page: #0F1115;
+      --card: #1A1D23;
+      --border: #262A31;
+      --text: #F2F3F5;
+      --muted: #8A909B;
+      --brand: #BA1B1D;
+      --link: #FF5A5C;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--page);
+      color: var(--text);
+      font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+    header { border-bottom: 1px solid var(--border); margin-bottom: 24px; padding-bottom: 16px; }
+    .brand { color: var(--text); text-decoration: none; font: 700 22px "BarlowCondensed", sans-serif; letter-spacing: .5px; }
+    .brand span { color: var(--brand); }
+    h1, h2 { font-family: "BarlowCondensed", sans-serif; font-weight: 700; line-height: 1.15; }
+    h1 { font-size: 40px; margin: 8px 0 4px; }
+    h2 { font-size: 26px; margin: 32px 0 8px; }
+    .updated { color: var(--muted); margin: 0; }
+    a { color: var(--link); }
+    ul { padding-left: 20px; }
+    li { margin: 4px 0; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    footer { margin-top: 48px; color: var(--muted); font-size: 14px; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <a class="brand" href="/">PRO<span>PLAY</span></a>
+  </header>
+
+  <h1>Política de privacidad</h1>
+  <p class="updated">Última actualización: 26 de noviembre de 2026</p>
+
+  <p>
+    En ProPlay (<a href="https://proplayapp.com">proplayapp.com</a> y nuestras apps móviles) te ayudamos a
+    encontrar y organizar eventos deportivos. Esta política explica qué datos personales recopilamos, para qué
+    los usamos, con quién los compartimos y cómo puedes ejercer tus derechos, de acuerdo con la Ley N.° 29733,
+    Ley de Protección de Datos Personales, y su Reglamento.
+  </p>
+
+  <h2>1. Responsable del tratamiento</h2>
+  <div class="card">
+    <!-- TODO(owner): fill in before publishing. -->
+    <p style="margin:0">
+      <strong>[NOMBRE O RAZÓN SOCIAL]</strong>, con [DNI/RUC N.° ...] y domicilio en [DIRECCIÓN, Lima, Perú].<br>
+      Contacto para temas de privacidad: <a href="mailto:[CORREO]">[CORREO]</a>
+    </p>
+  </div>
+
+  <h2>2. Datos que recopilamos</h2>
+  <ul>
+    <li><strong>Cuenta:</strong> nombre, apellido y correo electrónico. Si ingresas con Google, recibimos tu nombre,
+      correo y foto de perfil de tu cuenta de Google. Tu contraseña la gestiona Firebase Authentication; nosotros no
+      la vemos.</li>
+    <li><strong>Documento de identidad:</strong> tipo y número de DNI o carné de extranjería. Es obligatorio para
+      evitar cuentas duplicadas.</li>
+    <li><strong>Perfil:</strong> foto, género, edad y deportes que practicas (opcionales).</li>
+    <li><strong>Ubicación:</strong> si das permiso, usamos la ubicación de tu dispositivo para mostrarte eventos
+      cercanos. Ese cálculo se hace en tu dispositivo y no guardamos tu ubicación. Cuando creas un evento, guardamos
+      la ubicación y el distrito de la cancha que eliges.</li>
+    <li><strong>Saldo y pagos:</strong> cuando recargas saldo por Yape guardamos el monto, el número de teléfono que
+      indicas, la captura del comprobante y el estado de la recarga. También guardamos el historial de movimientos de
+      tu saldo (recargas, pagos de eventos y devoluciones). No recopilamos datos de tarjetas.</li>
+    <li><strong>Actividad:</strong> grupos a los que perteneces y su rol, eventos que creas o a los que te unes, y tus
+      entradas (código QR) con su estado de validación.</li>
+  </ul>
+
+  <h2>3. Para qué usamos tus datos</h2>
+  <ul>
+    <li>Crear y mantener tu cuenta, y verificar que cada persona tenga una sola cuenta.</li>
+    <li>Mostrarte eventos según tu deporte, género, edad y cercanía.</li>
+    <li>Gestionar tu saldo, aprobar recargas, cobrar eventos y procesar devoluciones.</li>
+    <li>Emitir y validar tus entradas en el evento.</li>
+    <li>Mostrar a los organizadores y demás participantes quién asiste a un evento.</li>
+    <li>Prevenir fraude y cumplir obligaciones legales.</li>
+  </ul>
+  <p>No vendemos tus datos ni los usamos para publicidad de terceros.</p>
+
+  <h2>4. Quién puede ver tus datos</h2>
+  <ul>
+    <li><strong>Otros usuarios:</strong> tu nombre y foto son visibles para los miembros de tus grupos y para los
+      participantes y organizadores de los eventos a los que te unes. Los eventos públicos se muestran sin la lista de
+      jugadores.</li>
+    <li><strong>Administradores de ProPlay:</strong> revisan los comprobantes de Yape para aprobar recargas.</li>
+    <li><strong>Proveedores:</strong> usamos Google Firebase (autenticación, base de datos, almacenamiento, funciones
+      y hosting) y Google Maps. Google trata los datos por encargo nuestro, en servidores que pueden estar fuera del
+      Perú (por ejemplo, en Estados Unidos o Brasil). Esto constituye un flujo transfronterizo de datos, que se realiza
+      con las garantías que exige la ley.</li>
+    <li><strong>Autoridades:</strong> solo cuando la ley lo exija.</li>
+  </ul>
+
+  <h2>5. Cuánto tiempo guardamos tus datos</h2>
+  <p>
+    Guardamos tus datos mientras tengas una cuenta. Si la eliminas, borramos tu perfil y tu documento de identidad.
+    Podemos conservar el historial de movimientos de saldo durante el plazo que exijan las normas contables y
+    tributarias.
+  </p>
+
+  <h2>6. Tus derechos</h2>
+  <p>
+    Puedes ejercer tus derechos de acceso, rectificación, cancelación y oposición (ARCO), así como revocar tu
+    consentimiento, escribiendo a <a href="mailto:[CORREO]">[CORREO]</a>. Puedes editar tu perfil directamente en la
+    app. Para eliminar tu cuenta, escríbenos desde el correo con el que te registraste. Responderemos en los plazos
+    que establece la ley. Si no quedas conforme, puedes presentar un reclamo ante la Autoridad Nacional de Protección
+    de Datos Personales del Ministerio de Justicia y Derechos Humanos.
+  </p>
+
+  <h2>7. Menores de edad</h2>
+  <p>
+    Si tienes menos de 14 años, necesitas la autorización de tu madre, padre o tutor para usar ProPlay.
+  </p>
+
+  <h2>8. Seguridad</h2>
+  <p>
+    Protegemos tus datos con conexiones cifradas (HTTPS), reglas de acceso en la base de datos y operaciones de saldo
+    que se ejecutan en nuestros servidores. Ningún sistema es infalible; si detectamos un incidente que te afecte, te
+    lo comunicaremos.
+  </p>
+
+  <h2>9. Cambios a esta política</h2>
+  <p>
+    Si cambiamos esta política, actualizaremos la fecha de arriba y, si el cambio es importante, te avisaremos en la
+    app.
+  </p>
+
+  <footer>ProPlay · <a href="/">Volver a la app</a></footer>
+</main>
+</body>
+</html>
