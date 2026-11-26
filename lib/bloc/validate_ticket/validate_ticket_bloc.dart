@@ -99,11 +99,16 @@ class ValidateTicketBloc
         ValidateTicketLoaded(ticket: ticket, isOwnerOrAdmin: isOwnerOrAdmin),
       );
     } on FirebaseException catch (e) {
-      // The rules only let the holder and the event's organizers read it.
+      // The rules only let the holder and the event's organizers read a
+      // ticket, and a deleted (cancelled) one is denied the same way, so one
+      // message covers "missing" and "not allowed". An old token-only QR also
+      // lands here for an organizer.
       emit(
         ValidateTicketError(
           e.code == 'permission-denied'
-              ? 'No tienes permisos para validar este ticket'
+              ? 'Este ticket no existe, fue cancelado o no tienes permisos '
+                    'para validarlo. Si el QR es antiguo, pide al jugador que '
+                    'abra su ticket de nuevo.'
               : e.toString(),
         ),
       );

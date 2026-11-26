@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:proplay/bloc/validate_ticket/validate_ticket_bloc.dart';
 import 'package:proplay/bloc/validate_ticket/validate_ticket_event.dart';
@@ -10,6 +11,7 @@ import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/group_service.dart';
 import 'package:proplay/services/session_service.dart';
 import 'package:proplay/services/ticket_service.dart';
+import 'package:proplay/utils/ticket_url_builder.dart';
 
 TicketModel _ticket() => TicketModel(
   id: 's1_p1',
@@ -28,6 +30,20 @@ TicketModel _ticket() => TicketModel(
   userDocumentType: 'dni',
   userDocumentNumber: '12345678',
 );
+
+class _DeniedTickets implements TicketService {
+  @override
+  Future<TicketModel?> getTicketByToken(
+    String token, {
+    String? ticketId,
+  }) async => throw FirebaseException(
+    plugin: 'cloud_firestore',
+    code: 'permission-denied',
+  );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 class _Tickets implements TicketService {
   @override
@@ -156,5 +172,29 @@ void main() {
     );
     expect((ok as ValidateTicketLoaded).isOwnerOrAdmin, isTrue);
     await creator.close();
+  });
+
+  test(
+    'a denied read (missing, cancelled or old QR) shows one message',
+    () async {
+      final bloc = ValidateTicketBloc(
+        ticketService: _DeniedTickets(),
+        groupService: _Groups('owner'),
+        sessionService: _Sessions(null),
+        currentUser: _user(),
+      )..add(const LoadTicketByToken('tok', ticketId: 's1_p1'));
+      final state = await bloc.stream.firstWhere(
+        (s) => s is ValidateTicketError,
+      );
+      expect((state as ValidateTicketError).message, contains('no existe'));
+      expect(state.message, contains('QR es antiguo'));
+      await bloc.close();
+    },
+  );
+
+  test('the QR url carries the ticket id and the token', () {
+    final uri = Uri.parse(TicketUrlBuilder.buildValidationUrl('s1_p1', 'a b'));
+    expect(uri.path, '/validate-ticket');
+    expect(uri.queryParameters, {'id': 's1_p1', 'token': 'a b'});
   });
 }
