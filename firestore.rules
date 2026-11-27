@@ -42,18 +42,24 @@ service cloud.firestore {
       return d.documentType + '_' + d.documentNumber;
     }
 
-    // A new users/{uid} doc must start with zero credits, no admin flag and a
-    // valid document whose uniqueness lock is created in the SAME write
-    // (transaction/batch) and belongs to the same uid.
-    function isValidNewUser(userId, d) {
+    // DNI: 8 digits. CE: 9-12 uppercase alphanumerics (lib/utils/document.dart).
+    function isValidDocument(d) {
       return d.documentType in ['dni', 'ce']
         && d.documentNumber is string
         && (d.documentType == 'dni'
             ? d.documentNumber.matches('^[0-9]{8}$')
-            : d.documentNumber.matches('^[A-Z0-9]{9,12}$'))
+            : d.documentNumber.matches('^[A-Z0-9]{9,12}$'));
+    }
+
+    // A new users/{uid} doc must start with zero credits, no admin flag and a
+    // valid document whose uniqueness lock is created in the SAME write
+    // (transaction/batch) and belongs to the same uid.
+    function isValidNewUser(userId, d) {
+      return isValidDocument(d)
         && d.superUser == false
         && d.credits == '0.00'
         && !('blockedUntil' in d)
+        && !('documentChangedAt' in d)
         && getAfter(/databases/$(database)/documents/documents/$(documentKey(d))).data.uid == userId;
     }
 
@@ -62,6 +68,14 @@ service cloud.firestore {
     function documentUnchanged() {
       return request.resource.data.get('documentType', '') == resource.data.get('documentType', '')
         && request.resource.data.get('documentNumber', '') == resource.data.get('documentNumber', '');
+    }
+
+    // A legacy account (no document yet) may claim one once, with its lock in
+    // the SAME write. Changing an existing document stays server-only.
+    function documentFirstClaim(userId) {
+      return resource.data.get('documentType', '') == ''
+        && isValidDocument(request.resource.data)
+        && getAfter(/databases/$(database)/documents/documents/$(documentKey(request.resource.data))).data.uid == userId;
     }
 
     match /documents/{key} {
@@ -115,15 +129,20 @@ service cloud.firestore {
       // Needed for sign-up ("create users/{uid}" on register / first Google sign-in).
       allow create: if isOwner(userId) && isValidNewUser(userId, request.resource.data);
 
-      // Only user can edit own profile (never the document). Only a superUser
+      // Only user can edit own profile (the document only once, when it had
+      // none: documentFirstClaim). Only a superUser
       // can change superUser (legacy docs without the field count as false),
       // so nobody can promote themselves.
       // credits (saldo) is written only by Cloud Functions (join, cancel,
       // refunds, credit approval), never by any client.
-      allow update: if (isOwner(userId) || isSuperUser()) && documentUnchanged()
+      allow update: if (isOwner(userId) || isSuperUser())
+        && (documentUnchanged() || (isOwner(userId) && documentFirstClaim(userId)))
         && request.resource.data.get('credits', '0.00') == resource.data.get('credits', '0.00')
         // blockedUntil (attendance policy) is written only by Cloud Functions.
         && request.resource.data.get('blockedUntil', null) == resource.data.get('blockedUntil', null)
+        // documentChangedAt (30-day document cooldown) is written only by the
+        // changeDocument function.
+        && request.resource.data.get('documentChangedAt', null) == resource.data.get('documentChangedAt', null)
         && (request.resource.data.get('superUser', false) == resource.data.get('superUser', false)
             || isSuperUser());
 

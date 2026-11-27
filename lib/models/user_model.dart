@@ -84,6 +84,9 @@ class UserModel {
   final String documentType; // 'dni' | 'ce' (DocumentType.name)
   final String documentNumber;
 
+  /// Last document correction; written only by the `changeDocument` function.
+  final DateTime? documentChangedAt;
+
   UserModel({
     required this.uid,
     required this.email,
@@ -100,9 +103,15 @@ class UserModel {
     this.sports = const [],
     required this.documentType,
     required this.documentNumber,
+    this.documentChangedAt,
   });
 
   bool get isMatchInfoComplete => gender != null && age != null;
+
+  /// Legacy accounts have '' (no DNI/CE); joining events needs one.
+  bool get hasDocument =>
+      (documentType == 'dni' || documentType == 'ce') &&
+      documentNumber.isNotEmpty;
 
   // Get credits as double value
   double get creditsValue => double.tryParse(credits) ?? 0.0;
@@ -173,6 +182,7 @@ class UserModel {
       sports: List<String>.from(map['sports'] ?? []),
       documentType: map['documentType'] ?? '',
       documentNumber: map['documentNumber'] ?? '',
+      documentChangedAt: (map['documentChangedAt'] as Timestamp?)?.toDate(),
     );
   }
 

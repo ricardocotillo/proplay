@@ -3,12 +3,15 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:proplay/bloc/attendance/no_shows_cubit.dart';
 import 'package:proplay/bloc/notifications/notifications_cubit.dart';
+import 'package:proplay/models/user_model.dart';
 import 'package:proplay/services/attendance_service.dart';
 import 'package:proplay/utils/attendance_policy.dart';
 import 'package:proplay/services/notification_service.dart';
 import 'package:proplay/theme/app_colors.dart';
 import 'package:proplay/utils/auth_helper.dart';
+import 'package:proplay/utils/document.dart';
 import 'package:proplay/widgets/cached_image.dart';
+import 'package:proplay/widgets/identity_document_dialog.dart';
 import 'package:proplay/widgets/logout_dialog.dart';
 import 'package:proplay/widgets/wallet_indicator.dart';
 
@@ -93,6 +96,7 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 8),
               _PushSwitch(uid: user.uid),
               _AttendanceTile(uid: user.uid, blockedUntil: user.blockedUntil),
+              _DocumentTile(user: user),
               _Tile(
                 icon: Icons.edit_outlined,
                 title: 'Editar perfil',
@@ -200,6 +204,50 @@ class _AttendanceTile extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// DNI/CE on the account. Tap: add it (legacy), or correct it once every
+/// 30 days (the server enforces the limit; the date here is display only).
+class _DocumentTile extends StatelessWidget {
+  const _DocumentTile({required this.user});
+
+  final UserModel user;
+
+  @override
+  Widget build(BuildContext context) {
+    final next = nextDocumentChange(user.documentChangedAt, DateTime.now());
+    final doc = '${user.documentType.toUpperCase()} ${user.documentNumber}';
+    final subtitle = !user.hasDocument
+        ? 'Sin documento'
+        : next == null
+        ? doc
+        : '$doc · podrás corregirlo desde el ${blockedUntilLabel(next)}';
+    return ListTile(
+      leading: const Icon(Icons.badge_outlined),
+      title: const Text('Documento de identidad'),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () async {
+        final messenger = ScaffoldMessenger.of(context);
+        if (!user.hasDocument) {
+          await askIdentityDocument(context);
+        } else if (next != null) {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'Podrás corregir tu documento desde el '
+                '${blockedUntilLabel(next)}.',
+              ),
+            ),
+          );
+        } else if (await askIdentityDocument(context, correcting: true)) {
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Documento actualizado')),
+          );
+        }
+      },
     );
   }
 }

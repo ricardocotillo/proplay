@@ -4,7 +4,9 @@ import {getFirestore, FieldValue, Timestamp} from 'firebase-admin/firestore';
 import {formatCredits} from './refundPolicy';
 import {getMessaging} from 'firebase-admin/messaging';
 import {blockedMessage, isBlocked} from './attendancePolicy';
-import {joinError, roundCents, spendDocId} from './joinPolicy';
+import {
+  DOCUMENT_REQUIRED_MESSAGE, hasIdentityDocument, joinError, roundCents, spendDocId,
+} from './joinPolicy';
 import {
   applyLateRefund, holdsOf, LateRefundPlan, notifyLateRefund, readLateRefund, readWaitlist,
 } from './waitlist';
@@ -66,6 +68,10 @@ export const joinSession = onCall(async (request) => {
     // Three no-shows in 90 days pause joining for 14 days (attendance policy).
     const until: number | undefined = user.blockedUntil?.toMillis?.();
     if (isBlocked(until, nowMs)) throw new HttpsError('failed-precondition', blockedMessage(until!));
+    // Legacy accounts have no DNI/CE: organizers need one on every ticket.
+    if (!hasIdentityDocument(user)) {
+      throw new HttpsError('failed-precondition', DOCUMENT_REQUIRED_MESSAGE);
+    }
 
     // Missing isPrivate = private, like the read rule and mirrorPublicEvent.
     const isPrivate = session.isPrivate !== false;

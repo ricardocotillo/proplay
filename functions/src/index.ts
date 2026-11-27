@@ -5,6 +5,7 @@ initializeApp();
 setGlobalOptions({region: 'southamerica-east1', maxInstances: 10});
 
 export {cancelParticipation} from './cancelParticipation';
+export {changeDocument} from './changeDocument';
 export {joinSession} from './joinSession';
 export {mirrorPublicEvent} from './publicEvents';
 export {cancelEvent, checkInPlayer, removePlayer} from './organizer';

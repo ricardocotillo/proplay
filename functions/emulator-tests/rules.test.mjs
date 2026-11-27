@@ -30,6 +30,11 @@ await env.withSecurityRulesDisabled(async (ctx) => {
   await setDoc(doc(d, 'groups/g2'), {name: 'G2'});
   await setDoc(doc(d, 'groups/g2/members/mallory'), {role: 'owner'});
   await setDoc(doc(d, 'users/owner1'), {credits: '0.00'});
+  // legacy accounts (no document) + an owner of a claimed document
+  for (const u of ['legacy1', 'legacy2', 'legacy3', 'legacy4', 'legacy5', 'legacy6', 'legacy7'])
+    await setDoc(doc(d, 'users/' + u), {credits: '0.00', firstName: 'L'});
+  await setDoc(doc(d, 'users/docowner'), {credits: '0.00', documentType: 'dni', documentNumber: '55555555'});
+  await setDoc(doc(d, 'documents/dni_55555555'), {uid: 'docowner', createdAt: Timestamp.now()});
   await setDoc(doc(d, 'users/alice'), {credits: '5.00', documentType: 'dni', documentNumber: '12345678'});
   for (const u of ['bob','c1','c2','c3','c4','c5','c6','c7','c8','u9','u10','v1','v2','zed'])
     await setDoc(doc(d, 'users/' + u), {credits: '0.00', documentType: 'dni', documentNumber: '12345678'});
@@ -164,6 +169,23 @@ await t('[theirs] register as superUser denied', async () => {
 });
 await t('[theirs] user cannot change own document number', () => assertFails(updateDoc(doc(alice, 'users/alice'), {documentNumber: '99999999'})));
 await t('[theirs] documents collection cannot be listed or deleted by clients', () => assertFails(deleteDoc(doc(alice, 'documents/dni_11111111'))));
+
+// --- documentChangedAt (30-day document cooldown) is written only by changeDocument ---
+await env.withSecurityRulesDisabled(async (ctx) => {
+  const d = ctx.firestore();
+  await setDoc(doc(d, 'users/changer'), {credits: '0.00', documentType: 'dni', documentNumber: '77777771', documentChangedAt: Timestamp.now()});
+  await setDoc(doc(d, 'users/fresh'), {credits: '0.00', documentType: 'dni', documentNumber: '77777772'});
+});
+await t('[cooldown] client cannot change documentChangedAt', () => assertFails(updateDoc(doc(as('changer'), 'users/changer'), {documentChangedAt: Timestamp.fromMillis(0)})));
+await t('[cooldown] client cannot delete documentChangedAt to skip the 30 days', () => assertFails(updateDoc(doc(as('changer'), 'users/changer'), {documentChangedAt: deleteField()})));
+await t('[cooldown] client cannot add documentChangedAt', () => assertFails(updateDoc(doc(as('fresh'), 'users/fresh'), {documentChangedAt: Timestamp.now()})));
+await t('[cooldown] register with documentChangedAt denied', async () => {
+  const db = as('reg5'); const b = writeBatch(db);
+  b.set(doc(db, 'users/reg5'), {...newUser('55555551'), documentChangedAt: Timestamp.now()});
+  b.set(doc(db, 'documents/dni_55555551'), {uid: 'reg5', createdAt: serverTimestamp()});
+  await assertFails(b.commit());
+});
+await t('[cooldown] a normal profile update leaves the field alone and succeeds', () => assertSucceeds(updateDoc(doc(as('changer'), 'users/changer'), {firstName: 'Ana'})));
 await t('[theirs] ticket with FORGED document snapshot denied', () => assertFails(setDoc(doc(as('v1'), 'tickets/s1_v1b'), ticket('v1', {userDocumentNumber: '00000000'}))));
 await t('[COMPAT] ticket WITHOUT userDocument* (our current client) denied for a user who has a document', async () => {
   const t0 = ticket('bob'); delete t0.userDocumentType; delete t0.userDocumentNumber; delete t0.pricePaid;
@@ -438,6 +460,38 @@ await t('a user reads their own no-shows, nobody else does, nobody writes them',
   await assertFails(getDoc(doc(bob, 'users/att1/noShows/e1')));
   await assertFails(setDoc(doc(att, 'users/att1/noShows/e2'), {eventId: 'e2', at: serverTimestamp()}));
   await assertFails(deleteDoc(doc(att, 'users/att1/noShows/e1')));
+});
+
+// --- legacy accounts add a document once (join gate) ---
+const claim = async (uid, type, num, extra = {}) => {
+  const db = as(uid); const b = writeBatch(db);
+  b.update(doc(db, 'users/' + uid), {documentType: type, documentNumber: num, ...extra});
+  b.set(doc(db, `documents/${type}_${num}`), {uid, createdAt: serverTimestamp()});
+  return b.commit();
+};
+await t('[claim] legacy account claims a DNI with its lock in one batch', () => assertSucceeds(claim('legacy1', 'dni', '66666661')));
+await t('[claim] legacy account claims a CE', () => assertSucceeds(claim('legacy2', 'ce', 'A12345678')));
+await t('[claim] document without the lock is denied', () => assertFails(updateDoc(doc(as('legacy3'), 'users/legacy3'), {documentType: 'dni', documentNumber: '66666663'})));
+await t('[claim] a number whose lock exists is denied', () => assertFails(claim('legacy4', 'dni', '55555555')));
+await t('[claim] bad format is denied', () => assertFails(claim('legacy5', 'dni', '1234')));
+await t('[claim] claim that also changes credits is denied', () => assertFails(claim('legacy6', 'dni', '66666666', {credits: '99.00'})));
+await t('[claim] after claiming, the number cannot change again from the client', async () => {
+  const db = as('legacy1'); const b = writeBatch(db);
+  b.update(doc(db, 'users/legacy1'), {documentNumber: '66666667'});
+  b.set(doc(db, 'documents/dni_66666667'), {uid: 'legacy1', createdAt: serverTimestamp()});
+  await assertFails(b.commit());
+});
+await t('[claim] a user with a document cannot swap it', async () => {
+  const db = as('docowner'); const b = writeBatch(db);
+  b.update(doc(db, 'users/docowner'), {documentNumber: '66666668'});
+  b.set(doc(db, 'documents/dni_66666668'), {uid: 'docowner', createdAt: serverTimestamp()});
+  await assertFails(b.commit());
+});
+await t('[claim] nobody sets another account\'s document (even with a lock for themselves)', async () => {
+  const db = as('bob'); const b = writeBatch(db);
+  b.update(doc(db, 'users/legacy7'), {documentType: 'dni', documentNumber: '66666669'});
+  b.set(doc(db, 'documents/dni_66666669'), {uid: 'bob', createdAt: serverTimestamp()});
+  await assertFails(b.commit());
 });
 
 await env.cleanup();

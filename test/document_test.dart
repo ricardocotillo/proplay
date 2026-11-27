@@ -22,4 +22,19 @@ void main() {
     expect(documentKey(DocumentType.dni, ' 12345678 '), 'dni_12345678');
     expect(documentKey(DocumentType.ce, 'ab1234567'), 'ce_AB1234567');
   });
+
+  test('nextDocumentChange: free without a previous change, then 30 days', () {
+    final now = DateTime(2026, 11, 27, 12);
+    expect(nextDocumentChange(null, now), isNull);
+    final c29 = now.subtract(const Duration(days: 29));
+    expect(nextDocumentChange(c29, now), c29.add(const Duration(days: 30)));
+    expect(
+      nextDocumentChange(now.subtract(const Duration(days: 30)), now),
+      isNull,
+    );
+    expect(
+      nextDocumentChange(now.subtract(const Duration(days: 31)), now),
+      isNull,
+    );
+  });
 }

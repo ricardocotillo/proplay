@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:proplay/models/user_model.dart';
 import 'package:proplay/utils/document.dart';
+import 'package:proplay/utils/error_message.dart';
 
 class DocumentAlreadyRegistered implements Exception {
   const DocumentAlreadyRegistered();
@@ -56,6 +58,47 @@ class UserService {
       rethrow;
     } catch (e) {
       throw Exception('Failed to create user: $e');
+    }
+  }
+
+  /// Adds a document to an account that has none (legacy), claiming its
+  /// lock in the same transaction. Throws [DocumentAlreadyRegistered] when
+  /// another account owns it.
+  Future<void> claimDocument(
+    String uid,
+    DocumentType type,
+    String number,
+  ) async {
+    final normalized = normalizeDocument(number);
+    final lockRef = _firestore
+        .collection('documents')
+        .doc(documentKey(type, normalized));
+    // Flag instead of throwing inside the transaction (see
+    // createUserWithDocument).
+    final taken = await _firestore.runTransaction<bool>((tx) async {
+      if ((await tx.get(lockRef)).exists) return true;
+      tx.set(lockRef, {'uid': uid, 'createdAt': FieldValue.serverTimestamp()});
+      tx.update(_firestore.collection(usersCollection).doc(uid), {
+        'documentType': type.name,
+        'documentNumber': normalized,
+      });
+      return false;
+    });
+    if (taken) throw const DocumentAlreadyRegistered();
+  }
+
+  /// Corrects the account's document via the `changeDocument` function
+  /// (30-day limit, lock swap). Error messages are the server's Spanish copy.
+  Future<void> changeDocument(DocumentType type, String number) async {
+    try {
+      await FirebaseFunctions.instanceFor(region: 'southamerica-east1')
+          .httpsCallable('changeDocument')
+          .call({
+            'documentType': type.name,
+            'documentNumber': normalizeDocument(number),
+          });
+    } on FirebaseFunctionsException catch (e) {
+      throw callableError(e);
     }
   }
 

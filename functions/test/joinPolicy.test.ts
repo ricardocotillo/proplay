@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {joinError, roundCents, spendDocId, JoinCheck} from '../src/joinPolicy';
+import {hasIdentityDocument, joinError, roundCents, spendDocId, JoinCheck} from '../src/joinPolicy';
 
 const NOW = Date.UTC(2026, 10, 26, 12);
 const ok: JoinCheck = {
@@ -45,4 +45,14 @@ test('price is compared in cents', () => {
 
 test('spend id is deterministic per join token', () => {
   assert.equal(spendDocId('s', 'u', 't'), 'spend_s_u_t');
+});
+
+test('join needs a DNI or CE on the account', () => {
+  assert.equal(hasIdentityDocument({documentType: 'dni', documentNumber: '12345678'}), true);
+  assert.equal(hasIdentityDocument({documentType: 'ce', documentNumber: 'A12345678'}), true);
+  assert.equal(hasIdentityDocument({}), false);
+  assert.equal(hasIdentityDocument({documentType: '', documentNumber: ''}), false);
+  assert.equal(hasIdentityDocument({documentType: 'dni', documentNumber: ''}), false);
+  assert.equal(hasIdentityDocument({documentType: 'passport', documentNumber: 'X1'}), false);
+  assert.equal(hasIdentityDocument({documentType: 'dni', documentNumber: 12345678}), false);
 });

@@ -288,6 +288,17 @@ await t('cleanup removes waitlist and late-cancel rows of events that ended', as
   void noPush;
 });
 
+await t('a legacy account without DNI/CE cannot join the waitlist', async () => {
+  const {id} = await fullEvent();
+  const w = `lg${++n}`;
+  await db.doc(`users/${w}`).set({
+    credits: '30.00', firstName: 'Ana', lastName: 'Pérez', profileImageUrl: null,
+    documentType: '', documentNumber: '', superUser: false,
+  });
+  await rejects(run(joinWaitlist, w, {sessionId: id}), 'failed-precondition', /DNI/);
+  assert.equal(await entry(id, w), undefined);
+});
+
 const failed = results.filter((r) => !r).length;
 console.log(`${results.length - failed}/${results.length} passed`);
 process.exit(failed ? 1 : 0);

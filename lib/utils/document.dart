@@ -28,3 +28,14 @@ String? validateDocument(DocumentType type, String? value) {
 /// Firestore doc id of the uniqueness lock in `documents/`.
 String documentKey(DocumentType type, String number) =>
     '${type.name}_${normalizeDocument(number)}';
+
+/// Minimum time between two document changes. Keep equal to
+/// functions/src/documentPolicy.ts.
+const int kDocumentCooldownDays = 30;
+
+/// When the next change is allowed, or null when it is allowed now.
+DateTime? nextDocumentChange(DateTime? changedAt, DateTime now) {
+  if (changedAt == null) return null;
+  final next = changedAt.add(const Duration(days: kDocumentCooldownDays));
+  return next.isAfter(now) ? next : null;
+}
