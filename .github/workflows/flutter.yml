@@ -2,26 +2,8 @@ name: Flutter
 
 on:
   pull_request:
-    paths:
-      - "lib/**"
-      - "test/**"
-      - "web/**"
-      - "assets/**"
-      - "pubspec.yaml"
-      - "pubspec.lock"
-      - "analysis_options.yaml"
-      - ".github/workflows/flutter.yml"
   push:
     branches: [main]
-    paths:
-      - "lib/**"
-      - "test/**"
-      - "web/**"
-      - "assets/**"
-      - "pubspec.yaml"
-      - "pubspec.lock"
-      - "analysis_options.yaml"
-      - ".github/workflows/flutter.yml"
 
 concurrency:
   group: flutter-${{ github.ref }}
@@ -31,7 +13,29 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.f.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: f
+        with:
+          filters: |
+            run:
+              - "lib/**"
+              - "test/**"
+              - "web/**"
+              - "assets/**"
+              - "pubspec.yaml"
+              - "pubspec.lock"
+              - "analysis_options.yaml"
+              - ".github/workflows/flutter.yml"
+
   flutter:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -55,3 +59,13 @@ jobs:
 
       # Compile check only. Deploys stay manual (see README).
       - run: flutter build web
+
+  # Always reports, so it is the one check to require in branch protection.
+  flutter-ok:
+    name: Flutter (required)
+    needs: [changes, flutter]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          [ "${{ needs.changes.result }}" = "success" ] && { [ "${{ needs.flutter.result }}" = "success" ] || [ "${{ needs.flutter.result }}" = "skipped" ]; }

@@ -2,20 +2,8 @@ name: Functions and rules
 
 on:
   pull_request:
-    paths:
-      - "functions/**"
-      - "firestore.rules"
-      - "firestore.indexes.json"
-      - "firebase.json"
-      - ".github/workflows/functions.yml"
   push:
     branches: [main]
-    paths:
-      - "functions/**"
-      - "firestore.rules"
-      - "firestore.indexes.json"
-      - "firebase.json"
-      - ".github/workflows/functions.yml"
 
 concurrency:
   group: functions-${{ github.ref }}
@@ -29,8 +17,30 @@ defaults:
     working-directory: functions
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    outputs:
+      run: ${{ steps.f.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: f
+        with:
+          filters: |
+            run:
+              - "functions/**"
+              - "firestore.rules"
+              - "firestore.indexes.json"
+              - "firebase.json"
+              - ".github/workflows/functions.yml"
+
   unit:
     name: Build and unit tests
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -46,6 +56,8 @@ jobs:
 
   emulator:
     name: Emulator tests (rules, join, cancel, waitlist, ...)
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -62,7 +74,23 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ~/.cache/firebase/emulators
-          key: firebase-emulators-${{ runner.os }}-${{ hashFiles('firebase.json') }}
+          key: firebase-emulators-${{ runner.os }}-${{ hashFiles('firebase.json', 'functions/package-lock.json') }}
           restore-keys: firebase-emulators-${{ runner.os }}-
       - run: npm ci
       - run: npm run test:emulator
+
+  # Always reports, so it is the one check to require in branch protection.
+  functions-ok:
+    name: Functions (required)
+    needs: [changes, unit, emulator]
+    if: always()
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - run: |
+          [ "${{ needs.changes.result }}" = "success" ] || exit 1
+          for r in "${{ needs.unit.result }}" "${{ needs.emulator.result }}"; do
+            [ "$r" = "success" ] || [ "$r" = "skipped" ] || exit 1
+          done
