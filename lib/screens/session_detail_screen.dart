@@ -29,6 +29,7 @@ import 'package:proplay/utils/join_availability.dart';
 import 'package:proplay/utils/min_players.dart';
 import 'package:proplay/utils/waitlist_bar.dart';
 import 'package:proplay/utils/refund_policy.dart';
+import 'package:proplay/widgets/identity_document_dialog.dart';
 
 class SessionDetailScreen extends StatefulWidget {
   final String sessionId;
@@ -675,8 +676,7 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
             ),
             const SizedBox(height: 8),
             ElevatedButton.icon(
-              onPressed: () =>
-                  context.read<SessionDetailBloc>().add(const JoinWaitlist()),
+              onPressed: () => _joinWaitlist(context),
               icon: const Icon(Icons.hourglass_top),
               label: const Text('Unirme a la lista de espera'),
               style: buttonStyle,
@@ -877,7 +877,23 @@ class _SessionDetailScreenState extends State<SessionDetailScreen> {
     }
   }
 
-  void _showJoinConfirmationDialog(BuildContext context, SessionModel session) {
+  /// Legacy accounts have no DNI/CE: ask once before joining (the server
+  /// refuses the join without one). False when the player backed out.
+  Future<bool> _ensureDocument(BuildContext context) async {
+    if (context.currentUser?.hasDocument ?? false) return true;
+    return await askIdentityDocument(context) && context.mounted;
+  }
+
+  Future<void> _joinWaitlist(BuildContext context) async {
+    if (!await _ensureDocument(context) || !context.mounted) return;
+    context.read<SessionDetailBloc>().add(const JoinWaitlist());
+  }
+
+  Future<void> _showJoinConfirmationDialog(
+    BuildContext context,
+    SessionModel session,
+  ) async {
+    if (!await _ensureDocument(context) || !context.mounted) return;
     final cost = UserModel.formatCredits(session.costPerPlayer);
 
     showDialog(

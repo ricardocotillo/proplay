@@ -54,6 +54,17 @@ export const joinError = (c: JoinCheck): JoinError | null => {
   return null;
 };
 
+/** Join and waitlist need a DNI or CE on the account (legacy docs have ''). */
+export const hasIdentityDocument = (
+  u: {documentType?: unknown; documentNumber?: unknown},
+): boolean =>
+  (u.documentType === 'dni' || u.documentType === 'ce') &&
+  typeof u.documentNumber === 'string' && u.documentNumber.length > 0;
+
+export const DOCUMENT_REQUIRED_MESSAGE =
+  'Registra tu DNI o carnet de extranjería para unirte a eventos. ' +
+  'Si no ves la opción, actualiza la app.';
+
 /** Ledger spend id: unique per join (token is new on every join). */
 export const spendDocId = (sessionId: string, uid: string, token: string) =>
   `spend_${sessionId}_${uid}_${token}`;

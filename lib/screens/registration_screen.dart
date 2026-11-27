@@ -6,6 +6,7 @@ import 'package:proplay/bloc/auth/auth_event.dart';
 import 'package:proplay/bloc/auth/auth_state.dart';
 import 'package:proplay/utils/auth_redirect.dart';
 import 'package:proplay/utils/document.dart';
+import 'package:proplay/widgets/document_fields.dart';
 import 'package:proplay/widgets/responsive_layout.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -139,41 +140,20 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    SegmentedButton<DocumentType>(
-                      segments: const [
-                        ButtonSegment(
-                          value: DocumentType.dni,
-                          label: Text('DNI'),
-                        ),
-                        ButtonSegment(
-                          value: DocumentType.ce,
-                          label: Text('Carnet de extranjería'),
-                        ),
-                      ],
-                      selected: {_docType},
-                      onSelectionChanged: isLoading
-                          ? null
-                          : (s) => setState(() {
-                              _docType = s.first;
-                              if (_documentController.text.isNotEmpty) {
-                                _docFieldKey.currentState?.validate();
-                              }
-                            }),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      key: _docFieldKey,
+                    DocumentFields(
+                      type: _docType,
+                      fieldKey: _docFieldKey,
                       controller: _documentController,
-                      decoration: const InputDecoration(
-                        labelText: 'Número de documento',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.badge),
-                      ),
-                      keyboardType: _docType == DocumentType.dni
-                          ? TextInputType.number
-                          : TextInputType.text,
                       enabled: !isLoading,
-                      validator: (v) => validateDocument(_docType, v),
+                      onTypeChanged: (t) {
+                        setState(() => _docType = t);
+                        // After the rebuild: the validator reads the new type.
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (_documentController.text.isNotEmpty) {
+                            _docFieldKey.currentState?.validate();
+                          }
+                        });
+                      },
                     ),
                     const SizedBox(height: 16),
                     TextFormField(

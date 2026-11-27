@@ -20,13 +20,13 @@ const results = [];
 
 async function seed({
   hoursAhead = 48, cost = 10, credits = '20.00', maxPlayers = 10, players = [{uid: 'other'}],
-  isPrivate = false, member = false,
+  isPrivate = false, member = false, document = true,
 } = {}) {
   const id = `j${++n}`;
   const uid = `ju${n}`;
   await db.doc(`users/${uid}`).set({
     credits, firstName: 'Ana', lastName: 'Pérez', profileImageUrl: null,
-    documentType: 'dni', documentNumber: '12345678',
+    documentType: document ? 'dni' : '', documentNumber: document ? '12345678' : '',
   });
   await db.doc(`liveSessions/${id}`).set({
     title: 'Pichanga', groupId: `g${n}`, isPrivate, costPerPlayer: cost, maxPlayers, sport: 'fútbol',
@@ -177,6 +177,22 @@ await t('price with more than 2 decimals is charged in cents', async () => {
   const [row] = await spends(uid);
   assert.equal(row.data().creditAmount, 33.33);
   assert.equal((await db.doc(`tickets/${id}_${uid}`).get()).data().pricePaid, 33.33);
+});
+
+await t('a legacy account without DNI/CE cannot join: no charge, no seat, no ticket', async () => {
+  const {id, uid} = await seed({document: false});
+  await rejects(join(uid, id), 'failed-precondition', /DNI/);
+  assert.equal(await credits(uid), '20.00');
+  assert.equal((await spends(uid)).length, 0);
+  assert.equal((await session(id)).playerCount, 1);
+  assert.equal((await db.doc(`tickets/${id}_${uid}`).get()).exists, false);
+});
+
+await t('a legacy account that already joined still gets its ticket back on retry', async () => {
+  const {id, uid} = await seed({players: [{uid: 'ju-x'}]});
+  await join(uid, id);
+  await db.doc(`users/${uid}`).update({documentType: '', documentNumber: ''});
+  assert.deepEqual(await join(uid, id), {ticketId: `${id}_${uid}`, alreadyJoined: true});
 });
 
 const failed = results.filter((r) => !r[1]).length;

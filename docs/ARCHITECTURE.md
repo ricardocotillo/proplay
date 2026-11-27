@@ -268,8 +268,9 @@ yape/{id}                        # first doc wins — admin QR / phone / name
 | `superUser` | bool | Admin |
 | `blockedUntil` | timestamp? | Joining is paused until then (3 no-shows in 90 days). Written only by Cloud Functions; clients cannot change it |
 | `sports` | string[] | Canonical sport values |
-| `documentType` | string | `dni` \| `ce` (`DocumentType.name`). Mandatory at registration; `''` on legacy docs |
+| `documentType` | string | `dni` \| `ce` (`DocumentType.name`). Mandatory at registration; `''` on legacy docs, which add one once in the join flow (`UserService.claimDocument`); `joinSession` / `joinWaitlist` refuse accounts without one |
 | `documentNumber` | string | Normalized (trim + uppercase). DNI: 8 digits. CE: 9–12 alphanumerics |
+| `documentChangedAt` | timestamp | Last document correction. Absent until the first one (registration and the legacy first claim do not set it, so the first correction is free); the next is allowed 30 days later. Written only by `changeDocument`; clients cannot write it (rules) |
 
 `isMatchInfoComplete` is `gender != null && age != null`.
 
@@ -334,7 +335,7 @@ Lookups: by `userId` (client-sorted by `eventDate`), or by `validationToken`.
 
 ### `documents/{type}_{number}`
 
-Uniqueness lock, e.g. `dni_12345678`. Fields: `uid`, `createdAt`. Written in the same transaction as `users/{uid}` by `UserService.createUserWithDocument`; a second claim throws `DocumentAlreadyRegistered`. Rules (`firestore.rules`): `get` for signed-in users; `create` only in the same write as the owner's `users/{uid}` doc that declares exactly that document (`getAfter`), with `uid == auth.uid`; no update/delete/list. `users/{uid}` cannot change `documentType`/`documentNumber` after creation, and a ticket's document snapshot must equal the holder's profile.
+Uniqueness lock, e.g. `dni_12345678`. Fields: `uid`, `createdAt`. Written in the same transaction as `users/{uid}` by `UserService.createUserWithDocument`, or, for a legacy account that has no document yet, by `UserService.claimDocument` (rules `documentFirstClaim`: stored type empty, valid format, lock for the same uid in the same write, owner only; any later change is server-only); a second claim throws `DocumentAlreadyRegistered`. A correction goes through the `changeDocument` callable (`UserService.changeDocument`, Profile → "Documento de identidad"): one transaction checks the 30-day cooldown (`users.documentChangedAt`), claims the new lock, releases the old one and updates the profile; tickets already issued keep their old document snapshot. Rules (`firestore.rules`): `get` for signed-in users; `create` only in the same write as the owner's `users/{uid}` doc that declares exactly that document (`getAfter`), with `uid == auth.uid`; no update/delete/list. `users/{uid}` cannot change `documentType`/`documentNumber` after creation, and a ticket's document snapshot must equal the holder's profile.
 
 ### `publicEvents/{sessionId}` — projection
 
@@ -436,6 +437,12 @@ SessionDetailBloc.JoinSession
       1. reject (functions/src/joinPolicy.ts): private event (missing isPrivate = private)
          and not a group member; price or seat limit not a valid number (price < 0,
          seats <= 0); event started (server clock); full; balance (users/{uid}) < price.
+         Before these (`joinSession`, and `joinWaitlist`): the account must have a DNI/CE
+         (`hasIdentityDocument`); legacy accounts add it in the join dialog first.
+         Deploy order for this gate: rules → hosting → functions (functions first would
+         refuse legacy players before they can add a document).
+         `changeDocument` (document correction) follows the usual order: functions →
+         hosting → rules; the rules only freeze `documentChangedAt` against clients.
          The price is rounded to cents once and used for the debit, ledger and ticket
       2. debit users/{uid}.credits
       3. creditHistory spend, id `spend_{sessionId}_{uid}_{token}`
@@ -481,7 +488,7 @@ Guests tap a card → `/events/:id` (`PublicEventScreen`, "Ingresa para unirte" 
 
 ### Cloud Functions (`functions/`)
 
-TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation`, `joinSession`, `joinWaitlist`, `leaveWaitlist` (and the scheduled `expireWaitlistOffers`, `autoCancelUnderfilled`, `recordAttendance`) and the organizer / credit callables, `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`), and for web push `sendReminders` (scheduled), `notifyCreditApproved` and `claimDeviceToken` (triggers). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel`, `join` (callable logic, incl. join → cancel → rejoin), `organizer` (credit review, cancel/remove event, check-in) and `reminders` (push sending with a fake sender), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
+TypeScript, Node 22 (Node 20 was decommissioned on 2026-10-30), v2 API, all in `southamerica-east1` (the Firestore database location; a Firestore trigger must be in the DB region). `cancelParticipation`, `joinSession`, `joinWaitlist`, `leaveWaitlist`, `changeDocument` (and the scheduled `expireWaitlistOffers`, `autoCancelUnderfilled`, `recordAttendance`) and the organizer / credit callables, `mirrorPublicEvent` (`onDocumentWritten('liveSessions/{id}')`), and for web push `sendReminders` (scheduled), `notifyCreditApproved` and `claimDeviceToken` (triggers). Unit tests: `cd functions && npm test` (`node --test` via `tsx`). Emulator tests: `cd functions && npm run test:emulator` (needs Java; runs `functions/emulator-tests/`: `cancel`, `join` (callable logic, incl. join → cancel → rejoin), `organizer` (credit review, cancel/remove event, check-in) and `reminders` (push sending with a fake sender), `rules` (`firestore.rules` incl. the known open holes), `backfill` (script) and `trigger` (`mirrorPublicEvent` through the Functions emulator), in three emulator runs because the backfill test needs a clean database).
 
 ### Recurring events (create flow)
 

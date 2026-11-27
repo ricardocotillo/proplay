@@ -27,7 +27,7 @@ export const nextBlockMs = (current: number | undefined, nowMs: number): number 
 export const isNoShow = (ticketStatus: unknown, anyoneCheckedIn: boolean): boolean =>
   anyoneCheckedIn && ticketStatus === 'valid';
 
-const fmtDate = (ms: number): string =>
+export const fmtDate = (ms: number): string =>
   new Intl.DateTimeFormat('es-PE', {
     day: 'numeric', month: 'long', timeZone: 'America/Lima',
   }).format(new Date(ms));

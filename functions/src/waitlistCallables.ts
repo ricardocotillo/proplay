@@ -3,7 +3,7 @@ import {onSchedule} from 'firebase-functions/v2/scheduler';
 import {getFirestore, FieldValue, Firestore, Timestamp} from 'firebase-admin/firestore';
 import {getMessaging} from 'firebase-admin/messaging';
 import {blockedMessage, isBlocked} from './attendancePolicy';
-import {joinError} from './joinPolicy';
+import {DOCUMENT_REQUIRED_MESSAGE, hasIdentityDocument, joinError} from './joinPolicy';
 import {Sender} from './notify';
 import {applyOffer, holdsOf, notifyOffer, OfferPlan, planOffer, readWaitlist} from './waitlist';
 import {isActiveOffer, MAX_WAITLIST} from './waitlistPolicy';
@@ -46,6 +46,9 @@ export const joinWaitlist = onCall(async (request) => {
     const user = userSnap.data()!;
     const until: number | undefined = user.blockedUntil?.toMillis?.();
     if (isBlocked(until, nowMs)) throw new HttpsError('failed-precondition', blockedMessage(until!));
+    if (!hasIdentityDocument(user)) {
+      throw new HttpsError('failed-precondition', DOCUMENT_REQUIRED_MESSAGE);
+    }
     const isPrivate = session.isPrivate !== false;
     const isMember = isPrivate && typeof session.groupId === 'string'
       ? (await tx.get(db.doc(`groups/${session.groupId}/members/${uid}`))).exists
