@@ -6,7 +6,18 @@ import 'package:go_router/go_router.dart';
 import 'package:proplay/screens/landing_screen.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
-Future<void> _pump(WidgetTester tester, Size size) async {
+// Two pumps: the first lets go_router resolve the route, the second runs the
+// transition. Not pumpAndSettle: see setUpAll.
+Future<void> _settle(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(seconds: 1));
+}
+
+Future<void> _pump(
+  WidgetTester tester,
+  Size size, {
+  double textScale = 1,
+}) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -26,7 +37,11 @@ Future<void> _pump(WidgetTester tester, Size size) async {
     MaterialApp.router(
       routerConfig: router,
       builder: (context, child) => ResponsiveBreakpoints.builder(
-        child: child!,
+        child: MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
         breakpoints: const [
           Breakpoint(start: 0, end: 639, name: MOBILE),
           Breakpoint(start: 640, end: 767, name: 'SM'),
@@ -36,7 +51,7 @@ Future<void> _pump(WidgetTester tester, Size size) async {
       ),
     ),
   );
-  await tester.pump(const Duration(seconds: 1));
+  await _settle(tester);
 }
 
 void main() {
@@ -58,18 +73,20 @@ void main() {
   testWidgets('CTAs navigate', (tester) async {
     await _pump(tester, const Size(1280, 3000));
     await tester.tap(find.text('Ingresar').first);
-    await tester.pump(const Duration(seconds: 1));
+    await _settle(tester);
     expect(find.text('login-stub'), findsOneWidget);
 
     GoRouter.of(tester.element(find.text('login-stub'))).go('/welcome');
-    await tester.pump(const Duration(seconds: 1));
+    await _settle(tester);
     await tester.tap(find.text('Crear cuenta').first);
-    await tester.pump(const Duration(seconds: 1));
+    await _settle(tester);
     expect(find.text('registration-stub'), findsOneWidget);
   });
 
   testWidgets('no overflow at 360px', (tester) async {
-    await _pump(tester, const Size(360, 3000));
+    // Tests render with the Ahem font (about twice as wide as Roboto), so
+    // scale text down to approximate real widths.
+    await _pump(tester, const Size(360, 3000), textScale: 0.5);
     expect(tester.takeException(), isNull);
   });
 }
