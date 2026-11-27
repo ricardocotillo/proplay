@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core_platform_interface/test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -34,10 +36,19 @@ Future<void> _pump(WidgetTester tester, Size size) async {
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  await tester.pump(const Duration(seconds: 1));
 }
 
 void main() {
+  // pumpAndSettle never returns: the event skeletons animate while the
+  // (mocked, never answering) Firestore query is pending.
+  // The events grid builds SessionService, which reads Firestore.instance.
+  setUpAll(() async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    setupFirebaseCoreMocks();
+    await Firebase.initializeApp();
+  });
+
   testWidgets('renders hero and sections', (tester) async {
     await _pump(tester, const Size(1280, 3000));
     expect(find.text('Encuentra tu próximo partido'), findsOneWidget);
@@ -47,13 +58,13 @@ void main() {
   testWidgets('CTAs navigate', (tester) async {
     await _pump(tester, const Size(1280, 3000));
     await tester.tap(find.text('Ingresar').first);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
     expect(find.text('login-stub'), findsOneWidget);
 
     GoRouter.of(tester.element(find.text('login-stub'))).go('/welcome');
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
     await tester.tap(find.text('Crear cuenta').first);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
     expect(find.text('registration-stub'), findsOneWidget);
   });
 

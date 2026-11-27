@@ -55,7 +55,7 @@ jobs:
       # Tighten to plain `flutter analyze` once flutter_lints is enabled.
       - run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - run: flutter test --trace off
+      - run: flutter test
 
       # Compile check only. Deploys stay manual (see README).
       - run: flutter build web
