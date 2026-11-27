@@ -158,7 +158,7 @@ Flutter → package imports → `package:proplay/...`
 flutter pub get
 flutter run
 flutter analyze
-flutter test          # pure-function/model tests; the default counter smoke test (needs Firebase) fails and is pre-existing
+flutter test          # pure-function/model tests; CI runs it on every PR (`.github/workflows/flutter.yml`)
 (cd functions && npm install && npm run build && npm test)
 (cd functions && npm run test:emulator)   # rules + join, cancel, organizer, credit-review and reminders + trigger + backfill on the Firestore/Functions emulators (needs Java)
 flutter build web

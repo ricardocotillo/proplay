@@ -1,0 +1,96 @@
+name: Functions and rules
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: functions-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: functions
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    outputs:
+      run: ${{ steps.f.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: f
+        with:
+          filters: |
+            run:
+              - "functions/**"
+              - "firestore.rules"
+              - "firestore.indexes.json"
+              - "firebase.json"
+              - ".github/workflows/functions.yml"
+
+  unit:
+    name: Build and unit tests
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+
+  emulator:
+    name: Emulator tests (rules, join, cancel, waitlist, ...)
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-${{ hashFiles('firebase.json', 'functions/package-lock.json') }}
+          restore-keys: firebase-emulators-${{ runner.os }}-
+      - run: npm ci
+      - run: npm run test:emulator
+
+  # Always reports, so it is the one check to require in branch protection.
+  functions-ok:
+    name: Functions (required)
+    needs: [changes, unit, emulator]
+    if: always()
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - run: |
+          [ "${{ needs.changes.result }}" = "success" ] || exit 1
+          for r in "${{ needs.unit.result }}" "${{ needs.emulator.result }}"; do
+            [ "$r" = "success" ] || [ "$r" = "skipped" ] || exit 1
+          done

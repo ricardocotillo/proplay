@@ -698,7 +698,7 @@ flutter analyze
 flutter test
 ```
 
-`test/widget_test.dart` is still the Flutter counter template and does **not** boot Firebase-safe UI. Replace it before relying on CI.
+The counter template test was removed. CI (GitHub Actions) runs `.github/workflows/flutter.yml` (analyze, `flutter test`, web build) and `.github/workflows/functions.yml` (functions build, unit tests, emulator suite incl. rules) on every PR; deploys stay manual.
 
 Intended direction (from project guidelines):
 

@@ -1,0 +1,71 @@
+name: Flutter
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: flutter-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.f.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: f
+        with:
+          filters: |
+            run:
+              - "lib/**"
+              - "test/**"
+              - "web/**"
+              - "assets/**"
+              - "pubspec.yaml"
+              - "pubspec.lock"
+              - "analysis_options.yaml"
+              - ".github/workflows/flutter.yml"
+
+  flutter:
+    needs: changes
+    if: needs.changes.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter --version
+
+      - run: flutter pub get
+
+      # `include_file_not_found` is a known warning while flutter_lints is
+      # commented out in pubspec.yaml, so only errors fail the job.
+      # Tighten to plain `flutter analyze` once flutter_lints is enabled.
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - run: flutter test
+
+      # Compile check only. Deploys stay manual (see README).
+      - run: flutter build web
+
+  # Always reports, so it is the one check to require in branch protection.
+  flutter-ok:
+    name: Flutter (required)
+    needs: [changes, flutter]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          [ "${{ needs.changes.result }}" = "success" ] && { [ "${{ needs.flutter.result }}" = "success" ] || [ "${{ needs.flutter.result }}" = "skipped" ]; }

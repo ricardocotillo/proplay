@@ -97,7 +97,7 @@ Spanish date formatting is initialized at startup (`initializeDateFormatting('es
 ```bash
 flutter pub get
 flutter analyze
-flutter test                    # currently still the default counter smoke test
+flutter test                    # pure-function/model/bloc tests
 flutter build apk
 flutter build ios
 flutter build web
